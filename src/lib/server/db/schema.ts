@@ -26,7 +26,7 @@ export const expenses = sqliteTable('expenses', {
 	accountId: integer('account_id').references(() => accounts.id, { onDelete: 'set null' })
 });
 
-export const expenseCosts = sqliteTable('expense_costs', {
+export const expenseAmounts = sqliteTable('expense_amounts', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	expenseId: integer('expense_id').notNull().references(() => expenses.id, { onDelete: 'cascade' }),
 	amount: integer('amount').notNull(), // Stored in whole currency units (no decimals)

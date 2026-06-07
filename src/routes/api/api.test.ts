@@ -6,7 +6,7 @@ import { addAccount } from '$lib/server/db/queries';
 
 describe('API Endpoints Integration', () => {
 	beforeEach(() => {
-		sqlite.exec('DELETE FROM expense_costs');
+		sqlite.exec('DELETE FROM expense_amounts');
 		sqlite.exec('DELETE FROM expenses');
 		sqlite.exec('DELETE FROM accounts');
 		sqlite.exec('DELETE FROM incomes');

@@ -4,7 +4,7 @@ CREATE TABLE `accounts` (
 	`owner` text NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `expense_costs` (
+CREATE TABLE `expense_amounts` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`expense_id` integer NOT NULL,
 	`amount` integer NOT NULL,

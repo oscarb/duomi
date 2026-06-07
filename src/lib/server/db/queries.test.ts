@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { db, sqlite } from './index';
-import { incomes, accounts, expenses, expenseCosts } from './schema';
+import { incomes, accounts, expenses, expenseAmounts } from './schema';
 import { getMonthlyIncomes, setMonthlyIncome, getActiveExpensesForMonth, addExpense, addAccount, getAccounts } from './queries';
 import { eq } from 'drizzle-orm';
 
 describe('Database Queries', () => {
 	beforeEach(() => {
 		// Clean the database tables before each test
-		sqlite.exec('DELETE FROM expense_costs');
+		sqlite.exec('DELETE FROM expense_amounts');
 		sqlite.exec('DELETE FROM expenses');
 		sqlite.exec('DELETE FROM accounts');
 		sqlite.exec('DELETE FROM incomes');

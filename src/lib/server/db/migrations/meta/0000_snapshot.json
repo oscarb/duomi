@@ -35,8 +35,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "expense_costs": {
-      "name": "expense_costs",
+    "expense_amounts": {
+      "name": "expense_amounts",
       "columns": {
         "id": {
           "name": "id",
@@ -69,9 +69,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "expense_costs_expense_id_expenses_id_fk": {
-          "name": "expense_costs_expense_id_expenses_id_fk",
-          "tableFrom": "expense_costs",
+        "expense_amounts_expense_id_expenses_id_fk": {
+          "name": "expense_amounts_expense_id_expenses_id_fk",
+          "tableFrom": "expense_amounts",
           "tableTo": "expenses",
           "columnsFrom": [
             "expense_id"

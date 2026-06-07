@@ -1,11 +1,11 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { expenses, expenseCosts, accounts } from '$lib/server/db/schema';
+import { expenses, expenseAmounts, accounts } from '$lib/server/db/schema';
 import {
 	getMonthlyIncomes,
 	addExpense,
-	updateExpenseCost,
+	updateExpenseAmount,
 	archiveExpense,
 	getAccounts
 } from '$lib/server/db/queries';
@@ -31,12 +31,12 @@ export const GET: RequestHandler = async ({ url }) => {
 	for (const expense of dbExpenses) {
 		const history = await db
 			.select({
-				amount: expenseCosts.amount,
-				valid_from: expenseCosts.validFrom
+				amount: expenseAmounts.amount,
+				valid_from: expenseAmounts.validFrom
 			})
-			.from(expenseCosts)
-			.where(eq(expenseCosts.expenseId, expense.id))
-			.orderBy(expenseCosts.validFrom)
+			.from(expenseAmounts)
+			.where(eq(expenseAmounts.expenseId, expense.id))
+			.orderBy(expenseAmounts.validFrom)
 			.all();
 
 		// Current amount is the cost active in the target year/month (latest valid_from <= targetLastDay)
@@ -164,9 +164,9 @@ export const PUT: RequestHandler = async ({ request }) => {
 			.run();
 	}
 
-	// Update or insert price cost if amount and validFrom are supplied
+	// Update or insert amount if amount and validFrom are supplied
 	if (amount !== undefined && validFrom !== undefined) {
-		await updateExpenseCost(id, amount, validFrom);
+		await updateExpenseAmount(id, amount, validFrom);
 	}
 
 	return json({ success: true });

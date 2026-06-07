@@ -64,7 +64,7 @@ try {
 				accountId: accA.id
 			}).returning().all();
 
-			db.insert(schema.expenseCosts).values({
+			db.insert(schema.expenseAmounts).values({
 				expenseId: rent.id,
 				amount: 2400,
 				validFrom: `${m2.year}-${String(m2.month).padStart(2, '0')}-01`
@@ -79,7 +79,7 @@ try {
 				accountId: accB.id
 			}).returning().all();
 
-			db.insert(schema.expenseCosts).values([
+			db.insert(schema.expenseAmounts).values([
 				{ expenseId: elec.id, amount: 120, validFrom: `${m2.year}-${String(m2.month).padStart(2, '0')}-01` },
 				{ expenseId: elec.id, amount: 140, validFrom: `${m1.year}-${String(m1.month).padStart(2, '0')}-01` },
 				{ expenseId: elec.id, amount: 160, validFrom: `${m0.year}-${String(m0.month).padStart(2, '0')}-01` }
@@ -95,7 +95,7 @@ try {
 				accountId: accA.id
 			}).returning().all();
 
-			db.insert(schema.expenseCosts).values({
+			db.insert(schema.expenseAmounts).values({
 				expenseId: net.id,
 				amount: 450,
 				validFrom: `${m2.year}-${String(m2.month).padStart(2, '0')}-01`
@@ -111,7 +111,7 @@ try {
 				accountId: accB.id
 			}).returning().all();
 
-			db.insert(schema.expenseCosts).values({
+			db.insert(schema.expenseAmounts).values({
 				expenseId: stream.id,
 				amount: 150,
 				validFrom: `${m2.year}-${String(m2.month).padStart(2, '0')}-01`
@@ -126,7 +126,7 @@ try {
 				accountId: accA.id
 			}).returning().all();
 
-			db.insert(schema.expenseCosts).values({
+			db.insert(schema.expenseAmounts).values({
 				expenseId: ins.id,
 				amount: 600,
 				validFrom: `${m2.year}-${String(m2.month).padStart(2, '0')}-01`
@@ -140,7 +140,7 @@ try {
 				splitType: 'dynamic'
 			}).returning().all();
 
-			db.insert(schema.expenseCosts).values({
+			db.insert(schema.expenseAmounts).values({
 				expenseId: dinner.id,
 				amount: 850,
 				validFrom: `${m1.year}-${String(m1.month).padStart(2, '0')}-01`
@@ -154,7 +154,7 @@ try {
 				splitType: 'dynamic'
 			}).returning().all();
 
-			db.insert(schema.expenseCosts).values({
+			db.insert(schema.expenseAmounts).values({
 				expenseId: groceries.id,
 				amount: 950,
 				validFrom: `${m0.year}-${String(m0.month).padStart(2, '0')}-01`
@@ -186,7 +186,7 @@ try {
 			}).returning().all();
 
 			const yyyymmdd = `${year}-${String(month).padStart(2, '0')}-01`;
-			db.insert(schema.expenseCosts).values({
+			db.insert(schema.expenseAmounts).values({
 				expenseId: rent.id,
 				amount: 2400,
 				validFrom: yyyymmdd
