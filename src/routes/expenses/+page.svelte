@@ -488,8 +488,8 @@
 									<input type="hidden" name="splitType" value={editSplitType} />
 
 									{#if editSplitType === 'static'}
-										<div class="space-y-3 pt-1">
-											<div class="flex justify-between text-xs font-bold text-[#2d3142]">
+										<div class="space-y-1.5 pt-1">
+											<div class="flex justify-between text-sm font-bold text-[#2d3142]">
 												<span>{data.personAName} <span class="text-[#ff7361] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
 												<span><span class="mr-0.5">{data.personBName}</span> <span class="text-[#4fd1c5]">{Math.round((1 - editRatio) * 100)}%</span></span>
 											</div>
@@ -506,16 +506,18 @@
 												<span>{formatter.format(Math.round(selectedExpense.currentAmount * editRatio))}</span>
 												<span>{formatter.format(Math.round(selectedExpense.currentAmount * (1 - editRatio)))}</span>
 											</div>
-											<p class="text-[10px] text-[#9ca3af] font-medium italic text-center mt-1.5">{t('overrideSliderDesc')}</p>
+											<p class="text-[10px] text-[#9ca3af] font-medium italic text-center mt-1">{t('overrideSliderDesc')}</p>
 										</div>
 									{:else}
-										<div class="flex justify-between text-xs font-bold text-[#2d3142]">
-											<span>{data.personAName} <span class="text-[#ff7361] ml-0.5">{Math.round(data.dynamicSplitRatioA * 100)}%</span></span>
-											<span><span class="mr-0.5">{data.personBName}</span> <span class="text-[#4fd1c5]">{Math.round((1 - data.dynamicSplitRatioA) * 100)}%</span></span>
-										</div>
-										<div class="flex justify-between text-[10px] font-bold text-[#9ca3af] pt-1">
-											<span>{formatter.format(Math.round(selectedExpense.currentAmount * data.dynamicSplitRatioA))}</span>
-											<span>{formatter.format(Math.round(selectedExpense.currentAmount * (1 - data.dynamicSplitRatioA)))}</span>
+										<div class="space-y-1.5">
+											<div class="flex justify-between text-sm font-bold text-[#2d3142]">
+												<span>{data.personAName} <span class="text-[#ff7361] ml-0.5">{Math.round(data.dynamicSplitRatioA * 100)}%</span></span>
+												<span><span class="mr-0.5">{data.personBName}</span> <span class="text-[#4fd1c5]">{Math.round((1 - data.dynamicSplitRatioA) * 100)}%</span></span>
+											</div>
+											<div class="flex justify-between text-[10px] font-bold text-[#9ca3af]">
+												<span>{formatter.format(Math.round(selectedExpense.currentAmount * data.dynamicSplitRatioA))}</span>
+												<span>{formatter.format(Math.round(selectedExpense.currentAmount * (1 - data.dynamicSplitRatioA)))}</span>
+											</div>
 										</div>
 									{/if}
 								</div>
