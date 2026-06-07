@@ -635,7 +635,7 @@
 									<tbody class="divide-y divide-[#efeeea] text-[#2d3142]">
 										{#each [...selectedExpense.history].sort((a,b) => b.validFrom.localeCompare(a.validFrom)) as hist}
 											<tr>
-												<td class="py-2 font-bold text-sm text-[#2d3142]">{hist.validFrom}</td>
+												<td class="py-2 font-bold text-sm text-[#2d3142]">{formatHistoryDate(hist.validFrom, locale)}</td>
 												<td class="py-2 text-right font-bold text-sm text-[#2d3142] font-sans">
 													{formatter.format(Math.round(hist.amount))}
 												</td>
