@@ -25,3 +25,7 @@ vite.config.ts.timestamp-*
 # Scratch and Local Databases
 /scratch/
 /data/
+
+# User CSV files
+*.csv
+
