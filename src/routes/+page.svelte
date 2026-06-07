@@ -120,6 +120,19 @@
 		});
 	}
 
+	function shareSettlement() {
+		const amountText = formatter.format(Math.round(currentSettlement.amount));
+		if (navigator.share) {
+			navigator.share({
+				text: amountText
+			}).catch(err => {
+				console.error('Error sharing:', err);
+			});
+		} else {
+			navigator.clipboard.writeText(amountText);
+		}
+	}
+
 	async function saveIncomes() {
 		const incomeA = Math.round(parseFloat(incomeAVal.replace(/\s/g, '')) || 0);
 		const incomeB = Math.round(parseFloat(incomeBVal.replace(/\s/g, '')) || 0);
@@ -227,10 +240,17 @@
 					<div class="flex justify-center">
 						<button
 							onclick={copySettlementText}
-							class="flex items-center gap-2 px-6 py-2 rounded-full border border-gray-100 bg-gray-50 text-[#9ca3af] text-sm font-semibold hover:bg-gray-100 hover:text-[#2d3142] transition-all focus:outline-none"
+							class="hidden md:flex items-center gap-2 px-6 py-2 rounded-full border border-gray-100 bg-gray-50 text-[#9ca3af] text-sm font-semibold hover:bg-gray-100 hover:text-[#2d3142] transition-all focus:outline-none"
 						>
 							<span class="material-symbols-outlined text-lg">content_copy</span>
 							<span>{t(copyStatus)}</span>
+						</button>
+						<button
+							onclick={shareSettlement}
+							class="flex md:hidden items-center gap-2 px-6 py-2 rounded-full border border-gray-100 bg-gray-50 text-[#9ca3af] text-sm font-semibold hover:bg-gray-100 hover:text-[#2d3142] transition-all focus:outline-none"
+						>
+							<span class="material-symbols-outlined text-lg">share</span>
+							<span>{t('share')}</span>
 						</button>
 					</div>
 				{:else}
