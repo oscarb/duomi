@@ -1,6 +1,8 @@
 <script lang="ts">
 	import '../app.css';
 	import { page } from '$app/state';
+	import { dev } from '$app/environment';
+	import { toasts } from '$lib/toasts.svelte';
 
 	import { setContext } from 'svelte';
 	import { translate, getCurrencyConfig } from '$lib/translations';
@@ -28,7 +30,32 @@
 	let currentMonth = $derived(page.data.period?.month || page.url.searchParams.get('month'));
 
 	let dashboardHref = $derived(currentYear && currentMonth ? `/?year=${currentYear}&month=${currentMonth}` : '/');
-	let expensesHref = $derived(currentYear && currentMonth ? `/expenses?year=${currentYear}&month=${currentMonth}` : '/expenses');
+	let expensesHref = '/expenses';
+
+	// Check if overlay card is open on the dashboard page
+	let selectedId = $derived(parseInt(page.url.searchParams.get('id') || '', 10) || null);
+	let isCreateMode = $derived(page.url.searchParams.get('new') === 'true');
+	let isOverlayOpen = $derived(selectedId !== null || isCreateMode);
+
+	// Automatic service worker unregistration in development mode to prevent stale page cache issues
+	$effect(() => {
+		if (dev && typeof navigator !== 'undefined' && navigator.serviceWorker) {
+			navigator.serviceWorker.getRegistrations().then((registrations) => {
+				for (const registration of registrations) {
+					registration.unregister().then((success) => {
+						if (success) {
+							console.log('Successfully unregistered active service worker in dev mode.');
+							window.location.reload();
+						}
+					});
+				}
+			});
+		} else if (!dev && typeof navigator !== 'undefined' && navigator.serviceWorker) {
+			navigator.serviceWorker.register('/service-worker.js', { type: 'module' }).catch((err) => {
+				console.error('Service worker registration failed:', err);
+			});
+		}
+	});
 </script>
 
 <div class="min-h-screen bg-[#ff7361] font-sans text-[#2d3142] flex flex-col">
@@ -53,4 +80,44 @@
 	<div class="flex-grow w-full max-w-6xl mx-auto px-4 md:px-8">
 		{@render children()}
 	</div>
+</div>
+
+<!-- Toast Container -->
+<div class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+	{#each toasts.list as toast (toast.id)}
+		<div
+			class="pointer-events-auto flex items-center justify-between p-4 bg-white/95 backdrop-blur border border-[#efeeea] rounded-xl shadow-xl transition-all duration-300 animate-slide-in"
+			style="box-shadow: 0 10px 30px -5px rgba(45, 49, 66, 0.08);"
+		>
+			<div class="flex items-center gap-2.5">
+				{#if toast.type === 'success'}
+					<span class="material-symbols-outlined text-[#4fd1c5] text-xl">check_circle</span>
+				{:else}
+					<span class="material-symbols-outlined text-[#ff7361] text-xl">error</span>
+				{/if}
+				<span class="text-sm font-semibold text-[#2d3142]">{toast.message}</span>
+			</div>
+			<div class="flex items-center gap-2 ml-4">
+				{#if toast.action}
+					<button
+						type="button"
+						onclick={() => {
+							toast.action?.callback();
+							toasts.dismiss(toast.id);
+						}}
+						class="text-xs font-bold text-[#ff7361] hover:text-[#ff7361]/80 hover:underline whitespace-nowrap pointer-events-auto"
+					>
+						{toast.action.label}
+					</button>
+				{/if}
+				<button
+					type="button"
+					onclick={() => toasts.dismiss(toast.id)}
+					class="text-[#9ca3af] hover:text-[#2d3142] transition-colors pointer-events-auto flex items-center justify-center"
+				>
+					<span class="material-symbols-outlined text-base">close</span>
+				</button>
+			</div>
+		</div>
+	{/each}
 </div>
