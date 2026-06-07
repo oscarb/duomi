@@ -194,18 +194,18 @@
 		<h1 class="text-4xl md:text-5xl font-bold">
 			{monthName} {data.period.year}
 		</h1>
-		<div class="flex items-center gap-4">
+		<div class="flex items-center gap-3">
 			<a
 				href="?year={prevMonth.year}&month={prevMonth.month}"
-				class="hover:opacity-100 transition-opacity flex items-center opacity-60 text-white"
+				class="w-12 h-12 rounded-full border border-white/15 bg-white/5 hover:bg-white/20 hover:border-white/30 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center opacity-70 hover:opacity-100 text-white"
 			>
-				<span class="material-symbols-outlined text-4xl" style="font-weight: 200;">arrow_back</span>
+				<span class="material-symbols-outlined text-3xl" style="font-weight: 200;">arrow_back</span>
 			</a>
 			<a
 				href="?year={nextMonth.year}&month={nextMonth.month}"
-				class="hover:opacity-100 transition-opacity flex items-center opacity-60 text-white"
+				class="w-12 h-12 rounded-full border border-white/15 bg-white/5 hover:bg-white/20 hover:border-white/30 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center opacity-70 hover:opacity-100 text-white"
 			>
-				<span class="material-symbols-outlined text-4xl" style="font-weight: 200;">arrow_forward</span>
+				<span class="material-symbols-outlined text-3xl" style="font-weight: 200;">arrow_forward</span>
 			</a>
 		</div>
 	</div>
