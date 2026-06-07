@@ -6,7 +6,10 @@ export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
 	server: {
 		host: true,
-		port: 3001
+		port: 3001,
+		watch: {
+			ignored: ['**/TODO.md', '**/README.md', '**/SPEC.md']
+		}
 	},
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}']
