@@ -378,12 +378,15 @@
 							<!-- Header: Title & Status -->
 							<div class="flex justify-between items-start pb-6">
 								<div class="flex-grow space-y-1.5">
-									<input
-										name="name"
-										type="text"
-										bind:value={editName}
-										class="w-1/2 min-w-[200px] font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 pb-1 transition-colors duration-200"
-									/>
+									<div class="inline-grid grid-cols-1 max-w-[50%] min-w-[120px]">
+										<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre">{editName || ' '}</span>
+										<input
+											name="name"
+											type="text"
+											bind:value={editName}
+											class="col-start-1 row-start-1 w-full font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 pb-1 transition-colors duration-200"
+										/>
+									</div>
 									<div class="flex items-center gap-2">
 										<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px] uppercase tracking-wider">
 											<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
