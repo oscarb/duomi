@@ -290,7 +290,7 @@
 									type="date"
 									required
 									value={new Date().toISOString().split('T')[0]}
-									class="w-full px-4 py-2.5 rounded-xl border border-[#efeeea] focus:border-[#ff7361] focus:ring-0 text-sm"
+									class="w-full px-4 py-2.5 rounded-xl border border-[#efeeea] bg-[#fbf9f5]/50 font-bold text-sm text-[#2d3142] focus:border-[#ff7361] focus:ring-2 focus:ring-[#ff7361]/20 outline-none transition-all cursor-pointer"
 								/>
 							</div>
 						</div>
@@ -447,12 +447,11 @@
 											</div>
 											{#if selectedExpense.intervalMonths !== 0}
 												<div class="flex items-center gap-1.5">
-													<span class="text-[12px] text-[#9ca3af]">{t('since')}</span>
 													<input
 														name="validFrom"
 														type="date"
 														bind:value={editPriceDate}
-														class="px-1.5 py-0.5 rounded border border-[#efeeea] bg-[#fbf9f5] text-[12px] font-bold text-[#2d3142] focus:border-[#ff7361] focus:ring-0 outline-none"
+														class="px-2 py-1 rounded-xl border border-[#efeeea] bg-[#fbf9f5] text-[12px] font-bold text-[#2d3142] focus:border-[#ff7361] focus:ring-2 focus:ring-[#ff7361]/20 outline-none transition-all cursor-pointer"
 													/>
 												</div>
 											{:else}
