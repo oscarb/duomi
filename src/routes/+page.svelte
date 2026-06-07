@@ -265,25 +265,29 @@
 							{#if currencyConfig.isPrefix}
 								<span class="text-[#9ca3af] opacity-50 mr-1">{currencyConfig.symbol}</span>
 							{/if}
-							<input
-								id="incomeA"
-								name="incomeA"
-								type="text"
-								inputmode="numeric"
-								pattern="[0-9\s]*"
-								value={incomeAVal}
-								onfocus={() => {
-									if (incomeAVal === '0') incomeAVal = '';
-								}}
-								oninput={(e) => handleIncomeInput(e, 'A')}
-								onblur={() => {
-									if (incomeAVal === '') incomeAVal = '0';
-									saveIncomes();
-								}}
-								class="tactile-input font-bold text-4xl p-0 focus:ring-0"
-								style="width: {Math.max(1, incomeAVal.length)}ch;"
-								placeholder="0"
-							/>
+							<div class="inline-grid grid-cols-1 items-baseline tactile-input">
+								<span class="invisible col-start-1 row-start-1 whitespace-pre font-bold text-4xl p-0">
+									{incomeAVal || '0'}
+								</span>
+								<input
+									id="incomeA"
+									name="incomeA"
+									type="text"
+									inputmode="numeric"
+									pattern="[0-9\s]*"
+									value={incomeAVal}
+									onfocus={() => {
+										if (incomeAVal === '0') incomeAVal = '';
+									}}
+									oninput={(e) => handleIncomeInput(e, 'A')}
+									onblur={() => {
+										if (incomeAVal === '') incomeAVal = '0';
+										saveIncomes();
+									}}
+									class="font-bold text-4xl p-0 focus:ring-0 col-start-1 row-start-1 w-full bg-transparent border-0 outline-none focus:outline-none"
+									placeholder="0"
+								/>
+							</div>
 							{#if !currencyConfig.isPrefix}
 								<span class="text-[#9ca3af] opacity-50 ml-1">{currencyConfig.symbol}</span>
 							{/if}
@@ -296,25 +300,29 @@
 							{#if currencyConfig.isPrefix}
 								<span class="text-[#9ca3af] opacity-50 mr-1">{currencyConfig.symbol}</span>
 							{/if}
-							<input
-								id="incomeB"
-								name="incomeB"
-								type="text"
-								inputmode="numeric"
-								pattern="[0-9\s]*"
-								value={incomeBVal}
-								onfocus={() => {
-									if (incomeBVal === '0') incomeBVal = '';
-								}}
-								oninput={(e) => handleIncomeInput(e, 'B')}
-								onblur={() => {
-									if (incomeBVal === '') incomeBVal = '0';
-									saveIncomes();
-								}}
-								class="tactile-input font-bold text-4xl p-0 focus:ring-0"
-								style="width: {Math.max(1, incomeBVal.length)}ch;"
-								placeholder="0"
-							/>
+							<div class="inline-grid grid-cols-1 items-baseline tactile-input">
+								<span class="invisible col-start-1 row-start-1 whitespace-pre font-bold text-4xl p-0">
+									{incomeBVal || '0'}
+								</span>
+								<input
+									id="incomeB"
+									name="incomeB"
+									type="text"
+									inputmode="numeric"
+									pattern="[0-9\s]*"
+									value={incomeBVal}
+									onfocus={() => {
+										if (incomeBVal === '0') incomeBVal = '';
+									}}
+									oninput={(e) => handleIncomeInput(e, 'B')}
+									onblur={() => {
+										if (incomeBVal === '') incomeBVal = '0';
+										saveIncomes();
+									}}
+									class="font-bold text-4xl p-0 focus:ring-0 col-start-1 row-start-1 w-full bg-transparent border-0 outline-none focus:outline-none"
+									placeholder="0"
+								/>
+							</div>
 							{#if !currencyConfig.isPrefix}
 								<span class="text-[#9ca3af] opacity-50 ml-1">{currencyConfig.symbol}</span>
 							{/if}
