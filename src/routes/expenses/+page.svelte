@@ -607,7 +607,9 @@
 								{#if selectedExpense.nextPaymentDate}
 									<div class="flex items-center gap-2 mt-4 px-1">
 										<span class="material-symbols-outlined text-[18px] text-[#ff7361]">calendar_month</span>
-										<p class="text-[11px] font-bold text-[#9ca3af]">{t('nextPaymentDate', { date: selectedExpense.nextPaymentDate })}</p>
+										<p class="text-xs font-medium text-[#9ca3af]">
+											{t('nextPaymentDate')} <span class="font-bold text-black ml-1">{selectedExpense.nextPaymentDate}</span>
+										</p>
 									</div>
 								{/if}
 							</div>
