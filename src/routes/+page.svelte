@@ -265,8 +265,8 @@
 							{#if currencyConfig.isPrefix}
 								<span class="text-[#9ca3af] opacity-50 mr-1">{currencyConfig.symbol}</span>
 							{/if}
-							<div class="inline-grid grid-cols-1 items-baseline tactile-input">
-								<span class="invisible col-start-1 row-start-1 whitespace-pre font-bold text-4xl p-0">
+							<div class="tactile-input" style="display: inline-grid; grid-template-columns: minmax(0, 1fr); align-items: baseline;">
+								<span class="invisible font-bold text-4xl p-0 whitespace-pre" style="grid-area: 1/1;">
 									{incomeAVal || '0'}
 								</span>
 								<input
@@ -284,7 +284,8 @@
 										if (incomeAVal === '') incomeAVal = '0';
 										saveIncomes();
 									}}
-									class="font-bold text-4xl p-0 focus:ring-0 col-start-1 row-start-1 w-full bg-transparent border-0 outline-none focus:outline-none"
+									class="font-bold text-4xl p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none"
+									style="grid-area: 1/1; width: 100%;"
 									placeholder="0"
 								/>
 							</div>
@@ -300,8 +301,8 @@
 							{#if currencyConfig.isPrefix}
 								<span class="text-[#9ca3af] opacity-50 mr-1">{currencyConfig.symbol}</span>
 							{/if}
-							<div class="inline-grid grid-cols-1 items-baseline tactile-input">
-								<span class="invisible col-start-1 row-start-1 whitespace-pre font-bold text-4xl p-0">
+							<div class="tactile-input" style="display: inline-grid; grid-template-columns: minmax(0, 1fr); align-items: baseline;">
+								<span class="invisible font-bold text-4xl p-0 whitespace-pre" style="grid-area: 1/1;">
 									{incomeBVal || '0'}
 								</span>
 								<input
@@ -319,7 +320,8 @@
 										if (incomeBVal === '') incomeBVal = '0';
 										saveIncomes();
 									}}
-									class="font-bold text-4xl p-0 focus:ring-0 col-start-1 row-start-1 w-full bg-transparent border-0 outline-none focus:outline-none"
+									class="font-bold text-4xl p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none"
+									style="grid-area: 1/1; width: 100%;"
 									placeholder="0"
 								/>
 							</div>
