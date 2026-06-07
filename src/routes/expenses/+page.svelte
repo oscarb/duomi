@@ -378,7 +378,7 @@
 							<!-- Header: Title & Status -->
 							<div class="flex justify-between items-start pb-6 gap-4">
 								<div class="flex-grow min-w-0 space-y-1.5">
-									<div class="inline-grid grid-cols-1 max-w-full min-w-[120px]">
+									<div class="inline-grid grid-cols-1 max-w-full min-w-[1ch]">
 										<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre-wrap break-words">{editName || ' '}</span>
 										<textarea
 											name="name"
