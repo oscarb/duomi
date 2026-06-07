@@ -265,8 +265,8 @@
 							{#if currencyConfig.isPrefix}
 								<span class="text-[#9ca3af] opacity-50 mr-1">{currencyConfig.symbol}</span>
 							{/if}
-							<div class="tactile-input" style="display: inline-grid; grid-template-columns: minmax(0, 1fr); align-items: baseline;">
-								<span class="invisible font-bold text-4xl p-0 whitespace-pre" style="grid-area: 1/1;">
+							<div class="tactile-input" style="display: inline-flex; position: relative; align-items: baseline;">
+								<span class="invisible font-bold text-4xl p-0 whitespace-pre">
 									{incomeAVal || '0'}
 								</span>
 								<input
@@ -284,8 +284,7 @@
 										if (incomeAVal === '') incomeAVal = '0';
 										saveIncomes();
 									}}
-									class="font-bold text-4xl p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none"
-									style="grid-area: 1/1; width: 100%;"
+									class="absolute left-0 top-0 w-full h-full font-bold text-4xl p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none"
 									placeholder="0"
 								/>
 							</div>
@@ -301,8 +300,8 @@
 							{#if currencyConfig.isPrefix}
 								<span class="text-[#9ca3af] opacity-50 mr-1">{currencyConfig.symbol}</span>
 							{/if}
-							<div class="tactile-input" style="display: inline-grid; grid-template-columns: minmax(0, 1fr); align-items: baseline;">
-								<span class="invisible font-bold text-4xl p-0 whitespace-pre" style="grid-area: 1/1;">
+							<div class="tactile-input" style="display: inline-flex; position: relative; align-items: baseline;">
+								<span class="invisible font-bold text-4xl p-0 whitespace-pre">
 									{incomeBVal || '0'}
 								</span>
 								<input
@@ -320,8 +319,7 @@
 										if (incomeBVal === '') incomeBVal = '0';
 										saveIncomes();
 									}}
-									class="font-bold text-4xl p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none"
-									style="grid-area: 1/1; width: 100%;"
+									class="absolute left-0 top-0 w-full h-full font-bold text-4xl p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none"
 									placeholder="0"
 								/>
 							</div>
