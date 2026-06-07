@@ -129,7 +129,7 @@
 									class="px-4 py-3 flex items-center justify-between hover:bg-[#fbf9f5] transition-colors border-l-4 {selectedId === item.id ? 'border-[#ff7361] bg-[#ff7361]/5' : 'border-transparent'}"
 								>
 									<div class="flex flex-col flex-grow">
-										<span class="font-bold text-sm text-[#2d3142] hover:text-[#ff7361] transition-colors underline decoration-[#efeeea] hover:decoration-[#ff7361]/30 underline-offset-4">{item.name}</span>
+										<span class="font-bold text-sm text-[#2d3142] hover:text-[#ff7361] transition-colors underline decoration-[#efeeea] hover:decoration-[#ff7361]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
 										<div class="mt-1.5 w-24 h-1.5 bg-[#4fd1c5] rounded-full overflow-hidden flex">
 											{#if item.splitType === 'static'}
 												<div class="bg-[#ff7361] h-full" style="width: {(item.staticSplitRatio ?? 0.5) * 100}%"></div>
@@ -177,7 +177,7 @@
 									class="px-4 py-3 flex items-center justify-between hover:bg-[#fbf9f5] transition-colors border-l-4 {selectedId === item.id ? 'border-[#4fd1c5] bg-[#4fd1c5]/5' : 'border-transparent'}"
 								>
 									<div class="flex flex-col flex-grow">
-										<span class="font-bold text-sm text-[#2d3142] hover:text-[#ff7361] transition-colors underline decoration-[#efeeea] hover:decoration-[#ff7361]/30 underline-offset-4">{item.name}</span>
+										<span class="font-bold text-sm text-[#2d3142] hover:text-[#ff7361] transition-colors underline decoration-[#efeeea] hover:decoration-[#ff7361]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
 										<div class="mt-1.5 w-24 h-1.5 bg-[#ff7361] rounded-full overflow-hidden flex">
 											{#if item.splitType === 'static'}
 												<div class="bg-[#4fd1c5] h-full" style="width: {(1 - (item.staticSplitRatio ?? 0.5)) * 100}%"></div>
@@ -379,13 +379,19 @@
 							<div class="flex justify-between items-start pb-6">
 								<div class="flex-grow space-y-1.5">
 									<div class="inline-grid grid-cols-1 max-w-[50%] min-w-[120px]">
-										<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre">{editName || ' '}</span>
-										<input
+										<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre-wrap break-words">{editName || ' '}</span>
+										<textarea
 											name="name"
-											type="text"
 											bind:value={editName}
-											class="col-start-1 row-start-1 w-full font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 pb-1 transition-colors duration-200"
-										/>
+											rows="1"
+											class="col-start-1 row-start-1 w-full h-full resize-none overflow-hidden font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 pb-1 transition-colors duration-200 whitespace-pre-wrap break-words"
+											onkeydown={(e) => {
+												if (e.key === 'Enter' && !e.shiftKey) {
+													e.preventDefault();
+													e.currentTarget.form?.requestSubmit();
+												}
+											}}
+										></textarea>
 									</div>
 									<div class="flex items-center gap-2">
 										<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px] uppercase tracking-wider">

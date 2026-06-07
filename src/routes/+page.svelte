@@ -460,7 +460,7 @@
 													<div class="flex items-center gap-3">
 														<a
 															href="/expenses?id={item.id}&year={data.period.year}&month={data.period.month}"
-															class="text-base font-semibold text-[#2d3142] opacity-80 hover:text-[#ff7361] hover:opacity-100 transition-all decoration-dashed hover:underline underline-offset-4"
+															class="text-base font-semibold text-[#2d3142] opacity-80 hover:text-[#ff7361] hover:opacity-100 transition-all decoration-dashed hover:underline underline-offset-4 whitespace-pre-wrap break-words"
 														>
 															{item.name}
 														</a>
@@ -559,7 +559,7 @@
 													<div class="flex items-center gap-3">
 														<a
 															href="/expenses?id={item.id}&year={data.period.year}&month={data.period.month}"
-															class="text-base font-semibold text-[#2d3142] opacity-80 hover:text-[#ff7361] hover:opacity-100 transition-all decoration-dashed hover:underline underline-offset-4"
+															class="text-base font-semibold text-[#2d3142] opacity-80 hover:text-[#ff7361] hover:opacity-100 transition-all decoration-dashed hover:underline underline-offset-4 whitespace-pre-wrap break-words"
 														>
 															{item.name}
 														</a>
