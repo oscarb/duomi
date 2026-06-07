@@ -497,7 +497,7 @@
 												</div>
 												<input type="hidden" name="amount" value={editPriceVal.replace(/\D/g, '')} />
 												{#if !currencyConfig.isPrefix}
-													<span class="text-[#9ca3af] ml-1 inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
+													<span class="text-[#9ca3af] -ml-[2px] inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
 												{/if}
 											</div>
 											{#if selectedExpense.intervalMonths !== 0}
