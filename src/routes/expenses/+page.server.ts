@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { getMonthlyIncomes, getAccounts, addExpense, updateExpenseCost, archiveExpense, addAccount } from '$lib/server/db/queries';
 import { db } from '$lib/server/db';
-import { expenses, expenseCosts } from '$lib/server/db/schema';
+import { expenses, expenseCosts, incomes } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -11,7 +11,26 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	const income = await getMonthlyIncomes(year, month);
 	const totalIncome = income.totalIncomeA + income.totalIncomeB;
-	const pctA = totalIncome > 0 ? Math.round((income.totalIncomeA / totalIncome) * 100) / 100 : 0.5;
+	let pctA = totalIncome > 0 ? Math.round((income.totalIncomeA / totalIncome) * 100) / 100 : 0.5;
+
+	if (totalIncome === 0) {
+		const allIncomes = await db.select().from(incomes).all();
+		let sortedWithIncomes = allIncomes
+			.filter(inc => inc.totalIncomeA + inc.totalIncomeB > 0 && (inc.year < year || (inc.year === year && inc.month <= month)))
+			.sort((a, b) => b.year - a.year || b.month - a.month);
+		
+		if (sortedWithIncomes.length === 0) {
+			sortedWithIncomes = allIncomes
+				.filter(inc => inc.totalIncomeA + inc.totalIncomeB > 0)
+				.sort((a, b) => b.year - a.year || b.month - a.month);
+		}
+
+		if (sortedWithIncomes.length > 0) {
+			const latest = sortedWithIncomes[0];
+			const latestTotal = latest.totalIncomeA + latest.totalIncomeB;
+			pctA = Math.round((latest.totalIncomeA / latestTotal) * 100) / 100;
+		}
+	}
 
 	const allAccounts = await getAccounts();
 	const dbExpenses = await db.select().from(expenses).all();
