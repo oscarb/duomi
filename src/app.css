@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Open Sans', sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: #ff7361;
+    color: #2d3142;
+  }
+
+  .tactile-input {
+    border-bottom: 1px solid #efeeea;
+    display: inline-block;
+    padding: 0;
+    padding-bottom: 2px;
+    transition: border-color 0.2s ease;
+    outline: none;
+    background: transparent;
+    min-width: 0;
+    box-sizing: content-box;
+    flex-shrink: 0;
+  }
+
+  .tactile-input:hover {
+    border-color: #ff7361;
+    cursor: pointer;
+  }
+
+  .tactile-input:focus-within, .tactile-input:focus {
+    border-color: #ff7361;
+    border-bottom-width: 1px;
+    box-shadow: none;
+  }
+
+  /* Hide number input spinners/steppers */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: none;
+  }
+
+  /* Custom Scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #fbf9f5;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #dfbfba;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #ff7361;
+  }
+}
