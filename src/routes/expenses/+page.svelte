@@ -378,13 +378,13 @@
 							<!-- Header: Title & Status -->
 							<div class="flex justify-between items-start pb-6 gap-4">
 								<div class="flex-grow min-w-0 space-y-1.5">
-									<div class="inline-grid grid-cols-1 max-w-[50cqw] min-w-[120px]">
+									<div class="inline-grid grid-cols-1 max-w-full min-w-[120px]">
 										<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre-wrap break-words">{editName || ' '}</span>
 										<textarea
 											name="name"
 											bind:value={editName}
 											rows="1"
-											class="col-start-1 row-start-1 w-full h-full resize-none overflow-hidden font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 pb-1 transition-colors duration-200 whitespace-pre-wrap break-words"
+											class="col-start-1 row-start-1 w-0 min-w-full h-full resize-none overflow-hidden font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 pb-1 transition-colors duration-200 whitespace-pre-wrap break-words"
 											onkeydown={(e) => {
 												if (e.key === 'Enter' && !e.shiftKey) {
 													e.preventDefault();
