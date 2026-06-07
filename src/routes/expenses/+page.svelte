@@ -424,7 +424,7 @@
 													type="number"
 													step="1"
 													bind:value={editPriceVal}
-													class="w-32 p-0 bg-transparent border-0 border-b-2 border-[#ff7361]/30 focus:border-[#ff7361] font-bold text-2xl text-[#2d3142] focus:ring-0 outline-none text-right pb-0.5"
+													class="w-32 p-0 bg-transparent border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] font-bold text-2xl text-[#2d3142] focus:ring-0 outline-none text-right pb-0.5 transition-colors duration-200"
 												/>
 												{#if !currencyConfig.isPrefix}
 													<span class="text-2xl font-bold text-[#9ca3af] ml-1">{currencyConfig.symbol}</span>
