@@ -1,8 +1,9 @@
 import type { PageServerLoad } from './$types';
-import { getMonthlyIncomes, getActiveExpensesForMonth } from '$lib/server/db/queries';
+import { getMonthlyIncomes, getActiveExpensesForMonth, getAccounts } from '$lib/server/db/queries';
 import { calculateSettlement } from '$lib/calculations';
 import { db } from '$lib/server/db';
-import { incomes } from '$lib/server/db/schema';
+import { incomes, expenses, expenseAmounts } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const now = new Date();
@@ -54,6 +55,63 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	const totalExpensesAmount = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
 
+	let accounts: any[] = [];
+	let allExpensesTemplates: any[] = [];
+	if (url.searchParams.has('id') || url.searchParams.has('new')) {
+		accounts = await getAccounts();
+		
+		const dbExpenses = await db.select().from(expenses).all();
+		for (const expense of dbExpenses) {
+			const history = await db
+				.select({
+					amount: expenseAmounts.amount,
+					validFrom: expenseAmounts.validFrom
+				})
+				.from(expenseAmounts)
+				.where(eq(expenseAmounts.expenseId, expense.id))
+				.orderBy(expenseAmounts.validFrom)
+				.all();
+
+			const targetLastDay = `${year}-${String(month).padStart(2, '0')}-31`;
+			const activeCost = [...history]
+				.filter(c => c.validFrom <= targetLastDay)
+				.sort((a, b) => b.validFrom.localeCompare(a.validFrom))[0];
+
+			const currentAmount = activeCost ? activeCost.amount : (history[0]?.amount || 0);
+
+			let nextPaymentDate: string | null = null;
+			if (expense.intervalMonths > 0 && activeCost) {
+				const costParts = activeCost.validFrom.split('-');
+				const costY = parseInt(costParts[0], 10);
+				const costM = parseInt(costParts[1], 10);
+				
+				const diff = (year - costY) * 12 + (month - costM);
+				if (diff >= 0) {
+					const remainder = diff % expense.intervalMonths;
+					const monthsToAdd = expense.intervalMonths - remainder;
+					const nextMonthTotal = month + (remainder === 0 ? 0 : monthsToAdd);
+					const nextY = year + Math.floor((nextMonthTotal - 1) / 12);
+					const nextM = ((nextMonthTotal - 1) % 12) + 1;
+					nextPaymentDate = `${nextY}-${String(nextM).padStart(2, '0')}-01`;
+				}
+			}
+
+			allExpensesTemplates.push({
+				id: expense.id,
+				name: expense.name,
+				paidBy: expense.paidBy as 'A' | 'B',
+				accountId: expense.accountId,
+				intervalMonths: expense.intervalMonths,
+				splitType: expense.splitType as 'dynamic' | 'static',
+				staticSplitRatio: expense.staticSplitRatio,
+				currentAmount: currentAmount,
+				nextPaymentDate: nextPaymentDate,
+				archivedDate: expense.archivedDate,
+				history: history
+			});
+		}
+	}
+
 	return {
 		period: { year, month },
 		settlement,
@@ -68,7 +126,10 @@ export const load: PageServerLoad = async ({ url }) => {
 		expenses: {
 			total: totalExpensesAmount,
 			items: activeExpenses
-		}
+		},
+		accounts,
+		templates: allExpensesTemplates,
+		dynamicSplitRatioA: pctA
 	};
 };
 

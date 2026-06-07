@@ -2,6 +2,8 @@
 	import { page } from '$app/state';
 	import { getContext } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
+	import { toasts } from '$lib/toasts.svelte';
+	import ExpenseFormCard from '$lib/components/ExpenseFormCard.svelte';
 
 	let { data } = $props();
 
@@ -11,6 +13,28 @@
 		currencyConfig: import('$lib/translations').CurrencyConfig;
 		formatter: Intl.NumberFormat;
 	}>('i18n');
+
+	const nowObj = new Date();
+	const realYear = nowObj.getFullYear();
+	const realMonth = nowObj.getMonth() + 1;
+	let isCurrentPeriod = $derived(data.period.year === realYear && data.period.month === realMonth);
+
+	// Read selected expense ID from query parameters to determine if overlay is open
+	let selectedId = $derived(parseInt(page.url.searchParams.get('id') || '', 10) || null);
+	let isCreateMode = $derived(page.url.searchParams.get('new') === 'true');
+	let initialPaidBy = $derived((page.url.searchParams.get('paidBy') as 'A' | 'B') || 'A');
+
+	let selectedExpense = $derived(data.templates?.find(e => e.id === selectedId) || null);
+	let isOverlayOpen = $derived(selectedId !== null || isCreateMode);
+
+	let overlayCancelHref = $derived.by(() => {
+		const year = page.url.searchParams.get('year');
+		const month = page.url.searchParams.get('month');
+		if (year && month) {
+			return `/?year=${year}&month=${month}`;
+		}
+		return '/';
+	});
 
 	// Calculate prev/next months
 	let prevMonth = $derived.by(() => {
@@ -130,7 +154,7 @@
 		expenseAmounts = newAmounts;
 	});
 
-	function handleExpenseCostInput(e: Event, id: number) {
+	function handleExpenseAmountInput(e: Event, id: number) {
 		const input = e.target as HTMLInputElement;
 		const cursorPosition = input.selectionStart || 0;
 		const originalValue = input.value;
@@ -165,7 +189,7 @@
 		});
 	}
 
-	async function saveExpenseCost(expenseId: number, amountStr: string) {
+	async function saveExpenseAmount(expenseId: number, amountStr: string) {
 		const amount = Math.round(parseFloat(amountStr.replace(/\s/g, '')) || 0);
 		const year = data.period.year;
 		const month = data.period.month;
@@ -182,12 +206,17 @@
 				})
 			});
 			if (!response.ok) {
-				console.error('Failed to save expense cost:', await response.text());
+				console.error('Failed to save expense amount:', await response.text());
 			} else {
+				const expenseName = data.expenses.items.find(e => e.id === expenseId)?.name || '';
+				const dateObj = new Date(year, month - 1, 1);
+				const formattedDate = dateObj.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+				const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+				toasts.show(t('toastAmountSaved', { name: expenseName, date: capitalizedDate }), 'success');
 				await invalidateAll();
 			}
 		} catch (err) {
-			console.error('Error saving expense cost:', err);
+			console.error('Error saving expense amount:', err);
 		}
 	}
 
@@ -289,6 +318,15 @@
 			{monthName} {data.period.year}
 		</h1>
 		<div class="flex items-center gap-3">
+			{#if !isCurrentPeriod}
+				<a
+					href="/"
+					class="w-12 h-12 rounded-full border border-white/15 bg-white/5 hover:bg-white/20 hover:border-white/30 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center opacity-70 hover:opacity-100 text-white"
+					title={t('jumpToCurrentMonth')}
+				>
+					<span class="material-symbols-outlined text-2xl" style="font-weight: 300;">today</span>
+				</a>
+			{/if}
 			<a
 				href="?year={prevMonth.year}&month={prevMonth.month}"
 				class="w-12 h-12 rounded-full border border-white/15 bg-white/5 hover:bg-white/20 hover:border-white/30 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center opacity-70 hover:opacity-100 text-white"
@@ -304,8 +342,9 @@
 		</div>
 	</div>
 
-	<!-- Main Grid -->
-	<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+	<!-- Main Grid with relative container wrapper for absolute sidebar alignment -->
+	<div class="relative">
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
 		<!-- Left Column (Settlement & Incomes) -->
 		<div class="space-y-8">
 			<!-- Settlement Card -->
@@ -389,6 +428,7 @@
 									type="text"
 									inputmode="numeric"
 									pattern="[0-9\s]*"
+									autocomplete="off"
 									value={incomeAVal}
 									onfocus={() => {
 										if (incomeAVal === '0') incomeAVal = '';
@@ -426,6 +466,7 @@
 									type="text"
 									inputmode="numeric"
 									pattern="[0-9\s]*"
+									autocomplete="off"
 									value={incomeBVal}
 									onfocus={() => {
 										if (incomeBVal === '0') incomeBVal = '';
@@ -554,7 +595,7 @@
 												<div class="w-full flex items-center justify-between">
 													<div class="flex items-center gap-3">
 														<a
-															href="/expenses?id={item.id}&year={data.period.year}&month={data.period.month}"
+															href="?id={item.id}&year={data.period.year}&month={data.period.month}"
 															class="text-base font-semibold text-[#2d3142] opacity-80 hover:text-[#ff7361] hover:opacity-100 transition-all decoration-dashed hover:underline underline-offset-4 whitespace-pre-wrap break-words"
 														>
 															{item.name}
@@ -593,14 +634,14 @@
 																			expenseAmounts[item.id] = '';
 																		}
 																	}}
-																	oninput={(e) => handleExpenseCostInput(e, item.id)}
+																	oninput={(e) => handleExpenseAmountInput(e, item.id)}
 																	onblur={() => {
 																		const prev = formatIncome(Math.round(item.amount).toString());
 																		if (expenseAmounts[item.id] === '') {
 																			expenseAmounts[item.id] = prev;
 																		}
 																		if (expenseAmounts[item.id] !== prev) {
-																			saveExpenseCost(item.id, expenseAmounts[item.id]);
+																			saveExpenseAmount(item.id, expenseAmounts[item.id]);
 																		}
 																	}}
 																	onkeydown={(e) => {
@@ -626,8 +667,8 @@
 										{/each}
 									</ul>
 									<a
-										href="/expenses?new=true&paidBy=A{group.accountId ? `&accountId=${group.accountId}` : ''}&year={data.period.year}&month={data.period.month}"
-										class="flex items-center text-sm mt-2 font-semibold {accountName === 'No Account' ? 'ml-1' : 'ml-4'} text-[#ff7361] hover:opacity-80 transition-opacity"
+										href="?new=true&paidBy=A{group.accountId ? `&accountId=${group.accountId}` : ''}&year={data.period.year}&month={data.period.month}"
+										class="inline-flex items-center text-sm mt-2 font-semibold {accountName === 'No Account' ? 'ml-1' : 'ml-4'} text-[#ff7361] hover:opacity-85 transition-opacity"
 									>
 										<span class="mr-1 text-base font-bold">+</span> {t('addExpense')}
 									</a>
@@ -635,7 +676,14 @@
 							{/each}
 						</div>
 					{:else}
-						<p class="text-xs text-[#9ca3af] italic py-4 pl-4 border border-dashed border-[#efeeea] rounded-xl mb-4">{t('noExpensesPaidBy', { name: data.personAName })}</p>
+						<div class="text-center py-6 px-4 border border-dashed border-[#efeeea] rounded-xl mb-4 bg-[#fbf9f5]/20 flex flex-col items-center justify-center">
+							<a
+								href="?new=true&paidBy=A&year={data.period.year}&month={data.period.month}"
+								class="inline-flex items-center text-xs font-bold text-[#ff7361] hover:opacity-85 transition-opacity"
+							>
+								+ {t('addExpense')}
+							</a>
+						</div>
 					{/if}
 				</div>
 
@@ -679,7 +727,7 @@
 												<div class="w-full flex items-center justify-between">
 													<div class="flex items-center gap-3">
 														<a
-															href="/expenses?id={item.id}&year={data.period.year}&month={data.period.month}"
+															href="?id={item.id}&year={data.period.year}&month={data.period.month}"
 															class="text-base font-semibold text-[#2d3142] opacity-80 hover:text-[#ff7361] hover:opacity-100 transition-all decoration-dashed hover:underline underline-offset-4 whitespace-pre-wrap break-words"
 														>
 															{item.name}
@@ -718,14 +766,14 @@
 																			expenseAmounts[item.id] = '';
 																		}
 																	}}
-																	oninput={(e) => handleExpenseCostInput(e, item.id)}
+																	oninput={(e) => handleExpenseAmountInput(e, item.id)}
 																	onblur={() => {
 																		const prev = formatIncome(Math.round(item.amount).toString());
 																		if (expenseAmounts[item.id] === '') {
 																			expenseAmounts[item.id] = prev;
 																		}
 																		if (expenseAmounts[item.id] !== prev) {
-																			saveExpenseCost(item.id, expenseAmounts[item.id]);
+																			saveExpenseAmount(item.id, expenseAmounts[item.id]);
 																		}
 																	}}
 																	onkeydown={(e) => {
@@ -751,8 +799,8 @@
 										{/each}
 									</ul>
 									<a
-										href="/expenses?new=true&paidBy=B{group.accountId ? `&accountId=${group.accountId}` : ''}&year={data.period.year}&month={data.period.month}"
-										class="flex items-center text-sm mt-2 font-semibold {accountName === 'No Account' ? 'ml-1' : 'ml-4'} text-[#ff7361] hover:opacity-80 transition-opacity"
+										href="?new=true&paidBy=B{group.accountId ? `&accountId=${group.accountId}` : ''}&year={data.period.year}&month={data.period.month}"
+										class="inline-flex items-center text-sm mt-2 font-semibold {accountName === 'No Account' ? 'ml-1' : 'ml-4'} text-[#ff7361] hover:opacity-85 transition-opacity"
 									>
 										<span class="mr-1 text-base font-bold">+</span> {t('addExpense')}
 									</a>
@@ -760,10 +808,184 @@
 							{/each}
 						</div>
 					{:else}
-						<p class="text-xs text-[#9ca3af] italic py-4 pl-4 border border-dashed border-[#efeeea] rounded-xl mb-4">{t('noExpensesPaidBy', { name: data.personBName })}</p>
+						<div class="text-center py-6 px-4 border border-dashed border-[#efeeea] rounded-xl mb-4 bg-[#fbf9f5]/20 flex flex-col items-center justify-center">
+							<a
+								href="?new=true&paidBy=B&year={data.period.year}&month={data.period.month}"
+								class="inline-flex items-center text-xs font-bold text-[#ff7361] hover:opacity-85 transition-opacity"
+							>
+								+ {t('addExpense')}
+							</a>
+						</div>
 					{/if}
 				</div>
 			</section>
 		</div>
 	</div>
+
+	<!-- CREATE/EDIT CARD DRAWER (fixed to right side of viewport on desktop/tablet, full screen on mobile, absolute top-aligned on wide screens) -->
+	<!-- CREATE/EDIT CARD DRAWER (fixed to right side of viewport on desktop/tablet, full screen on mobile, absolute top-aligned on wide screens) -->
+	{#if isOverlayOpen}
+		<div class="floating-sidebar-container animate-slide-in-fade">
+			<a
+				href={overlayCancelHref}
+				class="close-btn-floater"
+				aria-label={t('cancel')}
+			>
+				<span class="close-icon-content">close</span>
+				<span class="close-text-content">{locale.startsWith('sv') ? 'Stäng' : 'Close'}</span>
+			</a>
+			<ExpenseFormCard
+				expense={selectedExpense}
+				isCreateMode={isCreateMode}
+				initialPaidBy={initialPaidBy}
+				accounts={data.accounts}
+				namePersonA={data.personAName}
+				namePersonB={data.personBName}
+				dynamicSplitRatioA={data.dynamicSplitRatioA}
+				cancelHref={overlayCancelHref}
+				actionRoute="/expenses"
+				currentYear={data.period.year}
+				currentMonth={data.period.month}
+			/>
+		</div>
+	{/if}
+	</div>
 </div>
+
+<style>
+	@keyframes slideInFade {
+		from {
+			opacity: 0;
+			transform: translateX(30px);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+	@keyframes slideUpFadeMobile {
+		from {
+			opacity: 0;
+			transform: translateY(100px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	.animate-slide-in-fade {
+		animation: slideInFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	}
+	@media (max-width: 1023.98px) {
+		.animate-slide-in-fade {
+			animation: slideUpFadeMobile 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+		}
+	}
+
+	.floating-sidebar-container {
+		/* Full-screen on tablet/mobile by default (< 1024px) */
+		position: fixed;
+		z-index: 50;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		background-color: #ff7361; /* Coral background shows all around */
+		overflow-y: auto;
+		padding-top: 48px; /* Spacing for the background at the top */
+		padding-left: 12px;
+		padding-right: 12px;
+		padding-bottom: 12px;
+	}
+
+	.close-btn-floater {
+		position: fixed;
+		top: 10px;
+		right: 16px;
+		z-index: 60;
+		color: white;
+		font-size: 13px;
+		font-weight: bold;
+		text-decoration: none;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		padding: 4px 8px;
+		border-radius: 6px;
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		background-color: rgba(255, 255, 255, 0.05);
+	}
+
+	.close-btn-floater:hover {
+		background-color: rgba(255, 255, 255, 0.12);
+	}
+
+	.close-btn-floater:active {
+		background-color: rgba(255, 255, 255, 0.2);
+	}
+
+	.close-btn-floater .close-icon-content {
+		display: inline-block;
+		font-family: 'Material Symbols Outlined';
+		font-size: 16px;
+		font-weight: normal;
+	}
+
+	.close-btn-floater .close-text-content {
+		display: inline;
+	}
+
+	/* Absolute overlay mode when screen is desktop/tablet side-by-side (>= 1024px) */
+	@media (min-width: 1024px) {
+		.floating-sidebar-container {
+			position: absolute;
+			left: min(calc(100% + 32px), calc(100vw - (100vw - 100%) / 2 - 480px - 20px));
+			right: auto;
+			top: 0; /* Aligned card top again with other cards */
+			bottom: auto;
+			width: 480px;
+			height: auto;
+			background-color: transparent;
+			padding: 0;
+			z-index: 10;
+			overflow: visible;
+		}
+
+		.close-btn-floater {
+			position: absolute;
+			top: 0;
+			bottom: auto;
+			left: calc(100% + 12px); /* Put the close button to the right of the card instead */
+			right: auto;
+			width: 24px; /* Reduced size */
+			height: 24px;
+			border-radius: 9999px;
+			border: 1px solid rgba(255, 255, 255, 0.2);
+			background-color: rgba(255, 255, 255, 0.1);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: all 0.2s ease;
+			opacity: 1;
+		}
+
+		.close-btn-floater:hover {
+			background-color: rgba(255, 255, 255, 0.25);
+			opacity: 1;
+		}
+
+		.close-btn-floater:active {
+			background-color: rgba(255, 255, 255, 0.35);
+			opacity: 1;
+		}
+
+		.close-btn-floater .close-icon-content {
+			display: inline-block;
+		}
+
+		.close-btn-floater .close-text-content {
+			display: none;
+		}
+	}
+</style>
