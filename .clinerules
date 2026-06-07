@@ -25,6 +25,7 @@ All commit messages must be formatted as:
 *   `layout`: Changes to `app.html`, global `app.css` stylesheet, layout components, and toast notification stores.
 *   `release`: Changes to release tooling, versioning scripts, and tags.
 *   `docs`: Changes to README, SPEC, design files, or code documentation.
+*   **Custom Scopes**: Feel free to introduce new scopes as the codebase grows. Do not shoehorn changes into existing scopes if they do not fit.
 
 ### Description Formatting Rules
 *   **Case**: Start the description in **lowercase** (e.g. `db: setup database migrations`, NOT `db: Setup database migrations`).
