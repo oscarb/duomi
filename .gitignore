@@ -29,3 +29,5 @@ vite.config.ts.timestamp-*
 # User CSV files
 *.csv
 
+# Local tasks
+/TODO.md
