@@ -299,17 +299,7 @@
 			{#if isCreateMode}
 				<!-- Create New Template Panel -->
 				<div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(45,49,66,0.04)] p-8 border border-[#efeeea] sticky top-8">
-					<div class="flex justify-between items-center pb-4 mb-6 border-b border-[#efeeea]">
-						<h3 class="text-lg font-black text-[#2d3142] font-display">
-							{t('createNewTemplate')}
-						</h3>
-						<a
-							href={cancelHref}
-							class="w-8 h-8 rounded-full border border-[#efeeea] hover:bg-[#fbf9f5] hover:border-[#ff7361]/20 transition-all flex items-center justify-center text-[#9ca3af] hover:text-[#ff7361] focus:outline-none"
-						>
-							<span class="material-symbols-outlined text-lg">close</span>
-						</a>
-					</div>
+					<h3 class="text-lg font-black text-[#2d3142] font-display mb-6">{t('createNewTemplate')}</h3>
 					<form method="POST" action="?/create" use:enhance class="space-y-6">
 						<div class="space-y-1.5">
 					<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-name">{t('expenseName')}</label>
@@ -464,17 +454,7 @@
 				<!-- View/Edit selected template details -->
 				<div class="@container bg-white rounded-2xl shadow-[0_8px_30px_rgb(45,49,66,0.04)] p-8 md:p-10 border border-[#efeeea] sticky top-8">
 					{#if selectedExpense}
-						<div class="flex justify-between items-center pb-4 mb-6 border-b border-[#efeeea]">
-							<h3 class="text-lg font-black text-[#2d3142] font-display">
-								{t('templateDetails')}
-							</h3>
-							<a
-								href={cancelHref}
-								class="w-8 h-8 rounded-full border border-[#efeeea] hover:bg-[#fbf9f5] hover:border-[#ff7361]/20 transition-all flex items-center justify-center text-[#9ca3af] hover:text-[#ff7361] focus:outline-none"
-							>
-								<span class="material-symbols-outlined text-lg">close</span>
-							</a>
-						</div>
+
 
 						<form method="POST" action="?/update" use:enhance bind:this={editFormElement} class="space-y-6">
 				<input type="hidden" name="id" value={selectedExpense.id} />
