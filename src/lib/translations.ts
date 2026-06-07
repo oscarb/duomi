@@ -24,6 +24,7 @@ export const translations: Record<string, Record<string, string>> = {
 	'en-US': {
 		currentSettlement: 'Current Settlement',
 		allSettled: 'All Settled',
+		nothingToSeeHere: 'Nothing to see here',
 		noOutstandingExpenses: 'No outstanding expenses to split for this month.',
 		income: 'Income',
 		noIncomeSet: 'No income set (50% / 50% split)',
@@ -78,6 +79,7 @@ export const translations: Record<string, Record<string, string>> = {
 	'sv-SE': {
 		currentSettlement: 'Aktuell avräkning',
 		allSettled: 'Helt reglerat',
+		nothingToSeeHere: 'Här var det tomt',
 		noOutstandingExpenses: 'Inga utestående utgifter att dela för denna månad.',
 		income: 'Inkomst',
 		noIncomeSet: 'Ingen inkomst angiven (50% / 50% delning)',

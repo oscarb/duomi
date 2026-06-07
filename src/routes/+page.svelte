@@ -256,7 +256,7 @@
 				{:else}
 					<div class="py-8">
 						<span class="material-symbols-outlined text-5xl text-[#4fd1c5] mb-2">done_all</span>
-						<h3 class="text-xl font-bold text-[#2d3142]">{t('allSettled')}</h3>
+						<h3 class="text-xl font-bold text-[#2d3142]">{data.expenses.items.length === 0 ? t('nothingToSeeHere') : t('allSettled')}</h3>
 						<p class="text-xs text-[#9ca3af] mt-1">{t('noOutstandingExpenses')}</p>
 					</div>
 				{/if}
