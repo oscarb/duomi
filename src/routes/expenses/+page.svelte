@@ -360,7 +360,7 @@
 							<input type="hidden" name="id" value={selectedExpense.id} />
 
 							<!-- Header: Title & Status -->
-							<div class="flex justify-between items-start border-b border-[#efeeea] pb-6">
+							<div class="flex justify-between items-start pb-6">
 								<div class="flex-grow space-y-1.5">
 									<input
 										name="name"
