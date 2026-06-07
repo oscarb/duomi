@@ -529,20 +529,20 @@
 										<span class="text-[#9ca3af] mr-1 inline-block -translate-y-[2px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
 									{/if}
 									<div class="inline-grid grid-cols-1">
-										<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[3px] pr-[6px] pb-[2px] whitespace-pre tracking-tight">{editPriceVal || '0'}</span>
+										<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[1px] pr-[6px] pb-[4px] whitespace-pre tracking-tight">{editPriceVal || '0'}</span>
 										<input
 											type="text"
 											inputmode="numeric"
 											pattern="[0-9\s]*"
 											value={editPriceVal}
 											oninput={handleCostInput}
-											class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 pt-[3px] pr-[6px] pb-[2px] focus:ring-0 outline-none focus:outline-none text-right tracking-tight transition-colors duration-200"
+											class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pr-[6px] pb-[4px] tracking-tight transition-colors duration-200"
 											placeholder="0"
 										/>
 									</div>
 									<input type="hidden" name="amount" value={editPriceVal.replace(/\D/g, '')} />
 									{#if !currencyConfig.isPrefix}
-										<span class="text-[#9ca3af] ml-[-2px] inline-block -translate-y-[3px]">{currencyConfig.symbol}</span>
+										<span class="text-[#9ca3af] ml-1 inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
 									{/if}
 								</div>
 								<div class="flex flex-col items-end space-y-1 mt-1">
