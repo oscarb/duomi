@@ -354,9 +354,15 @@
 										bind:value={editName}
 										class="w-1/2 min-w-[200px] font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 pb-1 transition-colors duration-200"
 									/>
-									<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px] uppercase tracking-wider">
-										<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-										{t('active')}
+									<div class="flex items-center gap-2">
+										<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px] uppercase tracking-wider">
+											<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+											{t('active')}
+										</div>
+										<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#ff7361]/10 text-[#ff7361] border border-[#ff7361]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
+											<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#ff7361]' : 'bg-[#4fd1c5]'}"></span>
+											{editPaidBy === 'A' ? data.personAName : data.personBName}
+										</div>
 									</div>
 								</div>
 
