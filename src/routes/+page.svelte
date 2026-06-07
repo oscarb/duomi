@@ -471,7 +471,7 @@
 														</div>
 													</div>
 													<div class="flex items-center gap-3">
-														<span class="text-base font-semibold text-[#2d3142] flex items-center">
+														<span class="text-base font-semibold text-[#2d3142] flex items-baseline">
 															{#each formatter.formatToParts(Math.round(item.amount)) as part}
 																{#if part.type === 'currency'}
 																	<span class="text-[#9ca3af] opacity-40 font-normal {currencyConfig.isPrefix ? 'mr-0.5' : 'ml-0.5'}">{part.value}</span>
@@ -554,7 +554,7 @@
 														</div>
 													</div>
 													<div class="flex items-center gap-3">
-														<span class="text-base font-semibold text-[#2d3142] flex items-center">
+														<span class="text-base font-semibold text-[#2d3142] flex items-baseline">
 															{#each formatter.formatToParts(Math.round(item.amount)) as part}
 																{#if part.type === 'currency'}
 																	<span class="text-[#9ca3af] opacity-40 font-normal {currencyConfig.isPrefix ? 'mr-0.5' : 'ml-0.5'}">{part.value}</span>
