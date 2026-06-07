@@ -71,6 +71,8 @@ export const load: PageServerLoad = async () => {
 			}
 		}
 
+		const latestAmount = history[history.length - 1]?.amount || 0;
+
 		mappedExpenses.push({
 			id: expense.id,
 			name: expense.name,
@@ -80,6 +82,7 @@ export const load: PageServerLoad = async () => {
 			splitType: expense.splitType as 'dynamic' | 'static',
 			staticSplitRatio: expense.staticSplitRatio,
 			currentAmount: currentAmount,
+			latestAmount: latestAmount,
 			nextPaymentDate: nextPaymentDate,
 			archivedDate: expense.archivedDate,
 			history: history
@@ -152,6 +155,13 @@ export const actions = {
 			.set(updateFields)
 			.where(eq(expenses.id, id))
 			.run();
+
+		const amountStr = data.get('amount') as string;
+		if (amountStr) {
+			const amount = Math.round(parseFloat(amountStr) || 0);
+			const validFrom = data.get('validFrom') as string || new Date().toISOString().split('T')[0];
+			await updateExpenseAmount(id, amount, validFrom);
+		}
 
 		return { success: true };
 	},

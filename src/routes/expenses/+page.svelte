@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
+	import { browser } from '$app/environment';
 	import { getContext } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import ExpenseFormCard from '$lib/components/ExpenseFormCard.svelte';
 
 	const { locale, t, currencyConfig, formatter } = getContext<{
@@ -20,11 +22,6 @@
 	let isCreateMode = $derived(page.url.searchParams.get('new') === 'true');
 	let initialPaidBy = $derived((page.url.searchParams.get('paidBy') as 'A' | 'B') || 'A');
 
-	// Active and archived templates lists
-	let activeExpenses = $derived(data.expenses.filter(e => e.archivedDate === null));
-	let expensesA = $derived(activeExpenses.filter(e => e.paidBy === 'A'));
-	let expensesB = $derived(activeExpenses.filter(e => e.paidBy === 'B'));
-
 	// Currently selected expense
 	let selectedExpense = $derived(data.expenses.find(e => e.id === selectedId) || null);
 
@@ -34,28 +31,179 @@
 	let newAccountOwner = $state<'A' | 'B'>('A');
 
 	let cancelHref = '/expenses';
+
+	// --- Toolbar state ---
+	let activePerson = $state<'A' | 'B'>(((browser && localStorage.getItem('expenses_activePerson')) as 'A' | 'B') || 'A');
+	let showRecurring = $state(browser ? localStorage.getItem('expenses_showRecurring') !== 'false' : true);
+	let showOneTime = $state(browser ? localStorage.getItem('expenses_showOneTime') !== 'false' : true);
+	let showArchived = $state(browser ? localStorage.getItem('expenses_showArchived') === 'true' : false);
+	let sortBy = $state<'cost' | 'title'>(((browser && localStorage.getItem('expenses_sortBy')) as 'cost' | 'title') || 'cost');
+	let sortAsc = $state(browser ? localStorage.getItem('expenses_sortAsc') === 'true' : false);
+	let showTypeDropdown = $state(false);
+	let showSortDropdown = $state(false);
+
+	$effect(() => {
+		if (browser) {
+			localStorage.setItem('expenses_activePerson', activePerson);
+			localStorage.setItem('expenses_showRecurring', String(showRecurring));
+			localStorage.setItem('expenses_showOneTime', String(showOneTime));
+			localStorage.setItem('expenses_showArchived', String(showArchived));
+			localStorage.setItem('expenses_sortBy', sortBy);
+			localStorage.setItem('expenses_sortAsc', String(sortAsc));
+		}
+	});
+
+	function togglePerson() {
+		activePerson = activePerson === 'A' ? 'B' : 'A';
+	}
+
+	function applyFiltersAndSort(expenses: typeof data.expenses) {
+		let result = expenses.filter(e => {
+			const isArchived = e.archivedDate !== null;
+			const isOneTime = e.intervalMonths === 0;
+			const isRecurring = !isOneTime;
+
+			if (showArchived) {
+				if (!isArchived) return false;
+				if (showRecurring === showOneTime) {
+					return true;
+				}
+				if (isRecurring && !showRecurring) return false;
+				if (isOneTime && !showOneTime) return false;
+				return true;
+			} else {
+				if (isArchived) return false;
+				if (isRecurring && !showRecurring) return false;
+				if (isOneTime && !showOneTime) return false;
+				return true;
+			}
+		});
+		result = [...result].sort((a, b) => {
+			let cmp = 0;
+			if (sortBy === 'cost') cmp = a.latestAmount - b.latestAmount;
+			else cmp = a.name.localeCompare(b.name);
+			return sortAsc ? cmp : -cmp;
+		});
+		return result;
+	}
+
+	let filteredExpensesA = $derived.by(() => {
+		return applyFiltersAndSort(data.expenses.filter(e => e.paidBy === 'A'));
+	});
+	let filteredExpensesB = $derived.by(() => {
+		return applyFiltersAndSort(data.expenses.filter(e => e.paidBy === 'B'));
+	});
+
+	let typeLabel = $derived.by(() => {
+		const active = [showRecurring && 'Recurring', showOneTime && 'One-time', showArchived && 'Archived'].filter(Boolean);
+		if (active.length === 3) return 'All types';
+		if (active.length === 0) return 'No types';
+		return active.join(', ');
+	});
+
+	let sortLabel = $derived(`${sortBy === 'cost' ? t('sortAmount') : t('sortTitle')} ${sortAsc ? '↑' : '↓'}`);
+
+	// Click-outside action to close dropdowns
+	function clickOutside(node: HTMLElement, cb: () => void) {
+		function handle(e: MouseEvent) {
+			if (!node.contains(e.target as Node)) cb();
+		}
+		document.addEventListener('mousedown', handle, true);
+		return { destroy() { document.removeEventListener('mousedown', handle, true); } };
+	}
 </script>
 
 <div class="py-8">
-	<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+	<div class="expenses-layout">
 		<!-- Left Column: Recurring Expenses List -->
-		<div class="lg:col-span-7 flex flex-col space-y-6">
+		<div class="expenses-list">
+
+			<!-- Toolbar -->
+			<div class="toolbar">
+				<!-- Person switcher -->
+				<button class="toolbar-btn" onclick={togglePerson} type="button">
+					<span class="person-dot" style="background:{activePerson === 'B' ? '#4fd1c5' : '#ff7361'}"></span>
+					<span>{activePerson === 'A' ? data.personAName : data.personBName}</span>
+					<span class="material-symbols-outlined toolbar-btn-icon">swap_horiz</span>
+				</button>
+
+				<!-- Type filter -->
+				<div class="toolbar-dropdown-wrap" use:clickOutside={() => { showTypeDropdown = false; }}>
+					<button
+						class="toolbar-btn {showTypeDropdown ? 'toolbar-btn--active' : ''}"
+						type="button"
+						onclick={() => { showTypeDropdown = !showTypeDropdown; showSortDropdown = false; }}
+					>
+						<span class="material-symbols-outlined toolbar-btn-icon">filter_list</span>
+						<span>{typeLabel}</span>
+					</button>
+					{#if showTypeDropdown}
+						<div class="toolbar-menu" transition:fade={{ duration: 120 }}>
+							<label class="toolbar-menu-item">
+								<input type="checkbox" bind:checked={showRecurring} />
+								<span>Recurring</span>
+							</label>
+							<label class="toolbar-menu-item">
+								<input type="checkbox" bind:checked={showOneTime} />
+								<span>One-time</span>
+							</label>
+							<div class="toolbar-menu-divider"></div>
+							<label class="toolbar-menu-item">
+								<input type="checkbox" bind:checked={showArchived} />
+								<span>Archived</span>
+							</label>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Sort (right-aligned) -->
+				<div class="toolbar-dropdown-wrap toolbar-sort" use:clickOutside={() => { showSortDropdown = false; }}>
+					<button
+						class="toolbar-btn {showSortDropdown ? 'toolbar-btn--active' : ''}"
+						type="button"
+						onclick={() => { showSortDropdown = !showSortDropdown; showTypeDropdown = false; }}
+					>
+						<span class="material-symbols-outlined toolbar-btn-icon">sort</span>
+						<span>{sortLabel}</span>
+					</button>
+					{#if showSortDropdown}
+						<div class="toolbar-menu toolbar-menu--right" transition:fade={{ duration: 120 }}>
+							<button
+								class="toolbar-menu-item {sortBy === 'cost' ? 'toolbar-menu-item--selected' : ''}"
+								type="button"
+								onclick={() => { sortBy = 'cost'; }}
+							>{t('sortAmount')}</button>
+							<button
+								class="toolbar-menu-item {sortBy === 'title' ? 'toolbar-menu-item--selected' : ''}"
+								type="button"
+								onclick={() => { sortBy = 'title'; }}
+							>{t('sortTitle')}</button>
+							<div class="toolbar-menu-divider"></div>
+							<button
+								class="toolbar-menu-item toolbar-menu-item--direction"
+								type="button"
+								onclick={() => { sortAsc = !sortAsc; }}
+							>
+								<span class="material-symbols-outlined" style="font-size:15px;">{sortAsc ? 'arrow_upward' : 'arrow_downward'}</span>
+								{sortAsc ? 'Ascending' : 'Descending'}
+							</button>
+						</div>
+					{/if}
+				</div>
+			</div>
 			<!-- Payer A's templates -->
+			{#if activePerson !== 'B'}
 			<div class="flex flex-col space-y-3">
-				<h2 class="text-white text-2xl font-bold uppercase tracking-widest flex items-center gap-3 ml-1 mt-2">
-					<span class="w-3.5 h-3.5 rounded-full bg-[#ff7361] shadow-[0_0_8px_rgba(255,115,97,0.5)]"></span>
-					{data.personAName}
-				</h2>
 				<div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(45,49,66,0.04)] border border-[#efeeea] overflow-hidden">
-					{#if expensesA.length > 0}
+					{#if filteredExpensesA.length > 0}
 						<div class="flex flex-col">
-							{#each expensesA as item, idx}
+							{#each filteredExpensesA as item, idx}
 								<a
 									href={selectedId === item.id ? cancelHref : `?id=${item.id}`}
 									class="px-4 py-3 flex items-center justify-between hover:bg-[#ff7361]/5 transition-colors border-l-4 border-b border-[#efeeea] 
 									{selectedId === item.id ? 'border-l-[#ff7361] bg-[#ff7361]/5 border-b-transparent' : 'border-l-transparent'}
-									{idx === expensesA.length - 1 ? 'border-b-0' : ''}
-									{expensesA[idx + 1]?.id === selectedId ? 'border-b-transparent' : ''}"
+									{idx === filteredExpensesA.length - 1 ? 'border-b-0' : ''}
+									{filteredExpensesA[idx + 1]?.id === selectedId ? 'border-b-transparent' : ''}"
 								>
 									<div class="flex flex-col flex-grow">
 										<span class="font-bold text-sm text-[#2d3142] hover:text-[#ff7361] transition-colors decoration-[#efeeea] hover:decoration-[#ff7361]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
@@ -68,7 +216,7 @@
 										</div>
 									</div>
 									<div class="text-right">
-										<p class="font-bold text-sm text-[#2d3142]">{formatter.format(Math.round(item.currentAmount))}</p>
+										<p class="font-bold text-sm text-[#2d3142]">{formatter.format(Math.round(item.latestAmount))}</p>
 										<p class="text-[10px] font-bold uppercase tracking-wider {selectedId === item.id ? 'text-[#ff7361]' : 'text-[#9ca3af]'}">
 											{item.intervalMonths === 0 ? t('oneTime') : item.intervalMonths === 1 ? t('monthly') : item.intervalMonths === 3 ? t('quarterly') : item.intervalMonths === 12 ? t('yearly') : ''}
 										</p>
@@ -76,37 +224,45 @@
 								</a>
 							{/each}
 						</div>
+						<div class="px-4 py-3.5 bg-[#fbf9f5]/50 border-t border-[#efeeea]">
+							<a
+								href="?new=true&paidBy=A"
+								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
+							>
+								<span class="material-symbols-outlined text-sm">add</span>
+								<span>{t('addTemplate')}</span>
+							</a>
+						</div>
 					{:else}
-						<p class="text-xs text-[#9ca3af] italic p-6">{t('noActiveTemplates', { name: data.personAName })}</p>
+						<div class="flex flex-col items-center justify-center text-center p-8 space-y-4">
+							<span class="material-symbols-outlined text-4xl text-[#ff7361] opacity-70">receipt_long</span>
+							<p class="text-xs text-[#9ca3af] font-bold max-w-[200px] leading-relaxed">{t('noActiveTemplates', { name: data.personAName })}</p>
+							<a
+								href="?new=true&paidBy=A"
+								class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#ff7361]/10 border border-[#ff7361]/30 hover:bg-[#ff7361] hover:text-white rounded-xl text-[#ff7361] transition-all text-xs font-bold shadow-sm"
+							>
+								<span class="material-symbols-outlined text-sm">add</span>
+								<span>{t('addTemplate')}</span>
+							</a>
+						</div>
 					{/if}
-					<div class="px-4 py-3.5 bg-[#fbf9f5]/50 border-t border-[#efeeea]">
-						<a
-							href="?new=true&paidBy=A"
-							class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
-						>
-							<span class="material-symbols-outlined text-sm">add</span>
-							<span>{t('addTemplate')}</span>
-						</a>
-					</div>
 				</div>
 			</div>
- 
+			{/if}
+
 			<!-- Payer B's templates -->
-			<div class="flex flex-col space-y-3 pt-4">
-				<h2 class="text-white text-2xl font-bold uppercase tracking-widest flex items-center gap-3 ml-1 mt-12">
-					<span class="w-3.5 h-3.5 rounded-full bg-[#4fd1c5] shadow-[0_0_8px_rgba(79,209,197,0.5)]"></span>
-					{data.personBName}
-				</h2>
+			{#if activePerson !== 'A'}
+			<div class="flex flex-col space-y-3">
 				<div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(45,49,66,0.04)] border border-[#efeeea] overflow-hidden">
-					{#if expensesB.length > 0}
+					{#if filteredExpensesB.length > 0}
 						<div class="flex flex-col">
-							{#each expensesB as item, idx}
+							{#each filteredExpensesB as item, idx}
 								<a
 									href={selectedId === item.id ? cancelHref : `?id=${item.id}`}
 									class="px-4 py-3 flex items-center justify-between hover:bg-[#4fd1c5]/5 transition-colors border-l-4 border-b border-[#efeeea]
 									{selectedId === item.id ? 'border-l-[#4fd1c5] bg-[#4fd1c5]/5 border-b-transparent' : 'border-l-transparent'}
-									{idx === expensesB.length - 1 ? 'border-b-0' : ''}
-									{expensesB[idx + 1]?.id === selectedId ? 'border-b-transparent' : ''}"
+									{idx === filteredExpensesB.length - 1 ? 'border-b-0' : ''}
+									{filteredExpensesB[idx + 1]?.id === selectedId ? 'border-b-transparent' : ''}"
 								>
 									<div class="flex flex-col flex-grow">
 										<span class="font-bold text-sm text-[#2d3142] hover:text-[#ff7361] transition-colors decoration-[#efeeea] hover:decoration-[#ff7361]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
@@ -119,7 +275,7 @@
 										</div>
 									</div>
 									<div class="text-right">
-										<p class="font-bold text-sm text-[#2d3142]">{formatter.format(Math.round(item.currentAmount))}</p>
+										<p class="font-bold text-sm text-[#2d3142]">{formatter.format(Math.round(item.latestAmount))}</p>
 										<p class="text-[10px] font-bold uppercase tracking-wider {selectedId === item.id ? 'text-[#4fd1c5]' : 'text-[#9ca3af]'}">
 											{item.intervalMonths === 0 ? t('oneTime') : item.intervalMonths === 1 ? t('monthly') : item.intervalMonths === 3 ? t('quarterly') : item.intervalMonths === 12 ? t('yearly') : ''}
 										</p>
@@ -127,26 +283,37 @@
 								</a>
 							{/each}
 						</div>
+						<div class="px-4 py-3.5 bg-[#fbf9f5]/50 border-t border-[#efeeea]">
+							<a
+								href="?new=true&paidBy=B"
+								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
+							>
+								<span class="material-symbols-outlined text-sm">add</span>
+								<span>{t('addTemplate')}</span>
+							</a>
+						</div>
 					{:else}
-						<p class="text-xs text-[#9ca3af] italic p-6">{t('noActiveTemplates', { name: data.personBName })}</p>
+						<div class="flex flex-col items-center justify-center text-center p-8 space-y-4">
+							<span class="material-symbols-outlined text-4xl text-[#4fd1c5] opacity-70">receipt_long</span>
+							<p class="text-xs text-[#9ca3af] font-bold max-w-[200px] leading-relaxed">{t('noActiveTemplates', { name: data.personBName })}</p>
+							<a
+								href="?new=true&paidBy=B"
+								class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#4fd1c5]/10 border border-[#4fd1c5]/30 hover:bg-[#4fd1c5] hover:text-white rounded-xl text-[#4fd1c5] transition-all text-xs font-bold shadow-sm"
+							>
+								<span class="material-symbols-outlined text-sm">add</span>
+								<span>{t('addTemplate')}</span>
+							</a>
+						</div>
 					{/if}
-					<div class="px-4 py-3.5 bg-[#fbf9f5]/50 border-t border-[#efeeea]">
-						<a
-							href="?new=true&paidBy=B"
-							class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
-						>
-							<span class="material-symbols-outlined text-sm">add</span>
-							<span>{t('addTemplate')}</span>
-						</a>
-					</div>
 				</div>
 			</div>
+			{/if}
 		</div>
 
-		<!-- Right Column: Details Card -->
-		<div class="lg:col-span-5">
+		<!-- Right Column: Details Card (desktop inline, mobile full-screen overlay) -->
+		<div class="detail-panel {isCreateMode || selectedExpense ? 'detail-panel--open' : ''}">
 			{#if isCreateMode || selectedExpense}
-				<div class="mobile-overlay-container animate-slide-in-fade">
+				<div class="mobile-overlay-container animate-slide-in-fade" out:fade={{ duration: 180 }}>
 					<a
 						href={cancelHref}
 						class="close-btn-floater"
@@ -167,14 +334,6 @@
 						currentYear={data.period.year}
 						currentMonth={data.period.month}
 					/>
-				</div>
-			{:else}
-				<div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(45,49,66,0.04)] p-8 md:p-10 border border-[#efeeea] sticky top-8 text-center py-20">
-					<span class="material-symbols-outlined text-6xl text-[#9ca3af]/40 mb-3">receipt_long</span>
-					<h3 class="text-lg font-bold text-[#2d3142]">{t('selectTemplate')}</h3>
-					<p class="text-xs text-[#9ca3af] max-w-xs mx-auto mt-1">
-						{t('selectTemplateDesc')}
-					</p>
 				</div>
 			{/if}
 		</div>
@@ -252,8 +411,52 @@
 		animation: slideUpFadeMobile 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 	}
 
+	@keyframes fadeInOnly {
+		from { opacity: 0; }
+		to   { opacity: 1; }
+	}
+
+	@keyframes slideFromRight {
+		from {
+			opacity: 0;
+			transform: translateX(24px);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+
+	/* Desktop: flex layout so detail panel pushes the list */
+	.expenses-layout {
+		display: flex;
+		gap: 2rem;
+		align-items: flex-start;
+	}
+
+	.expenses-list {
+		flex: 1 1 0;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	/* Detail panel: collapsed by default, expands when open */
+	.detail-panel {
+		width: 0;
+		overflow: hidden;
+		flex-shrink: 0;
+		transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.detail-panel--open {
+		width: 420px;
+	}
+
 	.mobile-overlay-container {
 		display: block;
+		width: 420px;
 	}
 
 	.close-btn-floater {
@@ -292,49 +495,196 @@
 	}
 
 	@media (max-width: 1023.98px) {
+		.expenses-layout {
+			display: block;
+		}
+
+		.detail-panel {
+			width: auto;
+			overflow: visible;
+		}
+
+		.detail-panel--open {
+			width: auto;
+		}
+
 		.mobile-overlay-container {
 			position: fixed;
 			z-index: 50;
 			inset: 0;
 			width: 100%;
 			height: 100%;
-			background-color: #ff7361; /* Coral background shows all around */
+			background-color: #ff7361;
 			overflow-y: auto;
-			padding-top: 60px; /* Spacing for the background at the top + margin below close button */
+			padding-top: 60px;
 			padding-left: 12px;
 			padding-right: 12px;
 			padding-bottom: 12px;
 		}
-
-
 	}
 
 	@media (min-width: 1024px) {
-		.mobile-overlay-container {
-			margin-top: 0; /* Aligned card top again with other cards */
-			position: relative;
-		}
-
 		.close-btn-floater {
 			display: none !important;
 		}
 
-		.close-btn-floater:hover {
-			background-color: rgba(255, 255, 255, 0.25);
-			opacity: 1;
+		.animate-slide-in-fade {
+			animation: slideFromRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 		}
+	}
 
-		.close-btn-floater:active {
-			background-color: rgba(255, 255, 255, 0.35);
-			opacity: 1;
-		}
+	/* ---- Toolbar ---- */
+	.toolbar {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-wrap: wrap;
+		margin-bottom: 4px;
+	}
 
-		.close-btn-floater .close-icon-content {
-			display: inline-block;
-		}
+	.toolbar-dropdown-wrap {
+		position: relative;
+	}
 
-		.close-btn-floater .close-text-content {
-			display: none;
-		}
+	.toolbar-sort {
+		margin-left: auto;
+	}
+
+	.toolbar-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 5px 10px 5px 8px;
+		border-radius: 8px;
+		border: 1px solid rgba(255,255,255,0.22);
+		background: rgba(255,255,255,0.92);
+		color: #2d3142;
+		font-size: 12px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+		white-space: nowrap;
+		letter-spacing: 0.01em;
+		box-shadow: 0 1px 3px rgba(45,49,66,0.08);
+	}
+
+	.toolbar-btn:hover {
+		background: white;
+		box-shadow: 0 2px 6px rgba(45,49,66,0.12);
+	}
+
+	.toolbar-btn:active {
+		scale: 0.97;
+	}
+
+	.toolbar-btn--active {
+		background: white;
+		border-color: rgba(255,255,255,0.5);
+		box-shadow: 0 2px 8px rgba(45,49,66,0.14);
+	}
+
+	.toolbar-btn-icon {
+		font-size: 15px;
+		opacity: 0.5;
+		color: #2d3142;
+	}
+
+	.person-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		flex-shrink: 0;
+		transition: background 0.2s;
+	}
+
+	/* Dropdown menu */
+	.toolbar-menu {
+		position: absolute;
+		top: calc(100% + 6px);
+		left: 0;
+		z-index: 100;
+		background: white;
+		border: 1px solid #efeeea;
+		border-radius: 14px;
+		box-shadow: 0 8px 24px rgba(45,49,66,0.13), 0 2px 6px rgba(45,49,66,0.07);
+		min-width: 150px;
+		padding: 6px;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.toolbar-menu--right {
+		left: auto;
+		right: 0;
+	}
+
+	.toolbar-menu-item {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		padding: 8px 10px;
+		border-radius: 8px;
+		font-size: 13px;
+		font-weight: 500;
+		color: #2d3142;
+		cursor: pointer;
+		transition: background 0.12s;
+		text-align: left;
+		border: none;
+		background: none;
+		width: 100%;
+	}
+
+	.toolbar-menu-item:hover {
+		background: #f5f4f0;
+	}
+
+	.toolbar-menu-item--selected {
+		color: #ff7361;
+		font-weight: 700;
+	}
+
+	.toolbar-menu-item--direction {
+		color: #6b7280;
+		font-size: 12px;
+		gap: 6px;
+	}
+
+	.toolbar-menu-divider {
+		height: 1px;
+		background: #efeeea;
+		margin: 4px 6px;
+	}
+
+	/* Custom checkbox style */
+	.toolbar-menu-item input[type="checkbox"] {
+		appearance: none;
+		-webkit-appearance: none;
+		width: 15px;
+		height: 15px;
+		border: 1.5px solid #d1d5db;
+		border-radius: 4px;
+		flex-shrink: 0;
+		position: relative;
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+
+	.toolbar-menu-item input[type="checkbox"]:checked {
+		background: #ff7361;
+		border-color: #ff7361;
+	}
+
+	.toolbar-menu-item input[type="checkbox"]:checked::after {
+		content: '';
+		position: absolute;
+		left: 3px;
+		top: 1px;
+		width: 5px;
+		height: 8px;
+		border: 2px solid white;
+		border-top: none;
+		border-left: none;
+		transform: rotate(45deg);
 	}
 </style>

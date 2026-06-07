@@ -2,7 +2,7 @@
 	import { getContext } from 'svelte';
 	import { enhance, deserialize } from '$app/forms';
 	import { page } from '$app/state';
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAll, goto } from '$app/navigation';
 	import { toasts } from '$lib/toasts.svelte';
 
 	// Retrieve localized translations and formatting
@@ -54,6 +54,17 @@
 	let isAmountEdit = $state(false);
 	let amountInputEl = $state<HTMLInputElement | null>(null);
 
+	let latestAmount = $derived(expense?.history && expense.history.length > 0
+		? expense.history[expense.history.length - 1].amount
+		: (expense?.currentAmount || 0)
+	);
+	let isFuture = $derived.by(() => {
+		if (!expense?.history || expense.history.length === 0) return false;
+		const latestDate = expense.history[expense.history.length - 1].validFrom;
+		const today = new Date().toISOString().split('T')[0];
+		return latestDate > today;
+	});
+
 	// Account editing states
 	let isEditingAccounts = $state(false);
 	let isCreatingAccountInline = $state(false);
@@ -63,39 +74,44 @@
 	// Title focus states
 	let titleInputEl = $state<HTMLTextAreaElement | null>(null);
 	let lastExpenseId = $state<number | null>(null);
+	let currentTargetId = $state<number | 'new' | null>(null);
 
 	// Synchronize local states with expense data changes
 	$effect(() => {
-		if (expense) {
-			const idChanged = lastExpenseId !== expense.id;
-			lastExpenseId = expense.id;
+		const targetId = expense ? expense.id : 'new';
+		if (currentTargetId !== targetId) {
+			currentTargetId = targetId;
+			if (expense) {
+				const idChanged = lastExpenseId !== expense.id;
+				lastExpenseId = expense.id;
 
-			if (idChanged) {
+				if (idChanged) {
+					isAmountEdit = false;
+				}
+
+				editName = expense.name;
+				editPaidBy = expense.paidBy;
+				editInterval = expense.intervalMonths;
+				editSplitType = expense.splitType;
+				editRatio = expense.staticSplitRatio ?? 0.5;
+				editAccountId = expense.accountId;
+
+				if (idChanged || !isAmountEdit) {
+					editAmountVal = formatAmount(Math.round(latestAmount).toString());
+					editAmountDate = expense.history?.[expense.history.length - 1]?.validFrom || new Date().toISOString().split('T')[0];
+				}
+			} else {
+				lastExpenseId = null;
 				isAmountEdit = false;
+				editName = '';
+				editPaidBy = initialPaidBy;
+				editInterval = 1;
+				editSplitType = 'dynamic';
+				editRatio = 0.5;
+				editAccountId = parseInt(page.url.searchParams.get('accountId') || '', 10) || null;
+				editAmountVal = '';
+				editAmountDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
 			}
-
-			editName = expense.name;
-			editPaidBy = expense.paidBy;
-			editInterval = expense.intervalMonths;
-			editSplitType = expense.splitType;
-			editRatio = expense.staticSplitRatio ?? 0.5;
-			editAccountId = expense.accountId;
-
-			if (idChanged || !isAmountEdit) {
-				editAmountVal = formatAmount(Math.round(expense.currentAmount).toString());
-				editAmountDate = expense.history?.[expense.history.length - 1]?.validFrom || new Date().toISOString().split('T')[0];
-			}
-		} else {
-			lastExpenseId = null;
-			isAmountEdit = false;
-			editName = '';
-			editPaidBy = initialPaidBy;
-			editInterval = 1;
-			editSplitType = 'dynamic';
-			editRatio = 0.5;
-			editAccountId = parseInt(page.url.searchParams.get('accountId') || '', 10) || null;
-			editAmountVal = '';
-			editAmountDate = new Date().toISOString().split('T')[0];
 		}
 	});
 
@@ -110,6 +126,17 @@
 	$effect(() => {
 		if (isCreatingAccountInline && inlineAccountInputEl) {
 			inlineAccountInputEl.focus();
+		}
+	});
+
+	// Reset selected account if the new payer does not own it
+	$effect(() => {
+		if (editAccountId !== null) {
+			const selectedAcc = accounts.find(a => a.id === editAccountId);
+			if (selectedAcc && selectedAcc.owner !== editPaidBy) {
+				editAccountId = null;
+				triggerAutoSave();
+			}
 		}
 	});
 
@@ -266,18 +293,58 @@
 		inlineAccountName = '';
 	}
 
-	// Filter sequential unique changes for the history log
-	let uniqueHistory = $derived.by(() => {
-		if (!expense || !expense.history) return [];
-		const sortedChrono = [...expense.history].sort((a, b) => a.validFrom.localeCompare(b.validFrom));
-		const result = [];
+	// Filter sequential unique changes and combine with archive date for a chronological timeline
+	let combinedHistoryTimeline = $derived.by(() => {
+		if (!expense) return [];
+		const sortedChrono = expense.history ? [...expense.history].sort((a, b) => a.validFrom.localeCompare(b.validFrom)) : [];
+		const uniquePoints = [];
+		
+		let lastAmt = null;
 		for (let i = 0; i < sortedChrono.length; i++) {
 			if (i === 0 || sortedChrono[i].amount !== sortedChrono[i - 1].amount) {
-				result.push(sortedChrono[i]);
+				const currentAmt = sortedChrono[i].amount;
+				let pctChange = null;
+				if (lastAmt !== null && lastAmt !== 0) {
+					pctChange = ((currentAmt - lastAmt) / lastAmt) * 100;
+				}
+				uniquePoints.push({
+					type: 'price',
+					date: sortedChrono[i].validFrom,
+					amount: currentAmt,
+					pctChange
+				});
+				lastAmt = currentAmt;
 			}
 		}
-		return result.reverse();
+		
+		if (expense.archivedDate) {
+			uniquePoints.push({
+				type: 'archive',
+				date: expense.archivedDate,
+				amount: null,
+				pctChange: null
+			});
+		}
+		
+		uniquePoints.sort((a, b) => {
+			const timeA = new Date(a.date.includes('T') ? a.date : a.date + 'T00:00:00').getTime();
+			const timeB = new Date(b.date.includes('T') ? b.date : b.date + 'T00:00:00').getTime();
+			return timeB - timeA;
+		});
+		return uniquePoints;
 	});
+
+	let chartPoints = $derived(combinedHistoryTimeline.filter(item => item.type === 'price').reverse());
+
+	function handleAmountKeyDown(e: KeyboardEvent) {
+		if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+			e.preventDefault();
+			const step = e.shiftKey ? 10 : 1;
+			const currentVal = parseFloat(editAmountVal.replace(/\s/g, '')) || 0;
+			const newVal = Math.max(0, currentVal + (e.key === 'ArrowUp' ? step : -step));
+			editAmountVal = formatAmount(Math.round(newVal).toString());
+		}
+	}
 
 	// Auto-submit form element binding and logic
 	let editFormElement = $state<HTMLFormElement | null>(null);
@@ -368,65 +435,77 @@
 						} else {
 							toasts.show(t('toastCreatedFrom', { name, date: capitalizedDate }), 'success');
 						}
+
+						await update();
+						if (cancelHref) {
+							goto(cancelHref);
+						}
+					} else {
+						await update();
 					}
-					await update();
 				};
 			}}
 			bind:this={editFormElement}
 			class="space-y-12"
 		>
-			<div class="flex justify-between items-start pb-8 border-b border-[#efeeea] gap-4">
-				<!-- Title & Badges -->
-				<div class="flex-grow min-w-0 space-y-3">
-					<div class="inline-grid grid-cols-1 max-w-full min-w-[1ch]">
-						<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre-wrap break-words">{editName || t('name')}</span>
-						<textarea
-							bind:this={titleInputEl}
-							name="name"
-							bind:value={editName}
-							rows="1"
-							required
-							placeholder={t('name')}
-							class="col-start-1 row-start-1 w-0 min-w-full h-full resize-none overflow-hidden font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none pb-1 transition-colors duration-200 whitespace-pre-wrap break-words"
-							onkeydown={(e) => {
-								if (e.key === 'Enter' && !e.shiftKey) {
-									e.preventDefault();
-									e.currentTarget.form?.requestSubmit();
-								}
-							}}
-						></textarea>
+			<div class="flex flex-col gap-2 pb-8 border-b border-[#efeeea]">
+				<!-- Row 1: Title and Amount -->
+				<div class="flex justify-between items-start gap-4">
+					<div class="flex-grow min-w-0">
+						<div class="inline-grid grid-cols-1 max-w-full min-w-[1ch]">
+							<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre-wrap break-words">{editName || t('name')}</span>
+							<textarea
+								bind:this={titleInputEl}
+								name="name"
+								bind:value={editName}
+								rows="1"
+								required
+								placeholder={t('name')}
+								class="col-start-1 row-start-1 w-0 min-w-full h-full resize-none overflow-hidden font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none pb-1 transition-colors duration-200 whitespace-pre-wrap break-words"
+								onkeydown={(e) => {
+									if (e.key === 'Enter' && !e.shiftKey) {
+										e.preventDefault();
+										e.currentTarget.form?.requestSubmit();
+									}
+								}}
+							></textarea>
+						</div>
 					</div>
+
+					<div class="flex flex-col items-end flex-shrink-0">
+						<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2">
+							{#if currencyConfig.isPrefix}
+								<span class="text-[#9ca3af] mr-1 inline-block -translate-y-[2px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
+							{/if}
+							<div class="inline-grid grid-cols-1">
+								<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[1px] pr-[6px] pb-[4px] whitespace-pre tracking-tight">{editAmountVal || '0'}</span>
+								<input
+									type="text"
+									inputmode="numeric"
+									pattern="[0-9\s]*"
+									value={editAmountVal}
+									oninput={handleAmountInput}
+									onkeydown={handleAmountKeyDown}
+									required
+									class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pr-[6px] pb-[4px] tracking-tight transition-colors duration-200"
+									placeholder="0"
+								/>
+							</div>
+							<input type="hidden" name="amount" value={editAmountVal.replace(/\D/g, '')} />
+							{#if !currencyConfig.isPrefix}
+								<span class="text-[#9ca3af] ml-1 inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
+							{/if}
+						</div>
+					</div>
+				</div>
+
+				<!-- Row 2: Badge and Date -->
+				<div class="flex justify-between items-center gap-4">
 					<div class="flex items-center gap-2">
 						<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#ff7361]/10 text-[#ff7361] border border-[#ff7361]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
 							<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#ff7361]' : 'bg-[#4fd1c5]'}"></span>
 							{editPaidBy === 'A' ? namePersonA : namePersonB}
 						</div>
-					</div>
-				</div>
-
-				<!-- Amount and Date Box -->
-				<div class="flex flex-col items-end space-y-3.5">
-					<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2">
-						{#if currencyConfig.isPrefix}
-							<span class="text-[#9ca3af] mr-1 inline-block -translate-y-[2px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
-						{/if}
-						<div class="inline-grid grid-cols-1">
-							<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[1px] pr-[6px] pb-[4px] whitespace-pre tracking-tight">{editAmountVal || '0'}</span>
-							<input
-								type="text"
-								inputmode="numeric"
-								pattern="[0-9\s]*"
-								value={editAmountVal}
-								oninput={handleAmountInput}
-								required
-								class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pr-[6px] pb-[4px] tracking-tight transition-colors duration-200"
-								placeholder="0"
-							/>
-						</div>
-						<input type="hidden" name="amount" value={editAmountVal.replace(/\D/g, '')} />
-						{#if !currencyConfig.isPrefix}
-							<span class="text-[#9ca3af] ml-1 inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
-						{/if}
 					</div>
 
 					<div class="flex items-center">
@@ -519,7 +598,7 @@
 			<div>
 				<div class="flex items-center justify-between mb-3">
 					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest">{t('source')}</p>
-					{#if accounts.length > 0}
+					{#if accounts.filter(acc => acc.owner === editPaidBy).length > 0}
 						<button
 							type="button"
 							onclick={() => isEditingAccounts = !isEditingAccounts}
@@ -537,7 +616,7 @@
 					{/if}
 				</div>
 				<div class="flex flex-wrap gap-2 items-center">
-					{#each accounts as acc}
+					{#each accounts.filter(acc => acc.owner === editPaidBy) as acc}
 						<div class="relative">
 							<button
 								type="button"
@@ -553,7 +632,7 @@
 								{editAccountId === acc.id ? 'border-[#ff7361] bg-[#ff7361]/5 text-[#ff7361]' : 'border-[#efeeea] bg-white text-[#2d3142]/80 hover:text-[#2d3142] hover:border-[#ff7361]/30 hover:bg-[#fbf9f5]/50'}
 								{isEditingAccounts ? 'cursor-default opacity-80' : 'cursor-pointer'}"
 							>
-								{acc.name}
+								{#if editAccountId === acc.id}<span class="mr-1.5 font-bold">✓</span>{/if}{acc.name}
 							</button>
 							{#if isEditingAccounts}
 								<button
@@ -568,7 +647,7 @@
 						</div>
 					{/each}
 
-					{#if isEditingAccounts || accounts.length === 0}
+					{#if isEditingAccounts || accounts.filter(acc => acc.owner === editPaidBy).length === 0}
 						{#if isCreatingAccountInline}
 							<div class="flex items-center gap-2">
 								<div class="flex items-center border border-[#efeeea] bg-[#fbf9f5] rounded-lg px-2 h-[30px]">
@@ -703,6 +782,7 @@
 						if (actionName.includes('archive')) {
 							toasts.show(t('toastArchived'), 'success');
 						} else if (actionName.includes('updateAmount')) {
+							isAmountEdit = false;
 							const dateParts = editAmountDate.split('-');
 							const y = parseInt(dateParts[0], 10);
 							const m = parseInt(dateParts[1], 10);
@@ -713,7 +793,7 @@
 						} else if (actionName.includes('update')) {
 							if (expense && editPaidBy !== expense.paidBy) {
 								const targetPersonName = editPaidBy === 'A' ? namePersonA : namePersonB;
-								toasts.show(t('toastMoved', { name: targetPersonName }), 'success');
+								toasts.show(t('toastMoved', { name: editName, person: targetPersonName }), 'success');
 							}
 						}
 					}
@@ -771,7 +851,7 @@
 							type="button"
 							onclick={async () => {
 								isAmountEdit = true;
-								editAmountVal = formatAmount(Math.round(expense.currentAmount).toString());
+								editAmountVal = formatAmount(Math.round(latestAmount).toString());
 								editAmountDate = expense.history?.[expense.history.length - 1]?.validFrom || new Date().toISOString().split('T')[0];
 								await import('svelte').then(({ tick }) => tick());
 								amountInputEl?.focus();
@@ -783,7 +863,7 @@
 									{#if currencyConfig.isPrefix}
 										<span class="text-[#9ca3af] mr-1 inline-block" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
 									{/if}
-									{new Intl.NumberFormat(locale).format(Math.round(expense.currentAmount))}
+									{new Intl.NumberFormat(locale).format(Math.round(latestAmount))}
 									{#if !currencyConfig.isPrefix}
 										<span class="text-[#9ca3af] ml-1 inline-block">{currencyConfig.symbol}</span>
 									{/if}
@@ -791,7 +871,7 @@
 							</div>
 							{#if expense.intervalMonths !== 0}
 								<div class="mt-1 text-right flex items-center gap-1">
-									<span class="text-[12px] text-[#9ca3af]">{t('since')} <span class="font-bold text-[#2d3142]">{formatSinceDate(expense.history[expense.history.length - 1]?.validFrom || '', locale)}</span></span>
+									<span class="text-[12px] text-[#9ca3af]">{t(isFuture ? 'from' : 'since')} <span class="font-bold text-[#2d3142]">{formatSinceDate(expense.history[expense.history.length - 1]?.validFrom || '', locale)}</span></span>
 								</div>
 							{:else}
 								<div class="mt-1 text-right flex items-center gap-1">
@@ -818,6 +898,7 @@
 										pattern="[0-9\s]*"
 										value={editAmountVal}
 										oninput={handleAmountInput}
+										onkeydown={handleAmountKeyDown}
 										class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pr-[6px] pb-[4px] tracking-tight transition-colors duration-200"
 										placeholder="0"
 									/>
@@ -849,7 +930,6 @@
 									formaction="{actionRoute}?/updateAmount"
 									type="submit"
 									class="px-3 py-1 bg-[#ff7361] text-white rounded text-[12px] font-bold hover:bg-[#ff7361]/90 transition-all shadow-sm"
-									onclick={() => isAmountEdit = false}
 								>
 									{t('save')}
 								</button>
@@ -937,7 +1017,7 @@
 			<div>
 				<div class="flex items-center justify-between mb-3">
 					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest">{t('source')}</p>
-					{#if accounts.length > 0}
+					{#if accounts.filter(acc => acc.owner === editPaidBy).length > 0}
 						<button
 							type="button"
 							onclick={() => isEditingAccounts = !isEditingAccounts}
@@ -955,7 +1035,7 @@
 					{/if}
 				</div>
 				<div class="flex flex-wrap gap-2 items-center">
-					{#each accounts as acc}
+					{#each accounts.filter(acc => acc.owner === editPaidBy) as acc}
 						<div class="relative">
 							<button
 								type="button"
@@ -972,7 +1052,7 @@
 								{editAccountId === acc.id ? 'border-[#ff7361] bg-[#ff7361]/5 text-[#ff7361]' : 'border-[#efeeea] bg-white text-[#2d3142]/80 hover:text-[#2d3142] hover:border-[#ff7361]/30 hover:bg-[#fbf9f5]/50'}
 								{isEditingAccounts ? 'cursor-default opacity-80' : 'cursor-pointer'}"
 							>
-								{acc.name}
+								{#if editAccountId === acc.id}<span class="mr-1.5 font-bold">✓</span>{/if}{acc.name}
 							</button>
 							{#if isEditingAccounts}
 								<button
@@ -987,7 +1067,7 @@
 						</div>
 					{/each}
 
-					{#if isEditingAccounts || accounts.length === 0}
+					{#if isEditingAccounts || accounts.filter(acc => acc.owner === editPaidBy).length === 0}
 						{#if isCreatingAccountInline}
 							<div class="flex items-center gap-2">
 								<div class="flex items-center border border-[#efeeea] bg-[#fbf9f5] rounded-lg px-2 h-[30px]">
@@ -1099,25 +1179,66 @@
 				<div>
 					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('history')}</p>
 					<table class="w-full text-xs">
-						<tbody class="divide-y divide-[#efeeea] text-[#2d3142]">
-							{#if expense.archivedDate}
-								<tr>
-									<td class="py-2 font-bold text-sm text-[#2d3142]">{formatHistoryDate(expense.archivedDate, locale)}</td>
-									<td class="py-2 text-right font-bold text-sm text-[#2d3142]">
-										{t('archived')}
-									</td>
-								</tr>
-							{/if}
-							{#each uniqueHistory as hist}
-								<tr>
-									<td class="py-2 font-bold text-sm text-[#2d3142]">{formatHistoryDate(hist.validFrom, locale)}</td>
+						<tbody class="text-[#2d3142]">
+							{#each combinedHistoryTimeline as item}
+								{@const isFuturePrice = item.type === 'price' && item.date > new Date().toISOString().split('T')[0]}
+								<tr class={isFuturePrice ? 'opacity-40' : ''}>
+									<td class="py-2 font-bold text-sm text-[#2d3142]">{formatHistoryDate(item.date, locale)}</td>
 									<td class="py-2 text-right font-bold text-sm text-[#2d3142] font-sans">
-										{formatter.format(Math.round(hist.amount))}
+										{#if item.type === 'archive'}
+											{t('archived')}
+										{:else}
+											<div class="inline-flex items-center gap-1.5">
+												{#if item.pctChange !== null && item.pctChange !== 0}
+													<span class="text-[11px] font-medium text-[#9ca3af] bg-[#f3f4f6] px-1 py-0.5 rounded-md">
+														{item.pctChange > 0 ? '+' : ''}{Math.round(item.pctChange)}%
+													</span>
+												{/if}
+												<span>{formatter.format(Math.round(item.amount))}</span>
+											</div>
+										{/if}
 									</td>
 								</tr>
 							{/each}
 						</tbody>
 					</table>
+
+					<!-- Minimalistic visual trend diagram -->
+					{#if chartPoints.length >= 2}
+						{@const minAmt = Math.min(...chartPoints.map(p => p.amount))}
+						{@const maxAmt = Math.max(...chartPoints.map(p => p.amount))}
+						{@const range = maxAmt - minAmt}
+						{@const coords = chartPoints.map((p, idx) => {
+							const x = (idx / (chartPoints.length - 1)) * 340 + 30;
+							const y = range === 0 ? 50 : 80 - ((p.amount - minAmt) / range) * 60;
+							return { x, y, amount: p.amount };
+						})}
+						{@const linePath = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x} ${c.y}`).join(' ')}
+						{@const areaPath = `${linePath} L ${coords[coords.length - 1].x} 95 L ${coords[0].x} 95 Z`}
+						<div class="mt-6 pt-4 border-t border-[#efeeea]">
+							<p class="text-[10px] font-black text-[#9ca3af] uppercase tracking-widest mb-3">Price Trend</p>
+							<div class="relative w-full h-[100px] bg-[#fbf9f5] rounded-xl border border-[#efeeea] p-2 overflow-visible">
+								<svg class="w-full h-full overflow-visible" viewBox="0 0 400 100" preserveAspectRatio="none">
+									<defs>
+										<linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+											<stop offset="0%" stop-color={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stop-opacity="0.15" />
+											<stop offset="100%" stop-color={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stop-opacity="0" />
+										</linearGradient>
+									</defs>
+									<path d={areaPath} fill="url(#chartGrad)" />
+									<path d={linePath} fill="none" stroke={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+									{#each coords as pt}
+										<g>
+											<circle cx={pt.x} cy={pt.y} r="4.5" fill="white" stroke={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stroke-width="2.5" />
+											<text x={pt.x} y={pt.y - 10} text-anchor="middle" fill="#2d3142" class="text-[9px] font-black font-sans select-none pointer-events-none">
+												{Math.round(pt.amount)} kr
+											</text>
+										</g>
+									{/each}
+								</svg>
+							</div>
+						</div>
+					{/if}
 				</div>
 			{/if}
 
