@@ -58,6 +58,21 @@
 		return val;
 	}
 
+	function formatSinceDate(dateStr: string, localeStr: string): string {
+		if (!dateStr) return '';
+		const date = new Date(dateStr + 'T00:00:00');
+		if (isNaN(date.getTime())) return dateStr;
+		return date.toLocaleDateString(localeStr, { month: 'short', year: 'numeric' }).toLowerCase();
+	}
+
+	function formatHistoryDate(dateStr: string, localeStr: string): string {
+		if (!dateStr) return '';
+		const date = new Date(dateStr + 'T00:00:00');
+		if (isNaN(date.getTime())) return dateStr;
+		const formatted = date.toLocaleDateString(localeStr, { month: 'long', year: 'numeric' });
+		return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+	}
+
 	// Price edit state
 	let isPriceEdit = $state(false);
 	let editPriceVal = $state('');
@@ -390,7 +405,7 @@
 												editPriceVal = Math.round(selectedExpense.currentAmount).toString();
 												editPriceDate = new Date().toISOString().split('T')[0];
 											}}
-											class="group cursor-pointer border border-transparent hover:border-[#ff7361]/20 hover:bg-[#fbf9f5] p-2 -m-2 rounded-xl transition-all flex flex-col items-end relative"
+											class="group cursor-pointer border border-transparent hover:border-[#ff7361]/20 hover:bg-[#fbf9f5] p-2 -m-2 rounded-xl transition-all flex flex-col items-end relative min-w-[140px] whitespace-nowrap"
 										>
 											<div class="flex items-center">
 												<span class="text-2xl font-bold text-[#2d3142] tracking-tight">
@@ -405,7 +420,7 @@
 											</div>
 											{#if selectedExpense.intervalMonths !== 0}
 												<div class="mt-1 text-right flex items-center gap-1">
-													<span class="text-[12px] text-[#9ca3af]">{t('since')} <span class="font-bold text-[#2d3142]">{selectedExpense.history[selectedExpense.history.length - 1]?.validFrom || ''}</span></span>
+													<span class="text-[12px] text-[#9ca3af]">{t('since')} <span class="font-bold text-[#2d3142]">{formatSinceDate(selectedExpense.history[selectedExpense.history.length - 1]?.validFrom || '', locale)}</span></span>
 												</div>
 											{/if}
 											<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none w-8 h-8 bg-white/90 backdrop-blur shadow-sm rounded-full border border-[#ff7361]/20 flex items-center justify-center">
