@@ -367,9 +367,14 @@
 								{Math.round(currentPctB * 100)}%
 							</div>
 						{:else}
-							<div class="w-full h-full flex items-center justify-center text-[#9ca3af] text-xs font-light">
-								{t('noIncomeSet')}
-							</div>
+							<div
+								class="h-full border-r-8 border-white"
+								style="width: 50%; background-color: #e5e7eb;"
+							></div>
+							<div
+								class="h-full"
+								style="width: 50%; background-color: #e5e7eb;"
+							></div>
 						{/if}
 					</div>
 				</div>
