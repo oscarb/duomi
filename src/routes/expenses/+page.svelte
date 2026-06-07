@@ -472,17 +472,17 @@
 									<div class="grid grid-cols-2 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
 										<button
 											type="button"
-											onclick={() => editSplitType = 'dynamic'}
-											class="py-1.5 rounded-full text-xs font-bold transition-all {editSplitType === 'dynamic' ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142]'}"
-										>
-											{t('dynamic')}
-										</button>
-										<button
-											type="button"
 											onclick={() => editSplitType = 'static'}
 											class="py-1.5 rounded-full text-xs font-bold transition-all {editSplitType === 'static' ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142]'}"
 										>
 											{t('static')}
+										</button>
+										<button
+											type="button"
+											onclick={() => editSplitType = 'dynamic'}
+											class="py-1.5 rounded-full text-xs font-bold transition-all {editSplitType === 'dynamic' ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142]'}"
+										>
+											{t('dynamic')}
 										</button>
 									</div>
 									<input type="hidden" name="splitType" value={editSplitType} />
