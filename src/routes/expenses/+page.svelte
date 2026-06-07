@@ -47,6 +47,17 @@
 		}
 	});
 
+	function snapRatio(val: number): number {
+		const snapPoints = [0, 0.1, 0.2, 0.3, 0.33, 0.4, 0.5, 0.6, 0.66, 0.7, 0.8, 0.9, 1.0];
+		const tolerance = 0.02; // Snap if within 2%
+		for (const pt of snapPoints) {
+			if (Math.abs(val - pt) < tolerance) {
+				return pt;
+			}
+		}
+		return val;
+	}
+
 	// Price edit state
 	let isPriceEdit = $state(false);
 	let editPriceVal = $state('');
@@ -302,7 +313,10 @@
 									min="0"
 									max="1"
 									step="0.01"
-									bind:value={editRatio}
+									value={editRatio}
+									oninput={(e) => {
+										editRatio = snapRatio(parseFloat((e.target as HTMLInputElement).value));
+									}}
 									class="w-full h-1.5 bg-[#efeeea] rounded-lg appearance-none cursor-pointer accent-[#ff7361]"
 								/>
 							</div>
@@ -499,7 +513,10 @@
 												min="0"
 												max="1"
 												step="0.01"
-												bind:value={editRatio}
+												value={editRatio}
+												oninput={(e) => {
+													editRatio = snapRatio(parseFloat((e.target as HTMLInputElement).value));
+												}}
 												class="w-full h-1.5 bg-[#efeeea] rounded-lg appearance-none cursor-pointer accent-[#ff7361]"
 											/>
 											<div class="flex justify-between text-[10px] font-bold text-[#9ca3af]">
