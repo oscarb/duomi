@@ -385,7 +385,6 @@
 											</div>
 											<div class="mt-1 text-right flex items-center gap-1">
 												<span class="text-[12px] text-[#9ca3af]">{t('since')} <span class="font-bold text-[#2d3142]">{selectedExpense.history[selectedExpense.history.length - 1]?.validFrom || ''}</span></span>
-												<span class="material-symbols-outlined text-[14px] text-[#9ca3af]">calendar_month</span>
 											</div>
 											<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none w-8 h-8 bg-white/90 backdrop-blur shadow-sm rounded-full border border-[#ff7361]/20 flex items-center justify-center">
 												<span class="material-symbols-outlined text-[#ff7361] text-[16px]">edit</span>
