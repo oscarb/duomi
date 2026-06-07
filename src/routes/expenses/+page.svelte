@@ -477,22 +477,21 @@
 												<span class="material-symbols-outlined text-[#ff7361] text-[16px]">edit</span>
 											</div>
 										</button>
-									{:else}
 										<!-- Edit Mode: Inline transformation -->
-										<div class="flex flex-col items-end space-y-2.5">
-											<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight">
+										<div class="flex flex-col items-end space-y-2">
+											<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2">
 												{#if currencyConfig.isPrefix}
 													<span class="text-[#9ca3af] mr-1 inline-block" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
 												{/if}
 												<div class="inline-grid grid-cols-1">
-													<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pb-1 whitespace-pre">{editPriceVal || '0'}</span>
+													<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pb-[5px] whitespace-pre tracking-tight">{editPriceVal || '0'}</span>
 													<input
 														type="text"
 														inputmode="numeric"
 														pattern="[0-9\s]*"
 														value={editPriceVal}
 														oninput={handleCostInput}
-														class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pb-1 transition-colors duration-200"
+														class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pb-[5px] tracking-tight transition-colors duration-200"
 													/>
 												</div>
 												<input type="hidden" name="amount" value={editPriceVal.replace(/\D/g, '')} />
@@ -501,7 +500,7 @@
 												{/if}
 											</div>
 											{#if selectedExpense.intervalMonths !== 0}
-												<div class="flex items-center gap-1.5">
+												<div class="flex items-center gap-1.5 mt-2">
 													<input
 														name="validFrom"
 														type="date"
@@ -512,7 +511,7 @@
 											{:else}
 												<input type="hidden" name="validFrom" value={selectedExpense.history[selectedExpense.history.length - 1]?.validFrom || ''} />
 											{/if}
-											<div class="flex gap-2 pt-1">
+											<div class="flex gap-2">
 												<button
 													type="button"
 													class="px-2 py-1 text-[#9ca3af] font-bold text-[12px] hover:text-[#2d3142]"
