@@ -139,6 +139,37 @@
 		);
 	});
 
+	let reactiveNextPaymentDate = $derived.by(() => {
+		if (!selectedExpense || editInterval === 0) return null;
+
+		const year = data.period.year;
+		const month = data.period.month;
+		const targetLastDay = `${year}-${String(month).padStart(2, '0')}-31`;
+
+		const activeCost = [...selectedExpense.history]
+			.filter(c => c.validFrom <= targetLastDay)
+			.sort((a, b) => b.validFrom.localeCompare(a.validFrom))[0];
+
+		if (!activeCost) return null;
+
+		const costParts = activeCost.validFrom.split('-');
+		const costY = parseInt(costParts[0], 10);
+		const costM = parseInt(costParts[1], 10);
+
+		const diff = (year - costY) * 12 + (month - costM);
+		if (diff < 0) return null;
+
+		const remainder = diff % editInterval;
+		const monthsToAdd = editInterval - remainder;
+		const nextMonthTotal = month + (remainder === 0 ? 0 : monthsToAdd);
+		const nextY = year + Math.floor((nextMonthTotal - 1) / 12);
+		const nextM = ((nextMonthTotal - 1) % 12) + 1;
+
+		const date = new Date(nextY, nextM - 1, 1);
+		const formatted = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(date);
+		return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+	});
+
 	// Account creation dialog
 	let showAddAccount = $state(false);
 	let newAccountName = $state('');
@@ -671,11 +702,11 @@
 								</div>
 								<input type="hidden" name="intervalMonths" value={editInterval} />
 
-								{#if selectedExpense.nextPaymentDate}
+								{#if reactiveNextPaymentDate}
 									<div class="flex items-center gap-2 mt-4 px-1">
 										<span class="material-symbols-outlined text-[18px] text-[#ff7361]">calendar_month</span>
 										<p class="text-xs font-medium text-[#9ca3af]">
-											{t('nextPaymentDate')} <span class="font-bold text-black ml-1">{selectedExpense.nextPaymentDate}</span>
+											{t('nextPaymentDate')} <span class="font-bold text-black ml-1">{reactiveNextPaymentDate}</span>
 										</p>
 									</div>
 								{/if}
