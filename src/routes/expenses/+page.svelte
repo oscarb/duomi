@@ -370,15 +370,15 @@
 				</div>
 			{:else}
 				<!-- View/Edit selected template details -->
-				<div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(45,49,66,0.04)] p-8 md:p-10 border border-[#efeeea] sticky top-8">
+				<div class="@container bg-white rounded-2xl shadow-[0_8px_30px_rgb(45,49,66,0.04)] p-8 md:p-10 border border-[#efeeea] sticky top-8">
 					{#if selectedExpense}
 						<form method="POST" action="?/update" use:enhance class="space-y-6">
 							<input type="hidden" name="id" value={selectedExpense.id} />
 
 							<!-- Header: Title & Status -->
-							<div class="flex justify-between items-start pb-6">
-								<div class="flex-grow space-y-1.5">
-									<div class="inline-grid grid-cols-1 max-w-[50%] min-w-[120px]">
+							<div class="flex justify-between items-start pb-6 gap-4">
+								<div class="flex-grow min-w-0 space-y-1.5">
+									<div class="inline-grid grid-cols-1 max-w-[50cqw] min-w-[120px]">
 										<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre-wrap break-words">{editName || ' '}</span>
 										<textarea
 											name="name"
