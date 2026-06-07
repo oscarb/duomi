@@ -18,6 +18,7 @@
 	const realYear = nowObj.getFullYear();
 	const realMonth = nowObj.getMonth() + 1;
 	let isCurrentPeriod = $derived(data.period.year === realYear && data.period.month === realMonth);
+	let isPastPeriod = $derived(data.period.year < realYear || (data.period.year === realYear && data.period.month < realMonth));
 
 	// Read selected expense ID from query parameters to determine if overlay is open
 	let selectedId = $derived(parseInt(page.url.searchParams.get('id') || '', 10) || null);
@@ -60,6 +61,13 @@
 	// Dynamically format month names based on locale
 	let monthName = $derived.by(() => {
 		const date = new Date(data.period.year, data.period.month - 1, 1);
+		const formatted = new Intl.DateTimeFormat(locale, { month: 'long' }).format(date);
+		return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+	});
+
+	// Format the real current month name for the "go to current month" button title
+	let realMonthName = $derived.by(() => {
+		const date = new Date(realYear, realMonth - 1, 1);
 		const formatted = new Intl.DateTimeFormat(locale, { month: 'long' }).format(date);
 		return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 	});
@@ -112,8 +120,8 @@
 	}
 
 	// Temporary dynamic edit states
-	let incomeAVal = $state(data.income.isFallback ? '' : formatIncome(data.income.person_a.toString()));
-	let incomeBVal = $state(data.income.isFallback ? '' : formatIncome(data.income.person_b.toString()));
+	let incomeAVal = $state(data.income.isFallback || data.income.person_a === 0 ? '' : formatIncome(data.income.person_a.toString()));
+	let incomeBVal = $state(data.income.isFallback || data.income.person_b === 0 ? '' : formatIncome(data.income.person_b.toString()));
 
 	let currentIncomeANum = $derived.by(() => {
 		const val = incomeAVal.replace(/\s/g, '');
@@ -140,8 +148,8 @@
 
 	// Keep input in sync with server data when month changes
 	$effect(() => {
-		incomeAVal = data.income.isFallback ? '' : formatIncome(data.income.person_a.toString());
-		incomeBVal = data.income.isFallback ? '' : formatIncome(data.income.person_b.toString());
+		incomeAVal = data.income.isFallback || data.income.person_a === 0 ? '' : formatIncome(data.income.person_a.toString());
+		incomeBVal = data.income.isFallback || data.income.person_b === 0 ? '' : formatIncome(data.income.person_b.toString());
 	});
 
 	let expenseAmounts = $state<Record<number, string>>({});
@@ -309,6 +317,41 @@
 		}
 		return groups;
 	});
+
+	function handleIncomeKeyDown(e: KeyboardEvent, key: 'A' | 'B') {
+		if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+			e.preventDefault();
+			const step = e.shiftKey ? 1000 : 100;
+			let currentStr = key === 'A' ? incomeAVal : incomeBVal;
+			if (currentStr === '') {
+				currentStr = key === 'A' ? data.income.person_a.toString() : data.income.person_b.toString();
+			}
+			const currentVal = parseFloat(currentStr.replace(/\s/g, '')) || 0;
+			const newVal = Math.max(0, currentVal + (e.key === 'ArrowUp' ? step : -step));
+			const formatted = formatIncome(Math.round(newVal).toString());
+			if (key === 'A') {
+				incomeAVal = formatted;
+			} else {
+				incomeBVal = formatted;
+			}
+			saveIncomes();
+		}
+	}
+
+	function handleExpenseKeyDown(e: KeyboardEvent, itemId: number) {
+		if (e.key === 'Enter') {
+			(e.target as HTMLInputElement).blur();
+		} else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+			e.preventDefault();
+			const step = e.shiftKey ? 100 : 10;
+			const currentStr = expenseAmounts[itemId] || '';
+			const currentVal = parseFloat(currentStr.replace(/\s/g, '')) || 0;
+			const newVal = Math.max(0, currentVal + (e.key === 'ArrowUp' ? step : -step));
+			const formatted = formatIncome(Math.round(newVal).toString());
+			expenseAmounts[itemId] = formatted;
+			// Only update state; saving is handled by onblur event listener
+		}
+	}
 </script>
 
 <div class="py-8">
@@ -322,7 +365,7 @@
 				<a
 					href="/"
 					class="w-12 h-12 rounded-full border border-white/15 bg-white/5 hover:bg-white/20 hover:border-white/30 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center opacity-70 hover:opacity-100 text-white"
-					title={t('jumpToCurrentMonth')}
+					title="{locale.startsWith('sv') ? 'Gå till' : 'Go to'} {realMonthName} {realYear}"
 				>
 					<span class="material-symbols-outlined text-2xl" style="font-weight: 300;">today</span>
 				</a>
@@ -348,7 +391,7 @@
 		<!-- Left Column (Settlement & Incomes) -->
 		<div class="space-y-8">
 			<!-- Settlement Card -->
-			<section class="bg-white rounded-2xl p-10 shadow-lg text-center" data-purpose="current-settlement-card">
+			<section class="bg-white rounded-2xl p-6 sm:p-10 shadow-lg text-center" data-purpose="current-settlement-card">
 				<p class="text-[#9ca3af] tracking-widest text-sm font-semibold mb-4 uppercase">{t('currentSettlement')}</p>
 				
 				{#if currentSettlement.amount > 0 && currentSettlement.payer}
@@ -396,11 +439,11 @@
 			</section>
 
 			<!-- Incomes Card -->
-			<section class="bg-white rounded-2xl p-10 shadow-lg" data-purpose="income-settings-card">
-				<h3 class="text-2xl font-bold text-[#2d3142] font-display mb-8 flex items-center gap-2">
-					<span class="material-symbols-outlined text-2xl font-light text-[#2d3142]/70">account_balance_wallet</span>
+			<section class="bg-white rounded-2xl p-6 sm:p-10 shadow-lg" data-purpose="income-settings-card">
+				<h3 class="text-xl sm:text-2xl font-bold text-[#2d3142] font-display mb-8 flex items-center gap-2">
+					<span class="material-symbols-outlined text-xl sm:text-2xl font-light text-[#2d3142]/70">account_balance_wallet</span>
 					{t('income')}
-					<span class="text-xl font-bold text-[#2d3142] font-sans ml-auto">
+					<span class="text-lg sm:text-xl font-bold text-[#2d3142] font-sans ml-auto">
 						{#each formatter.formatToParts(Math.round(currentTotalIncome)) as part}
 							{#if part.type === 'currency'}
 								<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
@@ -411,16 +454,16 @@
 					</span>
 				</h3>
 
-				<div class="grid grid-cols-2 gap-0">
+				<div class="grid grid-cols-2 gap-4 sm:gap-6">
 					<div class="space-y-2">
 						<label for="incomeA" class="block text-[#9ca3af] text-xs uppercase tracking-widest font-medium">{data.personAName}</label>
-						<div class="text-4xl font-bold text-[#2d3142] flex items-baseline">
+						<div class="income-input-text font-bold text-[#2d3142] flex items-baseline">
 							{#if currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 mr-2">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-50 mr-1.5 sm:mr-2">{currencyConfig.symbol}</span>
 							{/if}
 							<div class="tactile-input" style="display: inline-flex; position: relative; align-items: baseline;">
-								<span class="invisible font-bold text-4xl p-0 whitespace-pre">
-									{incomeAVal || (data.income.isFallback ? formatIncome(data.income.person_a.toString()) : '0')}
+								<span class="invisible font-bold income-input-text p-0 whitespace-pre">
+									{incomeAVal || (data.income.person_a > 0 ? formatIncome(data.income.person_a.toString()) : '0')}
 								</span>
 								<input
 									id="incomeA"
@@ -434,31 +477,29 @@
 										if (incomeAVal === '0') incomeAVal = '';
 									}}
 									oninput={(e) => handleIncomeInput(e, 'A')}
+									onkeydown={(e) => handleIncomeKeyDown(e, 'A')}
 									onblur={() => {
-										if (incomeAVal === '' && !data.income.isFallback) {
-											incomeAVal = '0';
-										}
 										saveIncomes();
 									}}
-									class="absolute left-0 top-0 w-full h-full font-bold text-4xl p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none {data.income.isFallback && incomeAVal === '' ? 'opacity-40' : ''}"
-									placeholder={data.income.isFallback ? formatIncome(data.income.person_a.toString()) : '0'}
+									class="absolute left-0 top-0 w-full h-full font-bold income-input-text p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none {incomeAVal === '' ? 'opacity-40' : ''}"
+									placeholder={data.income.person_a > 0 ? formatIncome(data.income.person_a.toString()) : '0'}
 								/>
 							</div>
 							{#if !currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 ml-2">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-50 ml-1.5 sm:ml-2">{currencyConfig.symbol}</span>
 							{/if}
 						</div>
 					</div>
 
 					<div class="space-y-2">
 						<label for="incomeB" class="block text-[#9ca3af] text-xs uppercase tracking-widest font-medium">{data.personBName}</label>
-						<div class="text-4xl font-bold text-[#2d3142] flex items-baseline">
+						<div class="income-input-text font-bold text-[#2d3142] flex items-baseline">
 							{#if currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 mr-2">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-50 mr-1.5 sm:mr-2">{currencyConfig.symbol}</span>
 							{/if}
 							<div class="tactile-input" style="display: inline-flex; position: relative; align-items: baseline;">
-								<span class="invisible font-bold text-4xl p-0 whitespace-pre">
-									{incomeBVal || (data.income.isFallback ? formatIncome(data.income.person_b.toString()) : '0')}
+								<span class="invisible font-bold income-input-text p-0 whitespace-pre">
+									{incomeBVal || (data.income.person_b > 0 ? formatIncome(data.income.person_b.toString()) : '0')}
 								</span>
 								<input
 									id="incomeB"
@@ -472,18 +513,16 @@
 										if (incomeBVal === '0') incomeBVal = '';
 									}}
 									oninput={(e) => handleIncomeInput(e, 'B')}
+									onkeydown={(e) => handleIncomeKeyDown(e, 'B')}
 									onblur={() => {
-										if (incomeBVal === '' && !data.income.isFallback) {
-											incomeBVal = '0';
-										}
 										saveIncomes();
 									}}
-									class="absolute left-0 top-0 w-full h-full font-bold text-4xl p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none {data.income.isFallback && incomeBVal === '' ? 'opacity-40' : ''}"
-									placeholder={data.income.isFallback ? formatIncome(data.income.person_b.toString()) : '0'}
+									class="absolute left-0 top-0 w-full h-full font-bold income-input-text p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none {incomeBVal === '' ? 'opacity-40' : ''}"
+									placeholder={data.income.person_b > 0 ? formatIncome(data.income.person_b.toString()) : '0'}
 								/>
 							</div>
 							{#if !currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 ml-2">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-50 ml-1.5 sm:ml-2">{currencyConfig.symbol}</span>
 							{/if}
 						</div>
 					</div>
@@ -538,7 +577,7 @@
 
 		<!-- Right Column (Expenses) -->
 		<div class="space-y-8">
-			<section class="bg-white rounded-2xl p-10 shadow-lg" data-purpose="expenses-detailed-ledger">
+			<section class="bg-white rounded-2xl p-6 sm:p-10 shadow-lg" data-purpose="expenses-detailed-ledger">
 				<div class="flex justify-between items-center mb-8">
 					<h3 class="text-2xl font-bold text-[#2d3142] font-display flex items-center gap-2">
 						<span class="material-symbols-outlined text-2xl font-light text-[#2d3142]/70">receipt_long</span>
@@ -558,7 +597,7 @@
 				<!-- Paid by Person A -->
 				<div class="mb-10">
 					<div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-4">
-						<span class="text-xs font-semibold text-[#9ca3af] uppercase tracking-widest">{t('paidBy')} {data.personAName}</span>
+						<span class="text-xs font-semibold text-[#9ca3af] uppercase tracking-widest">{t(isPastPeriod ? 'paidByPerson' : 'toBePaidByPerson', { name: data.personAName })}</span>
 						<span class="text-sm font-bold text-[#2d3142]">
 							{#each formatter.formatToParts(Math.round(totalPaidByA)) as part}
 								{#if part.type === 'currency'}
@@ -644,11 +683,7 @@
 																			saveExpenseAmount(item.id, expenseAmounts[item.id]);
 																		}
 																	}}
-																	onkeydown={(e) => {
-																		if (e.key === 'Enter') {
-																			(e.target as HTMLInputElement).blur();
-																		}
-																	}}
+																	onkeydown={(e) => handleExpenseKeyDown(e, item.id)}
 																	class="absolute left-0 top-0 w-full h-full font-semibold text-base text-[#2d3142] p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none text-right"
 																	placeholder="0"
 																/>
@@ -666,17 +701,19 @@
 											</li>
 										{/each}
 									</ul>
-									<a
-										href="?new=true&paidBy=A{group.accountId ? `&accountId=${group.accountId}` : ''}&year={data.period.year}&month={data.period.month}"
-										class="inline-flex items-center text-sm mt-2 font-semibold {accountName === 'No Account' ? 'ml-1' : 'ml-4'} text-[#ff7361] hover:opacity-85 transition-opacity"
-									>
-										<span class="mr-1 text-base font-bold">+</span> {t('addExpense')}
-									</a>
 								</div>
 							{/each}
 						</div>
+						<div class="mt-4 pt-2 border-t border-gray-100/50 flex">
+							<a
+								href="?new=true&paidBy=A&year={data.period.year}&month={data.period.month}"
+								class="inline-flex items-center text-xs font-bold text-[#ff7361] hover:opacity-85 transition-opacity"
+							>
+								+ {t('addExpense')}
+							</a>
+						</div>
 					{:else}
-						<div class="text-center py-6 px-4 border border-dashed border-[#efeeea] rounded-xl mb-4 bg-[#fbf9f5]/20 flex flex-col items-center justify-center">
+						<div class="text-center py-3 px-4 border border-dashed border-[#efeeea] rounded-xl mb-3 bg-[#fbf9f5]/20 flex flex-col items-center justify-center">
 							<a
 								href="?new=true&paidBy=A&year={data.period.year}&month={data.period.month}"
 								class="inline-flex items-center text-xs font-bold text-[#ff7361] hover:opacity-85 transition-opacity"
@@ -690,7 +727,7 @@
 				<!-- Paid by Person B -->
 				<div>
 					<div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-4">
-						<span class="text-xs font-semibold text-[#9ca3af] uppercase tracking-widest">{t('paidBy')} {data.personBName}</span>
+						<span class="text-xs font-semibold text-[#9ca3af] uppercase tracking-widest">{t(isPastPeriod ? 'paidByPerson' : 'toBePaidByPerson', { name: data.personBName })}</span>
 						<span class="text-sm font-bold text-[#2d3142]">
 							{#each formatter.formatToParts(Math.round(totalPaidByB)) as part}
 								{#if part.type === 'currency'}
@@ -776,11 +813,7 @@
 																			saveExpenseAmount(item.id, expenseAmounts[item.id]);
 																		}
 																	}}
-																	onkeydown={(e) => {
-																		if (e.key === 'Enter') {
-																			(e.target as HTMLInputElement).blur();
-																		}
-																	}}
+																	onkeydown={(e) => handleExpenseKeyDown(e, item.id)}
 																	class="absolute left-0 top-0 w-full h-full font-semibold text-base text-[#2d3142] p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none text-right"
 																	placeholder="0"
 																/>
@@ -798,17 +831,19 @@
 											</li>
 										{/each}
 									</ul>
-									<a
-										href="?new=true&paidBy=B{group.accountId ? `&accountId=${group.accountId}` : ''}&year={data.period.year}&month={data.period.month}"
-										class="inline-flex items-center text-sm mt-2 font-semibold {accountName === 'No Account' ? 'ml-1' : 'ml-4'} text-[#ff7361] hover:opacity-85 transition-opacity"
-									>
-										<span class="mr-1 text-base font-bold">+</span> {t('addExpense')}
-									</a>
 								</div>
 							{/each}
 						</div>
+						<div class="mt-4 pt-2 border-t border-gray-100/50 flex">
+							<a
+								href="?new=true&paidBy=B&year={data.period.year}&month={data.period.month}"
+								class="inline-flex items-center text-xs font-bold text-[#ff7361] hover:opacity-85 transition-opacity"
+							>
+								+ {t('addExpense')}
+							</a>
+						</div>
 					{:else}
-						<div class="text-center py-6 px-4 border border-dashed border-[#efeeea] rounded-xl mb-4 bg-[#fbf9f5]/20 flex flex-col items-center justify-center">
+						<div class="text-center py-3 px-4 border border-dashed border-[#efeeea] rounded-xl mb-3 bg-[#fbf9f5]/20 flex flex-col items-center justify-center">
 							<a
 								href="?new=true&paidBy=B&year={data.period.year}&month={data.period.month}"
 								class="inline-flex items-center text-xs font-bold text-[#ff7361] hover:opacity-85 transition-opacity"
@@ -831,8 +866,8 @@
 				class="close-btn-floater"
 				aria-label={t('cancel')}
 			>
-				<span class="close-icon-content">close</span>
-				<span class="close-text-content">{locale.startsWith('sv') ? 'Stäng' : 'Close'}</span>
+				<span class="close-icon-mobile material-symbols-outlined" style="font-weight: 200;">arrow_back</span>
+				<span class="close-icon-desktop material-symbols-outlined" style="font-weight: 300;">close</span>
 			</a>
 			<ExpenseFormCard
 				expense={selectedExpense}
@@ -891,7 +926,7 @@
 		height: 100%;
 		background-color: #ff7361; /* Coral background shows all around */
 		overflow-y: auto;
-		padding-top: 48px; /* Spacing for the background at the top */
+		padding-top: 60px; /* Spacing for the background at the top + margin below close button */
 		padding-left: 12px;
 		padding-right: 12px;
 		padding-bottom: 12px;
@@ -900,40 +935,41 @@
 	.close-btn-floater {
 		position: fixed;
 		top: 10px;
-		right: 16px;
+		left: 16px;
 		z-index: 60;
-		color: white;
-		font-size: 13px;
-		font-weight: bold;
+		color: rgba(255, 255, 255, 0.7);
 		text-decoration: none;
 		cursor: pointer;
 		transition: all 0.2s ease;
 		display: flex;
 		align-items: center;
-		gap: 4px;
-		padding: 4px 8px;
-		border-radius: 6px;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		border-radius: 9999px;
 		border: 1px solid rgba(255, 255, 255, 0.15);
-		background-color: rgba(255, 255, 255, 0.05);
+		background-color: rgba(255, 255, 255, 0.08);
+		opacity: 0.9;
 	}
 
 	.close-btn-floater:hover {
-		background-color: rgba(255, 255, 255, 0.12);
+		background-color: rgba(255, 255, 255, 0.2);
+		border-color: rgba(255, 255, 255, 0.3);
+		opacity: 1;
 	}
 
 	.close-btn-floater:active {
-		background-color: rgba(255, 255, 255, 0.2);
+		background-color: rgba(255, 255, 255, 0.3);
+		scale: 0.95;
 	}
 
-	.close-btn-floater .close-icon-content {
+	.close-btn-floater .close-icon-desktop {
+		display: none;
+	}
+
+	.close-btn-floater .close-icon-mobile {
 		display: inline-block;
-		font-family: 'Material Symbols Outlined';
-		font-size: 16px;
-		font-weight: normal;
-	}
-
-	.close-btn-floater .close-text-content {
-		display: inline;
+		font-size: 22px;
 	}
 
 	/* Absolute overlay mode when screen is desktop/tablet side-by-side (>= 1024px) */
@@ -954,38 +990,40 @@
 
 		.close-btn-floater {
 			position: absolute;
-			top: 0;
+			top: -50px;
+			right: 0;
+			left: auto;
 			bottom: auto;
-			left: calc(100% + 12px); /* Put the close button to the right of the card instead */
-			right: auto;
-			width: 24px; /* Reduced size */
-			height: 24px;
+			width: 40px;
+			height: 40px;
 			border-radius: 9999px;
-			border: 1px solid rgba(255, 255, 255, 0.2);
-			background-color: rgba(255, 255, 255, 0.1);
+			border: 1px solid rgba(255, 255, 255, 0.15);
+			background-color: rgba(255, 255, 255, 0.08);
 			display: flex;
 			align-items: center;
 			justify-content: center;
 			transition: all 0.2s ease;
-			opacity: 1;
+			opacity: 0.9;
+		}
+
+		.close-btn-floater .close-icon-mobile {
+			display: none;
+		}
+
+		.close-btn-floater .close-icon-desktop {
+			display: inline-block;
+			font-size: 20px;
 		}
 
 		.close-btn-floater:hover {
-			background-color: rgba(255, 255, 255, 0.25);
+			background-color: rgba(255, 255, 255, 0.2);
+			border-color: rgba(255, 255, 255, 0.3);
 			opacity: 1;
 		}
 
 		.close-btn-floater:active {
-			background-color: rgba(255, 255, 255, 0.35);
-			opacity: 1;
-		}
-
-		.close-btn-floater .close-icon-content {
-			display: inline-block;
-		}
-
-		.close-btn-floater .close-text-content {
-			display: none;
+			background-color: rgba(255, 255, 255, 0.3);
+			scale: 0.95;
 		}
 	}
 </style>

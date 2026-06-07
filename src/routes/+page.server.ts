@@ -19,7 +19,8 @@ export const load: PageServerLoad = async ({ url }) => {
 		paidBy: e.paidBy,
 		splitType: e.splitType,
 		staticSplitRatio: e.staticSplitRatio,
-		amount: e.amount
+		amount: e.amount,
+		latestAmount: e.latestAmount
 	}));
 
 	let incomeA = income.totalIncomeA;
@@ -35,9 +36,6 @@ export const load: PageServerLoad = async ({ url }) => {
 		let fallbackIncome = null;
 		if (pastIncomes.length > 0) {
 			fallbackIncome = pastIncomes[0];
-		} else if (validIncomes.length > 0) {
-			validIncomes.sort((a, b) => b.year - a.year || b.month - a.month);
-			fallbackIncome = validIncomes[0];
 		}
 
 		if (fallbackIncome) {

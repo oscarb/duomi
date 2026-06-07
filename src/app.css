@@ -24,6 +24,11 @@
     flex-shrink: 0;
   }
 
+  .income-input-text {
+    font-size: clamp(1.25rem, 6.5vw, 2.25rem);
+    line-height: 1.2;
+  }
+
   .tactile-input:hover {
     border-color: #ff7361;
     cursor: pointer;
