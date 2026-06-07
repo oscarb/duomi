@@ -1,6 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { getMonthlyIncomes, getActiveExpensesForMonth } from '$lib/server/db/queries';
 import { calculateSettlement } from '$lib/calculations';
+import { db } from '$lib/server/db';
+import { incomes } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const now = new Date();
@@ -19,11 +21,36 @@ export const load: PageServerLoad = async ({ url }) => {
 		amount: e.amount
 	}));
 
-	const settlement = calculateSettlement(income.totalIncomeA, income.totalIncomeB, mappedExpenses);
+	let incomeA = income.totalIncomeA;
+	let incomeB = income.totalIncomeB;
+	let isFallback = false;
 
-	const totalIncome = income.totalIncomeA + income.totalIncomeB;
-	const pctA = totalIncome > 0 ? Math.round((income.totalIncomeA / totalIncome) * 100) / 100 : 0.5;
-	const pctB = totalIncome > 0 ? Math.round((income.totalIncomeB / totalIncome) * 100) / 100 : 0.5;
+	if (incomeA === 0 && incomeB === 0) {
+		const allIncomes = await db.select().from(incomes).all();
+		const validIncomes = allIncomes.filter(inc => inc.totalIncomeA + inc.totalIncomeB > 0);
+		const pastIncomes = validIncomes.filter(inc => inc.year < year || (inc.year === year && inc.month < month));
+		pastIncomes.sort((a, b) => b.year - a.year || b.month - a.month);
+
+		let fallbackIncome = null;
+		if (pastIncomes.length > 0) {
+			fallbackIncome = pastIncomes[0];
+		} else if (validIncomes.length > 0) {
+			validIncomes.sort((a, b) => b.year - a.year || b.month - a.month);
+			fallbackIncome = validIncomes[0];
+		}
+
+		if (fallbackIncome) {
+			incomeA = fallbackIncome.totalIncomeA;
+			incomeB = fallbackIncome.totalIncomeB;
+			isFallback = true;
+		}
+	}
+
+	const settlement = calculateSettlement(incomeA, incomeB, mappedExpenses);
+
+	const totalIncome = incomeA + incomeB;
+	const pctA = totalIncome > 0 ? Math.round((incomeA / totalIncome) * 100) / 100 : 0.5;
+	const pctB = totalIncome > 0 ? Math.round((incomeB / totalIncome) * 100) / 100 : 0.5;
 
 	const totalExpensesAmount = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
 
@@ -32,10 +59,11 @@ export const load: PageServerLoad = async ({ url }) => {
 		settlement,
 		income: {
 			total: totalIncome,
-			person_a: income.totalIncomeA,
+			person_a: incomeA,
 			person_a_pct: pctA,
-			person_b: income.totalIncomeB,
-			person_b_pct: pctB
+			person_b: incomeB,
+			person_b_pct: pctB,
+			isFallback
 		},
 		expenses: {
 			total: totalExpensesAmount,

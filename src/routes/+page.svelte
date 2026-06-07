@@ -87,11 +87,25 @@
 	}
 
 	// Temporary dynamic edit states
-	let incomeAVal = $state(formatIncome(data.income.person_a.toString()));
-	let incomeBVal = $state(formatIncome(data.income.person_b.toString()));
+	let incomeAVal = $state(data.income.isFallback ? '' : formatIncome(data.income.person_a.toString()));
+	let incomeBVal = $state(data.income.isFallback ? '' : formatIncome(data.income.person_b.toString()));
 
-	let currentIncomeANum = $derived(parseFloat(incomeAVal.replace(/\s/g, '')) || 0);
-	let currentIncomeBNum = $derived(parseFloat(incomeBVal.replace(/\s/g, '')) || 0);
+	let currentIncomeANum = $derived.by(() => {
+		const val = incomeAVal.replace(/\s/g, '');
+		if (val === '') {
+			return data.income.isFallback ? data.income.person_a : 0;
+		}
+		return parseFloat(val) || 0;
+	});
+
+	let currentIncomeBNum = $derived.by(() => {
+		const val = incomeBVal.replace(/\s/g, '');
+		if (val === '') {
+			return data.income.isFallback ? data.income.person_b : 0;
+		}
+		return parseFloat(val) || 0;
+	});
+
 	let currentTotalIncome = $derived(currentIncomeANum + currentIncomeBNum);
 
 	let currentPctA = $derived(currentTotalIncome > 0 ? currentIncomeANum / currentTotalIncome : 0.5);
@@ -101,8 +115,8 @@
 
 	// Keep input in sync with server data when month changes
 	$effect(() => {
-		incomeAVal = formatIncome(data.income.person_a.toString());
-		incomeBVal = formatIncome(data.income.person_b.toString());
+		incomeAVal = data.income.isFallback ? '' : formatIncome(data.income.person_a.toString());
+		incomeBVal = data.income.isFallback ? '' : formatIncome(data.income.person_b.toString());
 	});
 
 	let copyStatus = $state('copy');
@@ -137,8 +151,13 @@
 	}
 
 	async function saveIncomes() {
-		const incomeA = Math.round(parseFloat(incomeAVal.replace(/\s/g, '')) || 0);
-		const incomeB = Math.round(parseFloat(incomeBVal.replace(/\s/g, '')) || 0);
+		const valA = incomeAVal.replace(/\s/g, '');
+		const valB = incomeBVal.replace(/\s/g, '');
+		if (valA === '' && valB === '' && data.income.isFallback) {
+			return;
+		}
+		const incomeA = Math.round(parseFloat(valA) || 0);
+		const incomeB = Math.round(parseFloat(valB) || 0);
 		try {
 			const response = await fetch('/api/overview', {
 				method: 'POST',
@@ -290,7 +309,7 @@
 							{/if}
 							<div class="tactile-input" style="display: inline-flex; position: relative; align-items: baseline;">
 								<span class="invisible font-bold text-4xl p-0 whitespace-pre">
-									{incomeAVal || '0'}
+									{incomeAVal || (data.income.isFallback ? formatIncome(data.income.person_a.toString()) : '0')}
 								</span>
 								<input
 									id="incomeA"
@@ -304,11 +323,13 @@
 									}}
 									oninput={(e) => handleIncomeInput(e, 'A')}
 									onblur={() => {
-										if (incomeAVal === '') incomeAVal = '0';
+										if (incomeAVal === '' && !data.income.isFallback) {
+											incomeAVal = '0';
+										}
 										saveIncomes();
 									}}
-									class="absolute left-0 top-0 w-full h-full font-bold text-4xl p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none"
-									placeholder="0"
+									class="absolute left-0 top-0 w-full h-full font-bold text-4xl p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none {data.income.isFallback && incomeAVal === '' ? 'opacity-40' : ''}"
+									placeholder={data.income.isFallback ? formatIncome(data.income.person_a.toString()) : '0'}
 								/>
 							</div>
 							{#if !currencyConfig.isPrefix}
@@ -325,7 +346,7 @@
 							{/if}
 							<div class="tactile-input" style="display: inline-flex; position: relative; align-items: baseline;">
 								<span class="invisible font-bold text-4xl p-0 whitespace-pre">
-									{incomeBVal || '0'}
+									{incomeBVal || (data.income.isFallback ? formatIncome(data.income.person_b.toString()) : '0')}
 								</span>
 								<input
 									id="incomeB"
@@ -339,11 +360,13 @@
 									}}
 									oninput={(e) => handleIncomeInput(e, 'B')}
 									onblur={() => {
-										if (incomeBVal === '') incomeBVal = '0';
+										if (incomeBVal === '' && !data.income.isFallback) {
+											incomeBVal = '0';
+										}
 										saveIncomes();
 									}}
-									class="absolute left-0 top-0 w-full h-full font-bold text-4xl p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none"
-									placeholder="0"
+									class="absolute left-0 top-0 w-full h-full font-bold text-4xl p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none {data.income.isFallback && incomeBVal === '' ? 'opacity-40' : ''}"
+									placeholder={data.income.isFallback ? formatIncome(data.income.person_b.toString()) : '0'}
 								/>
 							</div>
 							{#if !currencyConfig.isPrefix}
