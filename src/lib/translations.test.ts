@@ -36,8 +36,8 @@ describe('translate', () => {
 	});
 
 	it('should translate correctly for other common keys', () => {
-		expect(translate('en-US', 'createNewTemplate')).toBe('Create New Template');
-		expect(translate('sv-SE', 'createNewTemplate')).toBe('Skapa ny mall');
+		expect(translate('en-US', 'createNewTemplate')).toBe('Create New Expense');
+		expect(translate('sv-SE', 'createNewTemplate')).toBe('Skapa ny utgift');
 		
 		expect(translate('en-US', 'placeholderExpenseName')).toBe('e.g. Electricity, Groceries');
 		expect(translate('sv-SE', 'placeholderExpenseName')).toBe('t.ex. El, Matvaror');
