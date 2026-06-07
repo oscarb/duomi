@@ -317,7 +317,7 @@
 						</div>
 
 						{#if editSplitType === 'static'}
-							<div class="space-y-2 pt-2">
+							<div class="space-y-1 pt-1.5">
 								<div class="flex justify-between text-xs font-bold text-[#2d3142]">
 									<span>{data.personAName}: {Math.round(editRatio * 100)}%</span>
 									<span>{data.personBName}: {Math.round((1 - editRatio) * 100)}%</span>
@@ -332,7 +332,8 @@
 									oninput={(e) => {
 										editRatio = snapRatio(parseFloat((e.target as HTMLInputElement).value));
 									}}
-									class="w-full h-1.5 bg-[#efeeea] rounded-lg appearance-none cursor-pointer accent-[#ff7361]"
+									class="w-full cursor-pointer appearance-none rounded-lg"
+									style="background: linear-gradient(to right, #ff7361 0%, #ff7361 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
 								/>
 							</div>
 						{/if}
@@ -516,7 +517,7 @@
 									<input type="hidden" name="splitType" value={editSplitType} />
 
 									{#if editSplitType === 'static'}
-										<div class="space-y-1.5 pt-1">
+										<div class="space-y-1 pt-0.5">
 											<div class="flex justify-between text-sm font-bold text-[#2d3142]">
 												<span>{data.personAName} <span class="text-[#ff7361] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
 												<span><span class="mr-0.5">{data.personBName}</span> <span class="text-[#4fd1c5]">{Math.round((1 - editRatio) * 100)}%</span></span>
@@ -531,21 +532,22 @@
 												oninput={(e) => {
 													editRatio = snapRatio(parseFloat((e.target as HTMLInputElement).value));
 												}}
-												class="w-full h-1.5 bg-[#efeeea] rounded-lg appearance-none cursor-pointer accent-[#ff7361]"
+												class="w-full cursor-pointer appearance-none rounded-lg"
+												style="background: linear-gradient(to right, #ff7361 0%, #ff7361 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
 											/>
-											<div class="flex justify-between text-[10px] font-bold text-[#9ca3af]">
+											<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
 												<span>{formatter.format(Math.round(selectedExpense.currentAmount * editRatio))}</span>
 												<span>{formatter.format(Math.round(selectedExpense.currentAmount * (1 - editRatio)))}</span>
 											</div>
 											<p class="text-[10px] text-[#9ca3af] font-medium italic text-center mt-1">{t('overrideSliderDesc')}</p>
 										</div>
 									{:else}
-										<div class="space-y-1.5">
+										<div class="space-y-1 pt-0.5">
 											<div class="flex justify-between text-sm font-bold text-[#2d3142]">
 												<span>{data.personAName} <span class="text-[#ff7361] ml-0.5">{Math.round(data.dynamicSplitRatioA * 100)}%</span></span>
 												<span><span class="mr-0.5">{data.personBName}</span> <span class="text-[#4fd1c5]">{Math.round((1 - data.dynamicSplitRatioA) * 100)}%</span></span>
 											</div>
-											<div class="flex justify-between text-[10px] font-bold text-[#9ca3af]">
+											<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
 												<span>{formatter.format(Math.round(selectedExpense.currentAmount * data.dynamicSplitRatioA))}</span>
 												<span>{formatter.format(Math.round(selectedExpense.currentAmount * (1 - data.dynamicSplitRatioA)))}</span>
 											</div>
