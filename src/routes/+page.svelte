@@ -41,12 +41,54 @@
 
 	import { calculateSettlement } from '$lib/calculations';
 
-	// Temporary dynamic edit states
-	let incomeAVal = $state(data.income.person_a.toString());
-	let incomeBVal = $state(data.income.person_b.toString());
+	function formatIncome(val: string): string {
+		const clean = val.replace(/\D/g, '');
+		if (!clean) return '';
+		return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+	}
 
-	let currentIncomeANum = $derived(parseFloat(incomeAVal) || 0);
-	let currentIncomeBNum = $derived(parseFloat(incomeBVal) || 0);
+	function handleIncomeInput(e: Event, key: 'A' | 'B') {
+		const input = e.target as HTMLInputElement;
+		const cursorPosition = input.selectionStart || 0;
+		const originalValue = input.value;
+
+		let clean = originalValue.replace(/\D/g, '');
+		clean = clean.slice(0, 7); // Max 7 digits
+		const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+		const digitsBeforeCursor = originalValue.slice(0, cursorPosition).replace(/\D/g, '').length;
+
+		if (key === 'A') {
+			incomeAVal = formatted;
+		} else {
+			incomeBVal = formatted;
+		}
+
+		input.value = formatted;
+
+		let newCursorPosition = 0;
+		let digitsFound = 0;
+		for (let i = 0; i < formatted.length; i++) {
+			if (formatted[i] !== ' ') {
+				digitsFound++;
+			}
+			newCursorPosition = i + 1;
+			if (digitsFound === digitsBeforeCursor) {
+				break;
+			}
+		}
+
+		queueMicrotask(() => {
+			input.setSelectionRange(newCursorPosition, newCursorPosition);
+		});
+	}
+
+	// Temporary dynamic edit states
+	let incomeAVal = $state(formatIncome(data.income.person_a.toString()));
+	let incomeBVal = $state(formatIncome(data.income.person_b.toString()));
+
+	let currentIncomeANum = $derived(parseFloat(incomeAVal.replace(/\s/g, '')) || 0);
+	let currentIncomeBNum = $derived(parseFloat(incomeBVal.replace(/\s/g, '')) || 0);
 	let currentTotalIncome = $derived(currentIncomeANum + currentIncomeBNum);
 
 	let currentPctA = $derived(currentTotalIncome > 0 ? currentIncomeANum / currentTotalIncome : 0.5);
@@ -56,8 +98,8 @@
 
 	// Keep input in sync with server data when month changes
 	$effect(() => {
-		incomeAVal = data.income.person_a.toString();
-		incomeBVal = data.income.person_b.toString();
+		incomeAVal = formatIncome(data.income.person_a.toString());
+		incomeBVal = formatIncome(data.income.person_b.toString());
 	});
 
 	let copyStatus = $state('copy');
@@ -79,8 +121,8 @@
 	}
 
 	async function saveIncomes() {
-		const incomeA = Math.round(parseFloat(incomeAVal) || 0);
-		const incomeB = Math.round(parseFloat(incomeBVal) || 0);
+		const incomeA = Math.round(parseFloat(incomeAVal.replace(/\s/g, '')) || 0);
+		const incomeB = Math.round(parseFloat(incomeBVal.replace(/\s/g, '')) || 0);
 		try {
 			const response = await fetch('/api/overview', {
 				method: 'POST',
@@ -228,21 +270,12 @@
 								name="incomeA"
 								type="text"
 								inputmode="numeric"
-								pattern="[0-9]*"
+								pattern="[0-9\s]*"
 								value={incomeAVal}
 								onfocus={() => {
 									if (incomeAVal === '0') incomeAVal = '';
 								}}
-								oninput={(e) => {
-									let clean = (e.target as HTMLInputElement).value.replace(/\D/g, '');
-									if (clean !== '') {
-										const num = parseInt(clean, 10);
-										clean = num.toString();
-									}
-									clean = clean.slice(0, 7);
-									(e.target as HTMLInputElement).value = clean;
-									incomeAVal = clean;
-								}}
+								oninput={(e) => handleIncomeInput(e, 'A')}
 								onblur={() => {
 									if (incomeAVal === '') incomeAVal = '0';
 									saveIncomes();
@@ -268,21 +301,12 @@
 								name="incomeB"
 								type="text"
 								inputmode="numeric"
-								pattern="[0-9]*"
+								pattern="[0-9\s]*"
 								value={incomeBVal}
 								onfocus={() => {
 									if (incomeBVal === '0') incomeBVal = '';
 								}}
-								oninput={(e) => {
-									let clean = (e.target as HTMLInputElement).value.replace(/\D/g, '');
-									if (clean !== '') {
-										const num = parseInt(clean, 10);
-										clean = num.toString();
-									}
-									clean = clean.slice(0, 7);
-									(e.target as HTMLInputElement).value = clean;
-									incomeBVal = clean;
-								}}
+								oninput={(e) => handleIncomeInput(e, 'B')}
 								onblur={() => {
 									if (incomeBVal === '') incomeBVal = '0';
 									saveIncomes();
