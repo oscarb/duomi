@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { db, sqlite } from './index';
 import { incomes, accounts, expenses, expenseAmounts } from './schema';
-import { getMonthlyIncomes, setMonthlyIncome, getActiveExpensesForMonth, addExpense, addAccount, getAccounts } from './queries';
+import { getMonthlyIncomes, setMonthlyIncome, getActiveExpensesForMonth, addExpense, addAccount, getAccounts, updateExpenseAmount } from './queries';
 import { eq } from 'drizzle-orm';
 
 describe('Database Queries', () => {
@@ -15,6 +15,29 @@ describe('Database Queries', () => {
 
 	afterEach(() => {
 		// Clean up
+	});
+
+	it('should update expense amount and create new history entries on new dates', async () => {
+		const [acc] = await db.insert(accounts).values({ name: 'Main Account', owner: 'A' }).returning();
+		const rentId = await addExpense('Rent', 'A', 1, 'dynamic', null, acc.id, 2400, '2026-08-01');
+
+		// 1. Same date update: should update existing
+		await updateExpenseAmount(rentId, 2500, '2026-08-01');
+		let amounts = await db.select().from(expenseAmounts).where(eq(expenseAmounts.expenseId, rentId)).all();
+		expect(amounts.length).toBe(1);
+		expect(amounts[0].amount).toBe(2500);
+
+		// 2. Different date (same month): should insert new history entry
+		await updateExpenseAmount(rentId, 2600, '2026-08-15');
+		amounts = await db.select().from(expenseAmounts).where(eq(expenseAmounts.expenseId, rentId)).all();
+		expect(amounts.length).toBe(2);
+		
+		// Sort by date to verify
+		amounts.sort((a, b) => a.validFrom.localeCompare(b.validFrom));
+		expect(amounts[0].validFrom).toBe('2026-08-01');
+		expect(amounts[0].amount).toBe(2500);
+		expect(amounts[1].validFrom).toBe('2026-08-15');
+		expect(amounts[1].amount).toBe(2600);
 	});
 
 	it('should set and get monthly incomes correctly', async () => {

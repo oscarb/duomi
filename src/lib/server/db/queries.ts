@@ -118,6 +118,7 @@ export async function getActiveExpensesForMonth(year: number, month: number) {
 		accountId: number | null;
 		accountName: string | null;
 		amount: number;
+		latestAmount: number;
 		validFrom: string;
 		nextPaymentDate: string | null;
 	}> = [];
@@ -169,6 +170,8 @@ export async function getActiveExpensesForMonth(year: number, month: number) {
 				nextPaymentDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
 			}
 
+			const absoluteLatestCost = costs.sort((a, b) => b.validFrom.localeCompare(a.validFrom))[0];
+
 			activeExpenses.push({
 				id: expense.id,
 				name: expense.name,
@@ -180,6 +183,7 @@ export async function getActiveExpensesForMonth(year: number, month: number) {
 				accountId: expense.accountId,
 				accountName: row.accountName,
 				amount: activeCost.amount,
+				latestAmount: absoluteLatestCost ? absoluteLatestCost.amount : activeCost.amount,
 				validFrom: activeCost.validFrom,
 				nextPaymentDate
 			});
@@ -230,19 +234,19 @@ export async function addExpense(
 }
 
 export async function updateExpenseAmount(expenseId: number, amount: number, validFrom: string) {
-	// Update or insert an amount for an expense in the target month.
-	// If an amount exists in the same YYYY-MM month, we update its amount.
+	// Update or insert an amount for an expense on a target date.
+	// If an amount exists on the exact same date (YYYY-MM-DD), we update its amount.
 	// Otherwise, we insert a new amount.
-	const targetMonthPrefix = validFrom.substring(0, 7); // e.g. "YYYY-MM"
-	const existingCosts = await db
+	const existing = await db
 		.select()
 		.from(expenseAmounts)
-		.where(eq(expenseAmounts.expenseId, expenseId))
-		.all();
-
-	const existing = existingCosts
-		.filter(c => c.validFrom.startsWith(targetMonthPrefix))
-		.sort((a, b) => b.validFrom.localeCompare(a.validFrom))[0];
+		.where(
+			and(
+				eq(expenseAmounts.expenseId, expenseId),
+				eq(expenseAmounts.validFrom, validFrom)
+			)
+		)
+		.get();
 
 	if (existing) {
 		await db
