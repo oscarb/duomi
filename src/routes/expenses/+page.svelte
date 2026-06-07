@@ -205,7 +205,7 @@
 					
 					<form method="POST" action="?/create" use:enhance class="space-y-6">
 						<div class="space-y-1.5">
-							<label class="text-[10px] font-black text-[#9ca3af] uppercase tracking-wider" for="new-name">{t('expenseName')}</label>
+							<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-name">{t('expenseName')}</label>
 							<input
 								id="new-name"
 								name="name"
@@ -218,7 +218,7 @@
 
 						<div class="grid grid-cols-2 gap-4">
 							<div class="space-y-1.5">
-								<label class="text-[10px] font-black text-[#9ca3af] uppercase tracking-wider" for="new-paidBy">{t('detailPaidBy')}</label>
+								<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-paidBy">{t('detailPaidBy')}</label>
 								<select
 									id="new-paidBy"
 									name="paidBy"
@@ -231,7 +231,7 @@
 							</div>
 
 							<div class="space-y-1.5">
-								<label class="text-[10px] font-black text-[#9ca3af] uppercase tracking-wider" for="new-interval">{t('frequency')}</label>
+								<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-interval">{t('frequency')}</label>
 								<select
 									id="new-interval"
 									name="intervalMonths"
@@ -247,7 +247,7 @@
 
 						<div class="grid grid-cols-2 gap-4">
 							<div class="space-y-1.5">
-								<label class="text-[10px] font-black text-[#9ca3af] uppercase tracking-wider" for="new-amount">{t('amountLabel', { symbol: currencyConfig.symbol })}</label>
+								<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-amount">{t('amountLabel', { symbol: currencyConfig.symbol })}</label>
 								<div class="relative flex items-center">
 									{#if currencyConfig.isPrefix}
 										<span class="absolute left-4 text-xs font-bold text-[#9ca3af]">{currencyConfig.symbol}</span>
@@ -268,7 +268,7 @@
 							</div>
 
 							<div class="space-y-1.5">
-								<label class="text-[10px] font-black text-[#9ca3af] uppercase tracking-wider" for="new-validFrom">{t('startMonth')}</label>
+								<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-validFrom">{t('startMonth')}</label>
 								<input
 									id="new-validFrom"
 									name="validFrom"
@@ -281,7 +281,7 @@
 						</div>
 
 						<div class="space-y-3">
-							<label class="text-[10px] font-black text-[#9ca3af] uppercase tracking-wider block" for="new-splitType">{t('splitType')}</label>
+							<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider block" for="new-splitType">{t('splitType')}</label>
 							<div class="grid grid-cols-2 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
 								<button
 									type="button"
@@ -323,7 +323,7 @@
 						{/if}
 
 						<div class="space-y-1.5">
-							<label class="text-[10px] font-black text-[#9ca3af] uppercase tracking-wider" for="new-account">{t('paidFrom')}</label>
+							<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-account">{t('paidFrom')}</label>
 							<select
 								id="new-account"
 								name="accountId"
@@ -467,7 +467,7 @@
 
 							<!-- Paid By select -->
 							<div class="space-y-1.5">
-								<label class="text-[10px] font-black text-[#9ca3af] uppercase tracking-wider" for="detail-paidBy">{t('detailPaidBy')}</label>
+								<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="detail-paidBy">{t('detailPaidBy')}</label>
 								<select
 									id="detail-paidBy"
 									name="paidBy"
@@ -481,7 +481,7 @@
 
 							<!-- Splitting Ratio Section -->
 							<div class="pt-2">
-								<p class="text-[10px] font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('splittingRatio')}</p>
+								<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('splittingRatio')}</p>
 								<div class="space-y-4">
 									<div class="grid grid-cols-2 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
 										<button
@@ -542,7 +542,7 @@
 
 							<!-- Source Account -->
 							<div class="pt-6 border-t border-[#efeeea]">
-								<p class="text-[10px] font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('source')}</p>
+								<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('source')}</p>
 								<div class="flex flex-wrap gap-2">
 									{#each data.accounts as acc}
 										<button
@@ -571,7 +571,7 @@
 
 							<!-- Frequency Section -->
 							<div class="pt-6 border-t border-[#efeeea]">
-								<p class="text-[10px] font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('frequency')}</p>
+								<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('frequency')}</p>
 								<div class="grid grid-cols-4 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
 									<button
 										type="button"
@@ -616,7 +616,7 @@
 
 							<!-- Price History Section -->
 							<div class="pt-6 border-t border-[#efeeea]">
-								<p class="text-[10px] font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('priceHistory')}</p>
+								<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('priceHistory')}</p>
 								<table class="w-full text-xs">
 									<tbody class="divide-y divide-[#efeeea] text-[#2d3142]">
 										{#each [...selectedExpense.history].sort((a,b) => b.validFrom.localeCompare(a.validFrom)) as hist}
@@ -675,7 +675,7 @@
 			
 			<div class="space-y-4">
 				<div class="space-y-1">
-					<label class="text-[10px] font-black text-[#9ca3af] uppercase tracking-wider" for="new-acc-name">{t('accountName')}</label>
+					<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-acc-name">{t('accountName')}</label>
 					<input
 						id="new-acc-name"
 						type="text"
@@ -686,7 +686,7 @@
 				</div>
 
 				<div class="space-y-1">
-					<label class="text-[10px] font-black text-[#9ca3af] uppercase tracking-wider" for="new-acc-owner">{t('owner')}</label>
+					<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-acc-owner">{t('owner')}</label>
 					<select
 						id="new-acc-owner"
 						bind:value={newAccountOwner}
