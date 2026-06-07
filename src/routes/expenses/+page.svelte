@@ -352,7 +352,7 @@
 										name="name"
 										type="text"
 										bind:value={editName}
-										class="w-full font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-transparent hover:border-[#efeeea] focus:border-[#ff7361] p-0 focus:ring-0 pb-1"
+										class="w-1/2 min-w-[200px] font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 pb-1 transition-colors duration-200"
 									/>
 									<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px] uppercase tracking-wider">
 										<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
