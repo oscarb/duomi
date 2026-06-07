@@ -234,7 +234,7 @@
 					<div class="text-[#ff7361] font-bold text-5xl flex items-center justify-center mb-6">
 						{#each formatter.formatToParts(Math.round(currentSettlement.amount)) as part}
 							{#if part.type === 'currency'}
-								<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+								<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-2' : 'ml-2'}">{part.value}</span>
 							{:else if part.type !== 'literal'}
 								{part.value}
 							{/if}
@@ -286,7 +286,7 @@
 						<label for="incomeA" class="block text-[#9ca3af] text-xs uppercase tracking-widest font-medium">{data.personAName}</label>
 						<div class="text-4xl font-bold text-[#2d3142] flex items-baseline">
 							{#if currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 mr-1">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-50 mr-2">{currencyConfig.symbol}</span>
 							{/if}
 							<div class="tactile-input" style="display: inline-flex; position: relative; align-items: baseline;">
 								<span class="invisible font-bold text-4xl p-0 whitespace-pre">
@@ -312,7 +312,7 @@
 								/>
 							</div>
 							{#if !currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 ml-1">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-50 ml-2">{currencyConfig.symbol}</span>
 							{/if}
 						</div>
 					</div>
@@ -321,7 +321,7 @@
 						<label for="incomeB" class="block text-[#9ca3af] text-xs uppercase tracking-widest font-medium">{data.personBName}</label>
 						<div class="text-4xl font-bold text-[#2d3142] flex items-baseline">
 							{#if currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 mr-1">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-50 mr-2">{currencyConfig.symbol}</span>
 							{/if}
 							<div class="tactile-input" style="display: inline-flex; position: relative; align-items: baseline;">
 								<span class="invisible font-bold text-4xl p-0 whitespace-pre">
@@ -347,7 +347,7 @@
 								/>
 							</div>
 							{#if !currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 ml-1">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-50 ml-2">{currencyConfig.symbol}</span>
 							{/if}
 						</div>
 					</div>
