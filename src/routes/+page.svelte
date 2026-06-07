@@ -231,11 +231,11 @@
 							{currentSettlement.payer === 'A' ? data.personBName : data.personAName}
 						</h2>
 					</div>
-					<div class="text-[#ff7361] font-bold text-5xl flex items-center justify-center gap-2 mb-6">
+					<div class="text-[#ff7361] font-bold text-5xl flex items-center justify-center mb-6">
 						{#each formatter.formatToParts(Math.round(currentSettlement.amount)) as part}
 							{#if part.type === 'currency'}
 								<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-0.5' : 'ml-0.5'}">{part.value}</span>
-							{:else}
+							{:else if part.type !== 'literal'}
 								{part.value}
 							{/if}
 						{/each}
@@ -275,7 +275,9 @@
 							{#if part.type === 'currency'}
 								<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-0.5' : 'ml-0.5'}">{part.value}</span>
 							{:else}
-								{part.value}
+								{#if part.type !== 'literal'}
+									{part.value}
+								{/if}
 							{/if}
 						{/each}
 					</span>
@@ -412,7 +414,7 @@
 						{#each formatter.formatToParts(Math.round(data.expenses.total)) as part}
 							{#if part.type === 'currency'}
 								<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-0.5' : 'ml-0.5'}">{part.value}</span>
-							{:else}
+							{:else if part.type !== 'literal'}
 								{part.value}
 							{/if}
 						{/each}
@@ -427,7 +429,7 @@
 							{#each formatter.formatToParts(Math.round(totalPaidByA)) as part}
 								{#if part.type === 'currency'}
 									<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-0.5' : 'ml-0.5'}">{part.value}</span>
-								{:else}
+								{:else if part.type !== 'literal'}
 									{part.value}
 								{/if}
 							{/each}
@@ -445,7 +447,7 @@
 											{#each formatter.formatToParts(Math.round(groupTotal)) as part}
 												{#if part.type === 'currency'}
 													<span class="opacity-50 {currencyConfig.isPrefix ? 'mr-0.5' : 'ml-0.5'}">{part.value}</span>
-												{:else}
+												{:else if part.type !== 'literal'}
 													{part.value}
 												{/if}
 											{/each}
@@ -478,7 +480,7 @@
 															{#each formatter.formatToParts(Math.round(item.amount)) as part}
 																{#if part.type === 'currency'}
 																	<span class="text-[#9ca3af] opacity-40 font-normal {currencyConfig.isPrefix ? 'mr-0.5' : 'ml-0.5'}">{part.value}</span>
-																{:else}
+																{:else if part.type !== 'literal'}
 																	<span class="tactile-input leading-none">{part.value}</span>
 																{/if}
 															{/each}
@@ -510,7 +512,7 @@
 							{#each formatter.formatToParts(Math.round(totalPaidByB)) as part}
 								{#if part.type === 'currency'}
 									<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-0.5' : 'ml-0.5'}">{part.value}</span>
-								{:else}
+								{:else if part.type !== 'literal'}
 									{part.value}
 								{/if}
 							{/each}
@@ -528,7 +530,7 @@
 											{#each formatter.formatToParts(Math.round(groupTotal)) as part}
 												{#if part.type === 'currency'}
 													<span class="opacity-50 {currencyConfig.isPrefix ? 'mr-0.5' : 'ml-0.5'}">{part.value}</span>
-												{:else}
+												{:else if part.type !== 'literal'}
 													{part.value}
 												{/if}
 											{/each}
@@ -561,7 +563,7 @@
 															{#each formatter.formatToParts(Math.round(item.amount)) as part}
 																{#if part.type === 'currency'}
 																	<span class="text-[#9ca3af] opacity-40 font-normal {currencyConfig.isPrefix ? 'mr-0.5' : 'ml-0.5'}">{part.value}</span>
-																{:else}
+																{:else if part.type !== 'literal'}
 																	<span class="tactile-input leading-none">{part.value}</span>
 																{/if}
 															{/each}
