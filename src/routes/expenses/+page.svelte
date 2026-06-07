@@ -219,11 +219,11 @@
 								>
 									<div class="flex flex-col flex-grow">
 										<span class="font-bold text-sm text-[#2d3142] hover:text-[#ff7361] transition-colors underline decoration-[#efeeea] hover:decoration-[#ff7361]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
-										<div class="mt-1.5 w-24 h-1.5 bg-[#ff7361] rounded-full overflow-hidden flex">
+										<div class="mt-1.5 w-24 h-1.5 bg-[#4fd1c5] rounded-full overflow-hidden flex">
 											{#if item.splitType === 'static'}
-												<div class="bg-[#4fd1c5] h-full" style="width: {(1 - (item.staticSplitRatio ?? 0.5)) * 100}%"></div>
+												<div class="bg-[#ff7361] h-full" style="width: {(item.staticSplitRatio ?? 0.5) * 100}%"></div>
 											{:else}
-												<div class="bg-[#4fd1c5] h-full" style="width: {(1 - data.dynamicSplitRatioA) * 100}%"></div>
+												<div class="bg-[#ff7361] h-full" style="width: {data.dynamicSplitRatioA * 100}%"></div>
 											{/if}
 										</div>
 									</div>
