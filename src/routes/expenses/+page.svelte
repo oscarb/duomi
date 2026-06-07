@@ -383,11 +383,11 @@
 											<div class="flex items-center">
 												<span class="text-2xl font-bold text-[#2d3142] tracking-tight">
 													{#if currencyConfig.isPrefix}
-														<span class="text-[#9ca3af] mr-1 inline-block" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
+														<span class="text-[#9ca3af] mr-0.5 inline-block" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
 													{/if}
 													{Math.round(selectedExpense.currentAmount)}
 													{#if !currencyConfig.isPrefix}
-														<span class="text-[#9ca3af] ml-1 inline-block">{currencyConfig.symbol}</span>
+														<span class="text-[#9ca3af] ml-0.5 inline-block">{currencyConfig.symbol}</span>
 													{/if}
 												</span>
 											</div>
@@ -404,7 +404,7 @@
 										<div class="flex flex-col items-end space-y-2">
 											<div class="flex items-center">
 												{#if currencyConfig.isPrefix}
-													<span class="text-2xl font-bold text-[#9ca3af] mr-1" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
+													<span class="text-2xl font-bold text-[#9ca3af] mr-0.5" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
 												{/if}
 												<input
 													type="number"
@@ -413,7 +413,7 @@
 													class="w-32 p-0 bg-transparent border-0 border-b-2 border-[#ff7361]/30 focus:border-[#ff7361] font-bold text-2xl text-[#2d3142] focus:ring-0 outline-none text-right pb-0.5"
 												/>
 												{#if !currencyConfig.isPrefix}
-													<span class="text-2xl font-bold text-[#9ca3af] ml-1">{currencyConfig.symbol}</span>
+													<span class="text-2xl font-bold text-[#9ca3af] ml-0.5">{currencyConfig.symbol}</span>
 												{/if}
 											</div>
 											<div class="flex items-center gap-1.5">
