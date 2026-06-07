@@ -439,21 +439,23 @@
 							{#each Object.entries(groupedExpensesA) as [accountName, group]}
 								{@const groupTotal = group.items.reduce((sum, e) => sum + e.amount, 0)}
 								<div class="mb-6">
-									<div class="flex justify-between items-center mb-3 px-1">
-										<h4 class="text-[11px] font-bold text-[#9ca3af]/60 uppercase tracking-wider">{accountName === 'No Account' ? t('noAccount') : accountName}</h4>
-										<span class="text-[11px] font-bold text-[#9ca3af]/60 uppercase tracking-wider">
-											{#each formatter.formatToParts(Math.round(groupTotal)) as part}
-												{#if part.type === 'currency'}
-													<span class="opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
-												{:else if part.type !== 'literal'}
-													{part.value}
-												{/if}
-											{/each}
-										</span>
-									</div>
+									{#if accountName !== 'No Account'}
+										<div class="flex justify-between items-center mb-3 px-1">
+											<h4 class="text-[11px] font-bold text-[#9ca3af]/60 uppercase tracking-wider">{accountName}</h4>
+											<span class="text-[11px] font-bold text-[#9ca3af]/60 uppercase tracking-wider">
+												{#each formatter.formatToParts(Math.round(groupTotal)) as part}
+													{#if part.type === 'currency'}
+														<span class="opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+													{:else if part.type !== 'literal'}
+														{part.value}
+													{/if}
+												{/each}
+											</span>
+										</div>
+									{/if}
 									<ul class="space-y-3">
 										{#each group.items as item}
-											<li class="flex justify-between items-center px-1 pl-4">
+											<li class="flex justify-between items-center px-1 {accountName === 'No Account' ? 'pl-1' : 'pl-4'}">
 												<div class="w-full flex items-center justify-between">
 													<div class="flex items-center gap-3">
 														<a
@@ -504,7 +506,7 @@
 									</ul>
 									<a
 										href="/expenses?new=true&paidBy=A{group.accountId ? `&accountId=${group.accountId}` : ''}&year={data.period.year}&month={data.period.month}"
-										class="flex items-center text-sm mt-2 font-semibold ml-4 text-[#ff7361] hover:opacity-80 transition-opacity"
+										class="flex items-center text-sm mt-2 font-semibold {accountName === 'No Account' ? 'ml-1' : 'ml-4'} text-[#ff7361] hover:opacity-80 transition-opacity"
 									>
 										<span class="mr-1 text-base font-bold">+</span> {t('addExpense')}
 									</a>
@@ -536,21 +538,23 @@
 							{#each Object.entries(groupedExpensesB) as [accountName, group]}
 								{@const groupTotal = group.items.reduce((sum, e) => sum + e.amount, 0)}
 								<div class="mb-6">
-									<div class="flex justify-between items-center mb-3 px-1">
-										<h4 class="text-[11px] font-bold text-[#9ca3af]/60 uppercase tracking-wider">{accountName === 'No Account' ? t('noAccount') : accountName}</h4>
-										<span class="text-[11px] font-bold text-[#9ca3af]/60 uppercase tracking-wider">
-											{#each formatter.formatToParts(Math.round(groupTotal)) as part}
-												{#if part.type === 'currency'}
-													<span class="opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
-												{:else if part.type !== 'literal'}
-													{part.value}
-												{/if}
-											{/each}
-										</span>
-									</div>
+									{#if accountName !== 'No Account'}
+										<div class="flex justify-between items-center mb-3 px-1">
+											<h4 class="text-[11px] font-bold text-[#9ca3af]/60 uppercase tracking-wider">{accountName}</h4>
+											<span class="text-[11px] font-bold text-[#9ca3af]/60 uppercase tracking-wider">
+												{#each formatter.formatToParts(Math.round(groupTotal)) as part}
+													{#if part.type === 'currency'}
+														<span class="opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+													{:else if part.type !== 'literal'}
+														{part.value}
+													{/if}
+												{/each}
+											</span>
+										</div>
+									{/if}
 									<ul class="space-y-3">
 										{#each group.items as item}
-											<li class="flex justify-between items-center px-1 pl-4">
+											<li class="flex justify-between items-center px-1 {accountName === 'No Account' ? 'pl-1' : 'pl-4'}">
 												<div class="w-full flex items-center justify-between">
 													<div class="flex items-center gap-3">
 														<a
@@ -601,7 +605,7 @@
 									</ul>
 									<a
 										href="/expenses?new=true&paidBy=B{group.accountId ? `&accountId=${group.accountId}` : ''}&year={data.period.year}&month={data.period.month}"
-										class="flex items-center text-sm mt-2 font-semibold ml-4 text-[#ff7361] hover:opacity-80 transition-opacity"
+										class="flex items-center text-sm mt-2 font-semibold {accountName === 'No Account' ? 'ml-1' : 'ml-4'} text-[#ff7361] hover:opacity-80 transition-opacity"
 									>
 										<span class="mr-1 text-base font-bold">+</span> {t('addExpense')}
 									</a>
