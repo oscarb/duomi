@@ -397,7 +397,7 @@
 													{#if currencyConfig.isPrefix}
 														<span class="text-[#9ca3af] mr-1 inline-block" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
 													{/if}
-													{Math.round(selectedExpense.currentAmount)}
+													{new Intl.NumberFormat(locale).format(Math.round(selectedExpense.currentAmount))}
 													{#if !currencyConfig.isPrefix}
 														<span class="text-[#9ca3af] ml-1 inline-block">{currencyConfig.symbol}</span>
 													{/if}
