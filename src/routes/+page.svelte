@@ -53,6 +53,9 @@
 		const originalValue = input.value;
 
 		let clean = originalValue.replace(/\D/g, '');
+		if (clean.startsWith('0')) {
+			clean = '0';
+		}
 		clean = clean.slice(0, 7); // Max 7 digits
 		const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
