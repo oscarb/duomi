@@ -383,9 +383,11 @@
 													{/if}
 												</span>
 											</div>
-											<div class="mt-1 text-right flex items-center gap-1">
-												<span class="text-[12px] text-[#9ca3af]">{t('since')} <span class="font-bold text-[#2d3142]">{selectedExpense.history[selectedExpense.history.length - 1]?.validFrom || ''}</span></span>
-											</div>
+											{#if selectedExpense.intervalMonths !== 0}
+												<div class="mt-1 text-right flex items-center gap-1">
+													<span class="text-[12px] text-[#9ca3af]">{t('since')} <span class="font-bold text-[#2d3142]">{selectedExpense.history[selectedExpense.history.length - 1]?.validFrom || ''}</span></span>
+												</div>
+											{/if}
 											<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none w-8 h-8 bg-white/90 backdrop-blur shadow-sm rounded-full border border-[#ff7361]/20 flex items-center justify-center">
 												<span class="material-symbols-outlined text-[#ff7361] text-[16px]">edit</span>
 											</div>
@@ -398,6 +400,7 @@
 													<span class="text-2xl font-bold text-[#9ca3af] mr-1" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
 												{/if}
 												<input
+													name="amount"
 													type="number"
 													step="1"
 													bind:value={editPriceVal}
@@ -407,14 +410,19 @@
 													<span class="text-2xl font-bold text-[#9ca3af] ml-1">{currencyConfig.symbol}</span>
 												{/if}
 											</div>
-											<div class="flex items-center gap-1.5">
-												<span class="text-[12px] text-[#9ca3af]">{t('since')}</span>
-												<input
-													type="date"
-													bind:value={editPriceDate}
-													class="px-1.5 py-0.5 rounded border border-[#efeeea] bg-[#fbf9f5] text-[12px] font-bold text-[#2d3142] focus:border-[#ff7361] focus:ring-0 outline-none"
-												/>
-											</div>
+											{#if selectedExpense.intervalMonths !== 0}
+												<div class="flex items-center gap-1.5">
+													<span class="text-[12px] text-[#9ca3af]">{t('since')}</span>
+													<input
+														name="validFrom"
+														type="date"
+														bind:value={editPriceDate}
+														class="px-1.5 py-0.5 rounded border border-[#efeeea] bg-[#fbf9f5] text-[12px] font-bold text-[#2d3142] focus:border-[#ff7361] focus:ring-0 outline-none"
+													/>
+												</div>
+											{:else}
+												<input type="hidden" name="validFrom" value={selectedExpense.history[selectedExpense.history.length - 1]?.validFrom || ''} />
+											{/if}
 											<div class="flex gap-2 pt-1">
 												<button
 													type="button"
