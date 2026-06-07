@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { getContext } from 'svelte';
+	import { invalidateAll } from '$app/navigation';
 
 	let { data } = $props();
 
@@ -118,6 +119,77 @@
 		incomeAVal = data.income.isFallback ? '' : formatIncome(data.income.person_a.toString());
 		incomeBVal = data.income.isFallback ? '' : formatIncome(data.income.person_b.toString());
 	});
+
+	let expenseAmounts = $state<Record<number, string>>({});
+
+	$effect(() => {
+		const newAmounts: Record<number, string> = {};
+		for (const item of data.expenses.items) {
+			newAmounts[item.id] = formatIncome(Math.round(item.amount).toString());
+		}
+		expenseAmounts = newAmounts;
+	});
+
+	function handleExpenseCostInput(e: Event, id: number) {
+		const input = e.target as HTMLInputElement;
+		const cursorPosition = input.selectionStart || 0;
+		const originalValue = input.value;
+
+		let clean = originalValue.replace(/\D/g, '');
+		if (clean.startsWith('0') && clean.length > 1) {
+			clean = clean.replace(/^0+/, '');
+		}
+		if (clean === '') clean = '0';
+		clean = clean.slice(0, 7); // Max 7 digits
+		const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+		const digitsBeforeCursor = originalValue.slice(0, cursorPosition).replace(/\D/g, '').length;
+
+		expenseAmounts[id] = formatted;
+		input.value = formatted;
+
+		let newCursorPosition = 0;
+		let digitsFound = 0;
+		for (let i = 0; i < formatted.length; i++) {
+			if (formatted[i] !== ' ') {
+				digitsFound++;
+			}
+			newCursorPosition = i + 1;
+			if (digitsFound === digitsBeforeCursor) {
+				break;
+			}
+		}
+
+		queueMicrotask(() => {
+			input.setSelectionRange(newCursorPosition, newCursorPosition);
+		});
+	}
+
+	async function saveExpenseCost(expenseId: number, amountStr: string) {
+		const amount = Math.round(parseFloat(amountStr.replace(/\s/g, '')) || 0);
+		const year = data.period.year;
+		const month = data.period.month;
+		const validFrom = `${year}-${String(month).padStart(2, '0')}-01`;
+
+		try {
+			const response = await fetch('/api/expenses', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					id: expenseId,
+					amount,
+					validFrom
+				})
+			});
+			if (!response.ok) {
+				console.error('Failed to save expense cost:', await response.text());
+			} else {
+				await invalidateAll();
+			}
+		} catch (err) {
+			console.error('Error saving expense cost:', err);
+		}
+	}
 
 	let copyStatus = $state('copy');
 
@@ -507,13 +579,39 @@
 																	{/if}
 																{/each}
 															{/if}
-															<span class="tactile-input leading-none">
-																{#each formatter.formatToParts(Math.round(item.amount)) as part}
-																	{#if part.type !== 'currency' && part.type !== 'literal'}
-																		{part.value}
-																	{/if}
-																{/each}
-															</span>
+															<div class="tactile-input leading-none" style="display: inline-flex; position: relative; align-items: baseline;">
+																<span class="invisible font-semibold text-base p-0 whitespace-pre">
+																	{expenseAmounts[item.id] || '0'}
+																</span>
+																<input
+																	type="text"
+																	inputmode="numeric"
+																	pattern="[0-9\s]*"
+																	value={expenseAmounts[item.id] || ''}
+																	onfocus={() => {
+																		if (expenseAmounts[item.id] === '0') {
+																			expenseAmounts[item.id] = '';
+																		}
+																	}}
+																	oninput={(e) => handleExpenseCostInput(e, item.id)}
+																	onblur={() => {
+																		const prev = formatIncome(Math.round(item.amount).toString());
+																		if (expenseAmounts[item.id] === '') {
+																			expenseAmounts[item.id] = prev;
+																		}
+																		if (expenseAmounts[item.id] !== prev) {
+																			saveExpenseCost(item.id, expenseAmounts[item.id]);
+																		}
+																	}}
+																	onkeydown={(e) => {
+																		if (e.key === 'Enter') {
+																			(e.target as HTMLInputElement).blur();
+																		}
+																	}}
+																	class="absolute left-0 top-0 w-full h-full font-semibold text-base text-[#2d3142] p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none text-right"
+																	placeholder="0"
+																/>
+															</div>
 															{#if !currencyConfig.isPrefix}
 																{#each formatter.formatToParts(Math.round(item.amount)) as part}
 																	{#if part.type === 'currency'}
@@ -606,13 +704,39 @@
 																	{/if}
 																{/each}
 															{/if}
-															<span class="tactile-input leading-none">
-																{#each formatter.formatToParts(Math.round(item.amount)) as part}
-																	{#if part.type !== 'currency' && part.type !== 'literal'}
-																		{part.value}
-																	{/if}
-																{/each}
-															</span>
+															<div class="tactile-input leading-none" style="display: inline-flex; position: relative; align-items: baseline;">
+																<span class="invisible font-semibold text-base p-0 whitespace-pre">
+																	{expenseAmounts[item.id] || '0'}
+																</span>
+																<input
+																	type="text"
+																	inputmode="numeric"
+																	pattern="[0-9\s]*"
+																	value={expenseAmounts[item.id] || ''}
+																	onfocus={() => {
+																		if (expenseAmounts[item.id] === '0') {
+																			expenseAmounts[item.id] = '';
+																		}
+																	}}
+																	oninput={(e) => handleExpenseCostInput(e, item.id)}
+																	onblur={() => {
+																		const prev = formatIncome(Math.round(item.amount).toString());
+																		if (expenseAmounts[item.id] === '') {
+																			expenseAmounts[item.id] = prev;
+																		}
+																		if (expenseAmounts[item.id] !== prev) {
+																			saveExpenseCost(item.id, expenseAmounts[item.id]);
+																		}
+																	}}
+																	onkeydown={(e) => {
+																		if (e.key === 'Enter') {
+																			(e.target as HTMLInputElement).blur();
+																		}
+																	}}
+																	class="absolute left-0 top-0 w-full h-full font-semibold text-base text-[#2d3142] p-0 focus:ring-0 bg-transparent border-0 outline-none focus:outline-none text-right"
+																	placeholder="0"
+																/>
+															</div>
 															{#if !currencyConfig.isPrefix}
 																{#each formatter.formatToParts(Math.round(item.amount)) as part}
 																	{#if part.type === 'currency'}

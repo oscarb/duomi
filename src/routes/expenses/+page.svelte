@@ -549,75 +549,64 @@
 							</button>
 						{:else}
 							<!-- Edit Mode: Inline price transformation -->
-							<div class="flex flex-col items-end space-y-2">
+							<div class="flex flex-col items-end space-y-1.5">
 								<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2">
 									{#if currencyConfig.isPrefix}
 										<span class="text-[#9ca3af] mr-1 inline-block -translate-y-[2px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
 									{/if}
 									<div class="inline-grid grid-cols-1">
-										<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[1px] pr-[6px] pb-[4px] whitespace-pre tracking-tight">{editPriceVal || '0'}</span>
+										<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[3px] pr-[6px] pb-[2px] whitespace-pre tracking-tight">{editPriceVal || '0'}</span>
 										<input
 											type="text"
 											inputmode="numeric"
 											pattern="[0-9\s]*"
 											value={editPriceVal}
 											oninput={handleCostInput}
-											class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pr-[6px] pb-[4px] tracking-tight transition-colors duration-200"
+											class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 pt-[3px] pr-[6px] pb-[2px] focus:ring-0 outline-none focus:outline-none text-right tracking-tight transition-colors duration-200"
+											placeholder="0"
 										/>
 									</div>
 									<input type="hidden" name="amount" value={editPriceVal.replace(/\D/g, '')} />
 									{#if !currencyConfig.isPrefix}
-										<span class="text-[#9ca3af] ml-1 inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
+										<span class="text-[#9ca3af] ml-[-2px] inline-block -translate-y-[3px]">{currencyConfig.symbol}</span>
 									{/if}
 								</div>
-								{#if selectedExpense.intervalMonths !== 0}
-									<div class="flex items-center gap-1.5 mt-2">
+								<div class="flex flex-col items-end space-y-1 mt-1">
+									{#if selectedExpense.intervalMonths !== 0}
 										<input
 											name="validFrom"
 											type="date"
 											bind:value={editPriceDate}
 											class="w-[125px] px-2 py-1 rounded-xl border border-[#efeeea] bg-[#fbf9f5] text-[12px] font-bold text-[#2d3142] focus:border-[#ff7361] focus:ring-2 focus:ring-[#ff7361]/20 outline-none transition-all cursor-pointer"
 										/>
+									{:else}
+										<input type="hidden" name="validFrom" value={selectedExpense.history[selectedExpense.history.length - 1]?.validFrom || ''} />
+									{/if}
+									<div class="flex gap-1.5 pt-0.5">
+										<button
+											type="button"
+											class="px-2 py-1 text-[#9ca3af] font-bold text-[12px] hover:text-[#2d3142]"
+											onclick={() => isPriceEdit = false}
+										>
+											{t('cancel')}
+										</button>
+										<button
+											formaction="?/updatePrice"
+											type="submit"
+											class="px-3 py-1 bg-[#ff7361] text-white rounded text-[12px] font-bold hover:bg-[#ff7361]/90 transition-all shadow-sm"
+											onclick={() => isPriceEdit = false}
+										>
+											{t('save')}
+										</button>
 									</div>
-								{:else}
-									<input type="hidden" name="validFrom" value={selectedExpense.history[selectedExpense.history.length - 1]?.validFrom || ''} />
-								{/if}
-								<div class="flex gap-2">
-									<button
-										type="button"
-										class="px-2 py-1 text-[#9ca3af] font-bold text-[12px] hover:text-[#2d3142]"
-										onclick={() => isPriceEdit = false}
-									>
-										{t('cancel')}
-									</button>
-									<button
-										formaction="?/updatePrice"
-										type="submit"
-										class="px-3 py-1 bg-[#ff7361] text-white rounded text-[12px] font-bold hover:bg-[#ff7361]/90 transition-all shadow-sm"
-										onclick={() => isPriceEdit = false}
-									>
-										{t('save')}
-									</button>
 								</div>
 							</div>
 						{/if}
 					</div>
 				</div>
 
-				<!-- Paid By select -->
-				<div class="space-y-1.5">
-					<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="detail-paidBy">{t('detailPaidBy')}</label>
-					<select
-						id="detail-paidBy"
-						name="paidBy"
-						bind:value={editPaidBy}
-						onchange={triggerAutoSave}
-						class="w-full px-4 py-2.5 rounded-xl border border-[#efeeea] focus:border-[#ff7361] focus:ring-0 text-sm font-bold text-[#2d3142] bg-[#fbf9f5]/50"
-					>
-						<option value="A">{data.personAName}</option>
-						<option value="B">{data.personBName}</option>
-					</select>
-				</div>
+				<!-- Hidden Paid By Input -->
+				<input type="hidden" name="paidBy" value={editPaidBy} />
 
 				<!-- Splitting Ratio Section -->
 				<div class="pt-2">
@@ -665,7 +654,7 @@
 									<span>{formatter.format(Math.round(selectedExpense.currentAmount * editRatio))}</span>
 									<span>{formatter.format(Math.round(selectedExpense.currentAmount * (1 - editRatio)))}</span>
 								</div>
-								<p class="text-[10px] text-[#9ca3af] font-medium italic text-center mt-1">{t('overrideSliderDesc')}</p>
+
 							</div>
 						{:else}
 							<div class="space-y-1 pt-0.5">
@@ -770,8 +759,8 @@
 					</table>
 				</div>
 
-				<!-- Sidebar Footer: Archive -->
-				<div class="pt-8 border-t border-[#efeeea] flex items-center justify-between">
+				<!-- Sidebar Footer: Archive & Move -->
+				<div class="pt-8 border-t border-[#efeeea] flex items-center justify-between gap-3">
 					<button
 						formaction="?/archive"
 						type="submit"
@@ -779,6 +768,20 @@
 					>
 						<span class="material-symbols-outlined text-[20px]">archive</span>
 						<span class="text-xs font-bold">{t('archiveExpense')}</span>
+					</button>
+
+					<button
+						type="button"
+						onclick={() => {
+							editPaidBy = editPaidBy === 'A' ? 'B' : 'A';
+							triggerAutoSave();
+						}}
+						class="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl text-[#ff7361] transition-all font-bold group border-[#ff7361] hover:bg-[#ff7361] hover:text-white"
+					>
+						<span class="text-xs font-bold">
+							{t('moveTo', { name: editPaidBy === 'A' ? data.personBName : data.personAName })}
+						</span>
+						<span class="material-symbols-outlined text-[20px] font-bold">arrow_forward</span>
 					</button>
 				</div>
 			</form>
