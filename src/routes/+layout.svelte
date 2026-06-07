@@ -2,7 +2,26 @@
 	import '../app.css';
 	import { page } from '$app/state';
 
-	let { children } = $props();
+	import { setContext } from 'svelte';
+	import { translate, getCurrencyConfig } from '$lib/translations';
+
+	let { children, data } = $props();
+
+	// Set translation and formatting context reactively
+	let locale = $derived(data.locale || 'en-US');
+	let currency = $derived(data.currency || 'USD');
+	
+	let t = $derived((key: string, params?: Record<string, string>) => translate(locale, key, params));
+	let currencyConfig = $derived(getCurrencyConfig(locale, currency));
+	let formatter = $derived(new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 }));
+
+	setContext('i18n', {
+		get locale() { return locale; },
+		get currency() { return currency; },
+		get t() { return t; },
+		get currencyConfig() { return currencyConfig; },
+		get formatter() { return formatter; }
+	});
 
 	// Derive month and year reactively to preserve query params during header navigation
 	let currentYear = $derived(page.data.period?.year || page.url.searchParams.get('year'));
@@ -19,13 +38,13 @@
 				class="pb-1 transition-opacity border-b-2 hover:opacity-100 {page.url.pathname === '/' ? 'border-white opacity-100' : 'border-transparent opacity-60'}"
 				href={dashboardHref}
 			>
-				Dashboard
+				{t('dashboard')}
 			</a>
 			<a
 				class="pb-1 transition-opacity border-b-2 hover:opacity-100 {page.url.pathname.startsWith('/expenses') ? 'border-white opacity-100' : 'border-transparent opacity-60'}"
 				href={expensesHref}
 			>
-				Expenses
+				{t('expenses')}
 			</a>
 		</nav>
 	</header>

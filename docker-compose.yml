@@ -13,3 +13,5 @@ services:
       - DATABASE_URL=/app/data/duomi.db
       - PUBLIC_PERSON_A_NAME=Partner A
       - PUBLIC_PERSON_B_NAME=Partner B
+      - LOCALE=en-US
+      - CURRENCY=USD
