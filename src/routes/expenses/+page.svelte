@@ -78,9 +78,50 @@
 	let editPriceVal = $state('');
 	let editPriceDate = $state('');
 
+	function formatCost(val: string): string {
+		const clean = val.replace(/\D/g, '');
+		if (!clean) return '';
+		return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+	}
+
+	function handleCostInput(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const cursorPosition = input.selectionStart || 0;
+		const originalValue = input.value;
+
+		let clean = originalValue.replace(/\D/g, '');
+		if (clean.startsWith('0') && clean.length > 1) {
+			clean = clean.replace(/^0+/, '');
+		}
+		if (clean === '') clean = '0';
+		clean = clean.slice(0, 7); // Max 7 digits
+		const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+		const digitsBeforeCursor = originalValue.slice(0, cursorPosition).replace(/\D/g, '').length;
+
+		editPriceVal = formatted;
+		input.value = formatted;
+
+		let newCursorPosition = 0;
+		let digitsFound = 0;
+		for (let i = 0; i < formatted.length; i++) {
+			if (formatted[i] !== ' ') {
+				digitsFound++;
+			}
+			newCursorPosition = i + 1;
+			if (digitsFound === digitsBeforeCursor) {
+				break;
+			}
+		}
+
+		queueMicrotask(() => {
+			input.setSelectionRange(newCursorPosition, newCursorPosition);
+		});
+	}
+
 	$effect(() => {
 		if (selectedExpense) {
-			editPriceVal = Math.round(selectedExpense.currentAmount).toString();
+			editPriceVal = formatCost(Math.round(selectedExpense.currentAmount).toString());
 			editPriceDate = new Date().toISOString().split('T')[0];
 		}
 	});
@@ -375,9 +416,8 @@
 						<form method="POST" action="?/update" use:enhance class="space-y-6">
 							<input type="hidden" name="id" value={selectedExpense.id} />
 
-							<!-- Header: Title & Status -->
 							<div class="flex justify-between items-start pb-6 gap-4">
-								<div class="flex-grow min-w-0 space-y-1.5">
+								<div class="flex-grow min-w-0 space-y-3">
 									<div class="inline-grid grid-cols-1 max-w-full min-w-[1ch]">
 										<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre-wrap break-words">{editName || ' '}</span>
 										<textarea
@@ -412,7 +452,7 @@
 											type="button"
 											onclick={() => {
 												isPriceEdit = true;
-												editPriceVal = Math.round(selectedExpense.currentAmount).toString();
+												editPriceVal = formatCost(Math.round(selectedExpense.currentAmount).toString());
 												editPriceDate = new Date().toISOString().split('T')[0];
 											}}
 											class="group cursor-pointer border border-transparent hover:border-[#ff7361]/20 hover:bg-[#fbf9f5] p-2 -m-2 rounded-xl transition-all flex flex-col items-end relative min-w-[140px] whitespace-nowrap"
@@ -439,20 +479,25 @@
 										</button>
 									{:else}
 										<!-- Edit Mode: Inline transformation -->
-										<div class="flex flex-col items-end space-y-2">
-											<div class="flex items-center">
+										<div class="flex flex-col items-end space-y-2.5">
+											<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight">
 												{#if currencyConfig.isPrefix}
-													<span class="text-2xl font-bold text-[#9ca3af] mr-1" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
+													<span class="text-[#9ca3af] mr-1 inline-block" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
 												{/if}
-												<input
-													name="amount"
-													type="number"
-													step="1"
-													bind:value={editPriceVal}
-													class="w-32 p-0 bg-transparent border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] font-bold text-2xl text-[#2d3142] focus:ring-0 outline-none focus:outline-none text-right pb-0.5 transition-colors duration-200"
-												/>
+												<div class="inline-grid grid-cols-1">
+													<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre">{editPriceVal || '0'}</span>
+													<input
+														type="text"
+														inputmode="numeric"
+														pattern="[0-9\s]*"
+														value={editPriceVal}
+														oninput={handleCostInput}
+														class="col-start-1 row-start-1 w-0 min-w-full h-full font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pb-1 transition-colors duration-200"
+													/>
+												</div>
+												<input type="hidden" name="amount" value={editPriceVal.replace(/\D/g, '')} />
 												{#if !currencyConfig.isPrefix}
-													<span class="text-2xl font-bold text-[#9ca3af] ml-1">{currencyConfig.symbol}</span>
+													<span class="text-[#9ca3af] ml-1 inline-block">{currencyConfig.symbol}</span>
 												{/if}
 											</div>
 											{#if selectedExpense.intervalMonths !== 0}
@@ -461,7 +506,7 @@
 														name="validFrom"
 														type="date"
 														bind:value={editPriceDate}
-														class="px-2 py-1 rounded-xl border border-[#efeeea] bg-[#fbf9f5] text-[12px] font-bold text-[#2d3142] focus:border-[#ff7361] focus:ring-2 focus:ring-[#ff7361]/20 outline-none transition-all cursor-pointer"
+														class="w-[125px] px-2 py-1 rounded-xl border border-[#efeeea] bg-[#fbf9f5] text-[12px] font-bold text-[#2d3142] focus:border-[#ff7361] focus:ring-2 focus:ring-[#ff7361]/20 outline-none transition-all cursor-pointer"
 													/>
 												</div>
 											{:else}
