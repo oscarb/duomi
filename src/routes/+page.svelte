@@ -1,7 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { getContext } from 'svelte';
 
 	let { data } = $props();
+
+	const { locale, t, currencyConfig, formatter } = getContext<{
+		locale: string;
+		t: (key: string, params?: Record<string, string>) => string;
+		currencyConfig: import('$lib/translations').CurrencyConfig;
+		formatter: Intl.NumberFormat;
+	}>('i18n');
 
 	// Calculate prev/next months
 	let prevMonth = $derived.by(() => {
@@ -24,10 +32,12 @@
 		return { year: y, month: m };
 	});
 
-	const MONTH_NAMES = [
-		'January', 'February', 'March', 'April', 'May', 'June',
-		'July', 'August', 'September', 'October', 'November', 'December'
-	];
+	// Dynamically format month names based on locale
+	let monthName = $derived.by(() => {
+		const date = new Date(data.period.year, data.period.month - 1, 1);
+		const formatted = new Intl.DateTimeFormat(locale, { month: 'long' }).format(date);
+		return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+	});
 
 	import { calculateSettlement } from '$lib/calculations';
 
@@ -50,16 +60,20 @@
 		incomeBVal = data.income.person_b.toString();
 	});
 
-	let copyStatus = $state('Copy');
+	let copyStatus = $state('copy');
 
 	function copySettlementText() {
 		const payerName = currentSettlement.payer === 'A' ? data.personAName : data.personBName;
 		const receiverName = currentSettlement.payer === 'A' ? data.personBName : data.personAName;
-		const text = `${payerName} owes ${receiverName} $${Math.round(currentSettlement.amount)}`;
+		const text = t('owes', {
+			payer: payerName,
+			receiver: receiverName,
+			amount: formatter.format(Math.round(currentSettlement.amount))
+		});
 		navigator.clipboard.writeText(text).then(() => {
-			copyStatus = 'Copied!';
+			copyStatus = 'copied';
 			setTimeout(() => {
-				copyStatus = 'Copy';
+				copyStatus = 'copy';
 			}, 2000);
 		});
 	}
@@ -123,7 +137,7 @@
 	<!-- Page Title & Month Selector -->
 	<div class="flex items-center justify-between mb-10 w-full text-white">
 		<h1 class="text-4xl md:text-5xl font-bold">
-			{MONTH_NAMES[data.period.month - 1]} {data.period.year}
+			{monthName} {data.period.year}
 		</h1>
 		<div class="flex items-center gap-4">
 			<a
@@ -147,7 +161,7 @@
 		<div class="space-y-8">
 			<!-- Settlement Card -->
 			<section class="bg-white rounded-2xl p-10 shadow-lg text-center" data-purpose="current-settlement-card">
-				<p class="text-[#9ca3af] tracking-widest text-sm font-semibold mb-4 uppercase">Current Settlement</p>
+				<p class="text-[#9ca3af] tracking-widest text-sm font-semibold mb-4 uppercase">{t('currentSettlement')}</p>
 				
 				{#if currentSettlement.amount > 0 && currentSettlement.payer}
 					<div class="flex justify-center items-center space-x-4 mb-2">
@@ -160,7 +174,13 @@
 						</h2>
 					</div>
 					<div class="text-[#ff7361] font-bold text-5xl flex items-center justify-center gap-2 mb-6">
-						<span class="text-[#9ca3af] opacity-50 mr-1">$</span>{Math.round(currentSettlement.amount)}
+						{#each formatter.formatToParts(Math.round(currentSettlement.amount)) as part}
+							{#if part.type === 'currency'}
+								<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+							{:else}
+								{part.value}
+							{/if}
+						{/each}
 					</div>
 					<div class="flex justify-center">
 						<button
@@ -168,14 +188,14 @@
 							class="flex items-center gap-2 px-6 py-2 rounded-full border border-gray-100 bg-gray-50 text-[#9ca3af] text-sm font-semibold hover:bg-gray-100 hover:text-[#2d3142] transition-all focus:outline-none"
 						>
 							<span class="material-symbols-outlined text-lg">content_copy</span>
-							<span>{copyStatus}</span>
+							<span>{t(copyStatus)}</span>
 						</button>
 					</div>
 				{:else}
 					<div class="py-8">
 						<span class="material-symbols-outlined text-5xl text-[#4fd1c5] mb-2">done_all</span>
-						<h3 class="text-xl font-bold text-[#2d3142]">All Settled</h3>
-						<p class="text-xs text-[#9ca3af] mt-1">No outstanding expenses to split for this month.</p>
+						<h3 class="text-xl font-bold text-[#2d3142]">{t('allSettled')}</h3>
+						<p class="text-xs text-[#9ca3af] mt-1">{t('noOutstandingExpenses')}</p>
 					</div>
 				{/if}
 			</section>
@@ -184,9 +204,15 @@
 			<section class="bg-white rounded-2xl p-10 shadow-lg" data-purpose="income-settings-card">
 				<h3 class="text-2xl font-bold text-[#2d3142] font-display mb-8 flex items-center gap-2">
 					<span class="material-symbols-outlined text-2xl font-light text-[#2d3142]/70">account_balance_wallet</span>
-					Income
+					{t('income')}
 					<span class="text-xl font-bold text-[#2d3142] font-sans ml-auto">
-						<span class="text-[#9ca3af] opacity-50 mr-0.5">$</span>{Math.round(currentTotalIncome).toLocaleString()}
+						{#each formatter.formatToParts(Math.round(currentTotalIncome)) as part}
+							{#if part.type === 'currency'}
+								<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-0.5' : 'ml-0.5'}">{part.value}</span>
+							{:else}
+								{part.value}
+							{/if}
+						{/each}
 					</span>
 				</h3>
 
@@ -194,7 +220,9 @@
 					<div class="space-y-2">
 						<label for="incomeA" class="block text-[#9ca3af] text-xs uppercase tracking-widest font-medium">{data.personAName}</label>
 						<div class="text-4xl font-bold text-[#2d3142] flex items-baseline">
-							<span class="text-[#9ca3af] opacity-50 mr-1">$</span>
+							{#if currencyConfig.isPrefix}
+								<span class="text-[#9ca3af] opacity-50 mr-1">{currencyConfig.symbol}</span>
+							{/if}
 							<input
 								id="incomeA"
 								name="incomeA"
@@ -223,13 +251,18 @@
 								style="width: {Math.max(1, incomeAVal.length)}ch;"
 								placeholder="0"
 							/>
+							{#if !currencyConfig.isPrefix}
+								<span class="text-[#9ca3af] opacity-50 ml-1">{currencyConfig.symbol}</span>
+							{/if}
 						</div>
 					</div>
 
 					<div class="space-y-2">
 						<label for="incomeB" class="block text-[#9ca3af] text-xs uppercase tracking-widest font-medium">{data.personBName}</label>
 						<div class="text-4xl font-bold text-[#2d3142] flex items-baseline">
-							<span class="text-[#9ca3af] opacity-50 mr-1">$</span>
+							{#if currencyConfig.isPrefix}
+								<span class="text-[#9ca3af] opacity-50 mr-1">{currencyConfig.symbol}</span>
+							{/if}
 							<input
 								id="incomeB"
 								name="incomeB"
@@ -258,6 +291,9 @@
 								style="width: {Math.max(1, incomeBVal.length)}ch;"
 								placeholder="0"
 							/>
+							{#if !currencyConfig.isPrefix}
+								<span class="text-[#9ca3af] opacity-50 ml-1">{currencyConfig.symbol}</span>
+							{/if}
 						</div>
 					</div>
 				</div>
@@ -280,7 +316,7 @@
 							</div>
 						{:else}
 							<div class="w-full h-full flex items-center justify-center text-[#9ca3af] text-xs font-light">
-								No income set (50% / 50% split)
+								{t('noIncomeSet')}
 							</div>
 						{/if}
 					</div>
@@ -294,19 +330,31 @@
 				<div class="flex justify-between items-center mb-8">
 					<h3 class="text-2xl font-bold text-[#2d3142] font-display flex items-center gap-2">
 						<span class="material-symbols-outlined text-2xl font-light text-[#2d3142]/70">receipt_long</span>
-						Expenses
+						{t('expenses')}
 					</h3>
 					<span class="text-xl font-bold text-[#2d3142]">
-						<span class="text-[#9ca3af] opacity-50 mr-1">$</span>{Math.round(data.expenses.total)}
+						{#each formatter.formatToParts(Math.round(data.expenses.total)) as part}
+							{#if part.type === 'currency'}
+								<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+							{:else}
+								{part.value}
+							{/if}
+						{/each}
 					</span>
 				</div>
 
 				<!-- Paid by Person A -->
 				<div class="mb-10">
 					<div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-4">
-						<span class="text-xs font-semibold text-[#9ca3af] uppercase tracking-widest">PAID BY {data.personAName}</span>
+						<span class="text-xs font-semibold text-[#9ca3af] uppercase tracking-widest">{t('paidBy')} {data.personAName}</span>
 						<span class="text-sm font-bold text-[#2d3142]">
-							<span class="text-[#9ca3af] opacity-50 mr-1">$</span>{Math.round(totalPaidByA)}
+							{#each formatter.formatToParts(Math.round(totalPaidByA)) as part}
+								{#if part.type === 'currency'}
+									<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+								{:else}
+									{part.value}
+								{/if}
+							{/each}
 						</span>
 					</div>
 
@@ -316,9 +364,15 @@
 								{@const groupTotal = group.items.reduce((sum, e) => sum + e.amount, 0)}
 								<div class="mb-6">
 									<div class="flex justify-between items-center mb-3 px-1">
-										<h4 class="text-[11px] font-bold text-[#9ca3af]/60 uppercase tracking-wider">{accountName}</h4>
+										<h4 class="text-[11px] font-bold text-[#9ca3af]/60 uppercase tracking-wider">{accountName === 'No Account' ? t('noAccount') : accountName}</h4>
 										<span class="text-[11px] font-bold text-[#9ca3af]/60 uppercase tracking-wider">
-											<span class="opacity-50 mr-1">$</span>{Math.round(groupTotal)}
+											{#each formatter.formatToParts(Math.round(groupTotal)) as part}
+												{#if part.type === 'currency'}
+													<span class="opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+												{:else}
+													{part.value}
+												{/if}
+											{/each}
 										</span>
 									</div>
 									<ul class="space-y-3">
@@ -345,8 +399,13 @@
 													</div>
 													<div class="flex items-center gap-3">
 														<span class="text-base font-semibold text-[#2d3142] flex items-center">
-															<span class="text-[#9ca3af] opacity-40 font-normal mr-1">$</span>
-															<span class="tactile-input leading-none">{Math.round(item.amount)}</span>
+															{#each formatter.formatToParts(Math.round(item.amount)) as part}
+																{#if part.type === 'currency'}
+																	<span class="text-[#9ca3af] opacity-40 font-normal {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+																{:else}
+																	<span class="tactile-input leading-none">{part.value}</span>
+																{/if}
+															{/each}
 														</span>
 													</div>
 												</div>
@@ -357,22 +416,28 @@
 										href="/expenses?new=true&paidBy=A{group.accountId ? `&accountId=${group.accountId}` : ''}&year={data.period.year}&month={data.period.month}"
 										class="flex items-center text-sm mt-2 font-semibold ml-4 text-[#ff7361] hover:opacity-80 transition-opacity"
 									>
-										<span class="mr-1 text-base font-bold">+</span> Add expense
+										<span class="mr-1 text-base font-bold">+</span> {t('addExpense')}
 									</a>
 								</div>
 							{/each}
 						</div>
 					{:else}
-						<p class="text-xs text-[#9ca3af] italic py-4 pl-4 border border-dashed border-[#efeeea] rounded-xl mb-4">No expenses paid by {data.personAName} this month.</p>
+						<p class="text-xs text-[#9ca3af] italic py-4 pl-4 border border-dashed border-[#efeeea] rounded-xl mb-4">{t('noExpensesPaidBy', { name: data.personAName })}</p>
 					{/if}
 				</div>
 
 				<!-- Paid by Person B -->
 				<div>
 					<div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-4">
-						<span class="text-xs font-semibold text-[#9ca3af] uppercase tracking-widest">PAID BY {data.personBName}</span>
+						<span class="text-xs font-semibold text-[#9ca3af] uppercase tracking-widest">{t('paidBy')} {data.personBName}</span>
 						<span class="text-sm font-bold text-[#2d3142]">
-							<span class="text-[#9ca3af] opacity-50 mr-1">$</span>{Math.round(totalPaidByB)}
+							{#each formatter.formatToParts(Math.round(totalPaidByB)) as part}
+								{#if part.type === 'currency'}
+									<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+								{:else}
+									{part.value}
+								{/if}
+							{/each}
 						</span>
 					</div>
 
@@ -382,9 +447,15 @@
 								{@const groupTotal = group.items.reduce((sum, e) => sum + e.amount, 0)}
 								<div class="mb-6">
 									<div class="flex justify-between items-center mb-3 px-1">
-										<h4 class="text-[11px] font-bold text-[#9ca3af]/60 uppercase tracking-wider">{accountName}</h4>
+										<h4 class="text-[11px] font-bold text-[#9ca3af]/60 uppercase tracking-wider">{accountName === 'No Account' ? t('noAccount') : accountName}</h4>
 										<span class="text-[11px] font-bold text-[#9ca3af]/60 uppercase tracking-wider">
-											<span class="opacity-50 mr-1">$</span>{Math.round(groupTotal)}
+											{#each formatter.formatToParts(Math.round(groupTotal)) as part}
+												{#if part.type === 'currency'}
+													<span class="opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+												{:else}
+													{part.value}
+												{/if}
+											{/each}
 										</span>
 									</div>
 									<ul class="space-y-3">
@@ -411,8 +482,13 @@
 													</div>
 													<div class="flex items-center gap-3">
 														<span class="text-base font-semibold text-[#2d3142] flex items-center">
-															<span class="text-[#9ca3af] opacity-40 font-normal mr-1">$</span>
-															<span class="tactile-input leading-none">{Math.round(item.amount)}</span>
+															{#each formatter.formatToParts(Math.round(item.amount)) as part}
+																{#if part.type === 'currency'}
+																	<span class="text-[#9ca3af] opacity-40 font-normal {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+																{:else}
+																	<span class="tactile-input leading-none">{part.value}</span>
+																{/if}
+															{/each}
 														</span>
 													</div>
 												</div>
@@ -423,13 +499,13 @@
 										href="/expenses?new=true&paidBy=B{group.accountId ? `&accountId=${group.accountId}` : ''}&year={data.period.year}&month={data.period.month}"
 										class="flex items-center text-sm mt-2 font-semibold ml-4 text-[#ff7361] hover:opacity-80 transition-opacity"
 									>
-										<span class="mr-1 text-base font-bold">+</span> Add expense
+										<span class="mr-1 text-base font-bold">+</span> {t('addExpense')}
 									</a>
 								</div>
 							{/each}
 						</div>
 					{:else}
-						<p class="text-xs text-[#9ca3af] italic py-4 pl-4 border border-dashed border-[#efeeea] rounded-xl mb-4">No expenses paid by {data.personBName} this month.</p>
+						<p class="text-xs text-[#9ca3af] italic py-4 pl-4 border border-dashed border-[#efeeea] rounded-xl mb-4">{t('noExpensesPaidBy', { name: data.personBName })}</p>
 					{/if}
 				</div>
 			</section>
