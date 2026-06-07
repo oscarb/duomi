@@ -1,5 +1,5 @@
 import { db } from './index';
-import { incomes, accounts, expenses, expenseCosts } from './schema';
+import { incomes, accounts, expenses, expenseAmounts } from './schema';
 import { eq, and, or, isNull, gte, sql } from 'drizzle-orm';
 
 // Helper to compute difference in months between YYYY-MM-DD and a target year/month
@@ -61,6 +61,30 @@ export async function addAccount(name: string, owner: 'A' | 'B') {
 	return newAccount;
 }
 
+export async function deleteAccount(id: number) {
+	const account = await db.select().from(accounts).where(eq(accounts.id, id)).get();
+	if (!account) return null;
+
+	const affectedExpenses = await db.select().from(expenses).where(eq(expenses.accountId, id)).all();
+
+	await db.delete(accounts).where(eq(accounts.id, id)).run();
+
+	return {
+		account,
+		affectedExpenseIds: affectedExpenses.map(e => e.id)
+	};
+}
+
+export async function restoreAccount(id: number, name: string, owner: 'A' | 'B', affectedExpenseIds: number[]) {
+	await db.insert(accounts).values({ id, name, owner }).run();
+
+	if (affectedExpenseIds.length > 0) {
+		for (const expenseId of affectedExpenseIds) {
+			await db.update(expenses).set({ accountId: id }).where(eq(expenses.id, expenseId)).run();
+		}
+	}
+}
+
 // 3. Expenses
 export async function getActiveExpensesForMonth(year: number, month: number) {
 	const targetMonthStr = `${year}-${String(month).padStart(2, '0')}`;
@@ -101,11 +125,11 @@ export async function getActiveExpensesForMonth(year: number, month: number) {
 	for (const row of allExpenses) {
 		const expense = row.expense;
 
-		// Fetch all costs for this expense
+		// Fetch all amounts for this expense
 		const costs = await db
 			.select()
-			.from(expenseCosts)
-			.where(eq(expenseCosts.expenseId, expense.id))
+			.from(expenseAmounts)
+			.where(eq(expenseAmounts.expenseId, expense.id))
 			.all();
 
 		if (costs.length === 0) continue;
@@ -175,7 +199,7 @@ export async function addExpense(
 	amount: number,
 	validFrom: string
 ) {
-	// Insert inside transaction to ensure both expense and cost are created
+	// Insert inside transaction to ensure both expense and amount are created
 	const newExpenseId = db.transaction((tx) => {
 		const newExpense = tx
 			.insert(expenses)
@@ -191,7 +215,7 @@ export async function addExpense(
 			.get();
 
 		tx
-			.insert(expenseCosts)
+			.insert(expenseAmounts)
 			.values({
 				expenseId: newExpense.id,
 				amount,
@@ -205,29 +229,30 @@ export async function addExpense(
 	return newExpenseId;
 }
 
-export async function updateExpenseCost(expenseId: number, amount: number, validFrom: string) {
-	// Update or insert a cost for an expense
-	// If a cost with the same validFrom exists, update it. Otherwise, insert.
-	const existing = await db
+export async function updateExpenseAmount(expenseId: number, amount: number, validFrom: string) {
+	// Update or insert an amount for an expense in the target month.
+	// If an amount exists in the same YYYY-MM month, we update its amount.
+	// Otherwise, we insert a new amount.
+	const targetMonthPrefix = validFrom.substring(0, 7); // e.g. "YYYY-MM"
+	const existingCosts = await db
 		.select()
-		.from(expenseCosts)
-		.where(
-			and(
-				eq(expenseCosts.expenseId, expenseId),
-				eq(expenseCosts.validFrom, validFrom)
-			)
-		)
-		.get();
+		.from(expenseAmounts)
+		.where(eq(expenseAmounts.expenseId, expenseId))
+		.all();
+
+	const existing = existingCosts
+		.filter(c => c.validFrom.startsWith(targetMonthPrefix))
+		.sort((a, b) => b.validFrom.localeCompare(a.validFrom))[0];
 
 	if (existing) {
 		await db
-			.update(expenseCosts)
+			.update(expenseAmounts)
 			.set({ amount })
-			.where(eq(expenseCosts.id, existing.id))
+			.where(eq(expenseAmounts.id, existing.id))
 			.run();
 	} else {
 		await db
-			.insert(expenseCosts)
+			.insert(expenseAmounts)
 			.values({
 				expenseId,
 				amount,
