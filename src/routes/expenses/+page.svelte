@@ -477,6 +477,7 @@
 												<span class="material-symbols-outlined text-[#ff7361] text-[16px]">edit</span>
 											</div>
 										</button>
+									{:else}
 										<!-- Edit Mode: Inline transformation -->
 										<div class="flex flex-col items-end space-y-2">
 											<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2">
