@@ -1,0 +1,1170 @@
+<script lang="ts">
+	import { getContext } from 'svelte';
+	import { enhance, deserialize } from '$app/forms';
+	import { page } from '$app/state';
+	import { invalidateAll } from '$app/navigation';
+	import { toasts } from '$lib/toasts.svelte';
+
+	// Retrieve localized translations and formatting
+	const { locale, t, currencyConfig, formatter } = getContext<{
+		locale: string;
+		t: (key: string, params?: Record<string, string>) => string;
+		currencyConfig: import('$lib/translations').CurrencyConfig;
+		formatter: Intl.NumberFormat;
+	}>('i18n');
+
+	// Props
+	let {
+		expense = null,
+		isCreateMode = false,
+		initialPaidBy = 'A',
+		accounts = [],
+		namePersonA = 'Person A',
+		namePersonB = 'Person B',
+		dynamicSplitRatioA = 0.5,
+		cancelHref = '/expenses',
+		actionRoute = '',
+		currentYear = new Date().getFullYear(),
+		currentMonth = new Date().getMonth() + 1
+	}: {
+		expense: any;
+		isCreateMode: boolean;
+		initialPaidBy: 'A' | 'B';
+		accounts: any[];
+		namePersonA: string;
+		namePersonB: string;
+		dynamicSplitRatioA: number;
+		cancelHref: string;
+		actionRoute: string;
+		currentYear: number;
+		currentMonth: number;
+	} = $props();
+
+	// Local states
+	let editName = $state('');
+	let editPaidBy = $state<'A' | 'B'>('A');
+	let editInterval = $state(1);
+	let editSplitType = $state<'dynamic' | 'static'>('dynamic');
+	let editRatio = $state(0.5);
+	let editAccountId = $state<number | null>(null);
+	let editAmountVal = $state('');
+	let editAmountDate = $state('');
+
+	// Amount edit toggler for existing templates
+	let isAmountEdit = $state(false);
+	let amountInputEl = $state<HTMLInputElement | null>(null);
+
+	// Account editing states
+	let isEditingAccounts = $state(false);
+	let isCreatingAccountInline = $state(false);
+	let inlineAccountName = $state('');
+	let inlineAccountInputEl = $state<HTMLInputElement | null>(null);
+
+	// Title focus states
+	let titleInputEl = $state<HTMLTextAreaElement | null>(null);
+	let lastExpenseId = $state<number | null>(null);
+
+	// Synchronize local states with expense data changes
+	$effect(() => {
+		if (expense) {
+			const idChanged = lastExpenseId !== expense.id;
+			lastExpenseId = expense.id;
+
+			if (idChanged) {
+				isAmountEdit = false;
+			}
+
+			editName = expense.name;
+			editPaidBy = expense.paidBy;
+			editInterval = expense.intervalMonths;
+			editSplitType = expense.splitType;
+			editRatio = expense.staticSplitRatio ?? 0.5;
+			editAccountId = expense.accountId;
+
+			if (idChanged || !isAmountEdit) {
+				editAmountVal = formatAmount(Math.round(expense.currentAmount).toString());
+				editAmountDate = expense.history?.[expense.history.length - 1]?.validFrom || new Date().toISOString().split('T')[0];
+			}
+		} else {
+			lastExpenseId = null;
+			isAmountEdit = false;
+			editName = '';
+			editPaidBy = initialPaidBy;
+			editInterval = 1;
+			editSplitType = 'dynamic';
+			editRatio = 0.5;
+			editAccountId = parseInt(page.url.searchParams.get('accountId') || '', 10) || null;
+			editAmountVal = '';
+			editAmountDate = new Date().toISOString().split('T')[0];
+		}
+	});
+
+	// Focus title input on mount/trigger in Create Mode
+	$effect(() => {
+		if (isCreateMode && titleInputEl) {
+			titleInputEl.focus();
+		}
+	});
+
+	// Focus inline account input field when "Lägg till" is clicked
+	$effect(() => {
+		if (isCreatingAccountInline && inlineAccountInputEl) {
+			inlineAccountInputEl.focus();
+		}
+	});
+
+	// Snaps range slider value to discrete points
+	function snapRatio(val: number): number {
+		const snapPoints = [0, 0.1, 0.2, 0.3, 0.33, 0.4, 0.5, 0.6, 0.66, 0.7, 0.8, 0.9, 1.0];
+		const tolerance = 0.02; // Snap if within 2%
+		for (const pt of snapPoints) {
+			if (Math.abs(val - pt) < tolerance) {
+				return pt;
+			}
+		}
+		return val;
+	}
+
+	// Format helpers
+	function formatSinceDate(dateStr: string, localeStr: string): string {
+		if (!dateStr) return '';
+		const date = new Date(dateStr + 'T00:00:00');
+		if (isNaN(date.getTime())) return dateStr;
+		return date.toLocaleDateString(localeStr, { month: 'short', year: 'numeric' }).toLowerCase();
+	}
+
+	function formatOneTimeDate(dateStr: string, localeStr: string): string {
+		if (!dateStr) return '';
+		const date = new Date(dateStr + 'T00:00:00');
+		if (isNaN(date.getTime())) return dateStr;
+		const day = date.getDate();
+		const year = date.getFullYear();
+		let month = date.toLocaleDateString(localeStr, { month: 'short' });
+		if (localeStr.startsWith('sv')) {
+			month = month.toLowerCase();
+		}
+		month = month.replace('.', '');
+		return `${day} ${month} ${year}`;
+	}
+
+	function formatHistoryDate(dateStr: string, localeStr: string): string {
+		if (!dateStr) return '';
+		const date = new Date(dateStr + 'T00:00:00');
+		if (isNaN(date.getTime())) return dateStr;
+		const formatted = date.toLocaleDateString(localeStr, { month: 'long', year: 'numeric' });
+		return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+	}
+
+	function formatAmount(val: string): string {
+		const clean = val.replace(/\D/g, '');
+		if (!clean) return '';
+		return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+	}
+
+	function handleAmountInput(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const cursorPosition = input.selectionStart || 0;
+		const originalValue = input.value;
+
+		let clean = originalValue.replace(/\D/g, '');
+		if (clean.startsWith('0') && clean.length > 1) {
+			clean = clean.replace(/^0+/, '');
+		}
+		if (clean === '') clean = '0';
+		clean = clean.slice(0, 7); // Max 7 digits
+		const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+		const digitsBeforeCursor = originalValue.slice(0, cursorPosition).replace(/\D/g, '').length;
+
+		editAmountVal = formatted;
+		input.value = formatted;
+
+		let newCursorPosition = 0;
+		let digitsFound = 0;
+		for (let i = 0; i < formatted.length; i++) {
+			if (formatted[i] !== ' ') {
+				digitsFound++;
+			}
+			newCursorPosition = i + 1;
+			if (digitsFound === digitsBeforeCursor) {
+				break;
+			}
+		}
+
+		queueMicrotask(() => {
+			input.setSelectionRange(newCursorPosition, newCursorPosition);
+		});
+	}
+
+	async function deleteAccount(id: number) {
+		const formData = new FormData();
+		formData.append('id', id.toString());
+
+		const response = await fetch(`${actionRoute || '/expenses'}?/deleteAccount`, {
+			method: 'POST',
+			body: formData
+		});
+
+		if (response.ok) {
+			const result = deserialize(await response.text());
+			if (result.type === 'success') {
+				const { deleted } = result.data as any;
+				if (deleted) {
+					await invalidateAll();
+					toasts.show(t('toastAccountDeleted', { name: deleted.account.name }), 'success', 5000, {
+						label: t('undo'),
+						callback: async () => {
+							const restoreData = new FormData();
+							restoreData.append('id', deleted.account.id.toString());
+							restoreData.append('name', deleted.account.name);
+							restoreData.append('owner', deleted.account.owner);
+							restoreData.append('affectedExpenseIds', JSON.stringify(deleted.affectedExpenseIds));
+
+							const restoreResponse = await fetch(`${actionRoute || '/expenses'}?/restoreAccount`, {
+								method: 'POST',
+								body: restoreData
+							});
+
+							if (restoreResponse.ok) {
+								const restoreResult = deserialize(await restoreResponse.text());
+								if (restoreResult.type === 'success') {
+									toasts.show(t('toastAccountRestored', { name: deleted.account.name }), 'success');
+									await invalidateAll();
+								}
+							}
+						}
+					});
+				}
+			}
+		}
+	}
+
+	async function saveAccountInline() {
+		if (!inlineAccountName.trim()) return;
+
+		const formData = new FormData();
+		formData.append('name', inlineAccountName.trim());
+		formData.append('owner', editPaidBy);
+
+		const response = await fetch(`${actionRoute || '/expenses'}?/createAccount`, {
+			method: 'POST',
+			body: formData
+		});
+
+		if (response.ok) {
+			const result = deserialize(await response.text());
+			if (result.type === 'success') {
+				await invalidateAll();
+				isCreatingAccountInline = false;
+				inlineAccountName = '';
+			}
+		}
+	}
+
+	function cancelAccountInline() {
+		isCreatingAccountInline = false;
+		inlineAccountName = '';
+	}
+
+	// Filter sequential unique changes for the history log
+	let uniqueHistory = $derived.by(() => {
+		if (!expense || !expense.history) return [];
+		const sortedChrono = [...expense.history].sort((a, b) => a.validFrom.localeCompare(b.validFrom));
+		const result = [];
+		for (let i = 0; i < sortedChrono.length; i++) {
+			if (i === 0 || sortedChrono[i].amount !== sortedChrono[i - 1].amount) {
+				result.push(sortedChrono[i]);
+			}
+		}
+		return result.reverse();
+	});
+
+	// Auto-submit form element binding and logic
+	let editFormElement = $state<HTMLFormElement | null>(null);
+
+	let isDirty = $derived.by(() => {
+		if (!expense || isCreateMode) return false;
+		return (
+			editName !== expense.name ||
+			editPaidBy !== expense.paidBy ||
+			editInterval !== expense.intervalMonths ||
+			editSplitType !== expense.splitType ||
+			editRatio !== (expense.staticSplitRatio ?? 0.5) ||
+			editAccountId !== expense.accountId
+		);
+	});
+
+	function triggerAutoSave() {
+		queueMicrotask(() => {
+			if (isDirty && editFormElement && !isCreateMode) {
+				editFormElement.requestSubmit();
+			}
+		});
+	}
+
+	// Derive 13 consecutive months starting from the current dashboard view month
+	let calendarMonths = $derived.by(() => {
+		const months = [];
+		let y = currentYear;
+		let m = currentMonth;
+		for (let i = 0; i < 13; i++) {
+			months.push({ year: y, month: m });
+			m++;
+			if (m > 12) {
+				m = 1;
+				y++;
+			}
+		}
+		return months;
+	});
+
+	// Helper to determine if a payment happens in a month for the visual grid
+	function isPaymentMonth(periodYear: number, monthVal: number, interval: number, validFromStr: string): boolean {
+		if (!validFromStr) return false;
+		const parts = validFromStr.split('-');
+		const startY = parseInt(parts[0], 10);
+		const startM = parseInt(parts[1], 10);
+
+		if (periodYear < startY) return false;
+		if (periodYear === startY && monthVal < startM) return false;
+
+		if (interval === 0) {
+			// One-time
+			return periodYear === startY && monthVal === startM;
+		}
+
+		const diff = (periodYear - startY) * 12 + (monthVal - startM);
+		return diff % interval === 0;
+	}
+
+	// Account creation states
+	let showAddAccount = $state(false);
+	let newAccountName = $state('');
+	let newAccountOwner = $state<'A' | 'B'>('A');
+</script>
+
+<div class="@container bg-white pt-6 pb-6 px-6 md:pt-10 md:pb-10 md:px-10 rounded-2xl floating-sidebar-card sticky lg:top-8 relative transition-all duration-300">
+	{#if isCreateMode}
+		<!-- CREATE NEW EXPENSE/TEMPLATE FORM -->
+		<form
+			method="POST"
+			action="{actionRoute}?/create"
+			use:enhance={({ formData }) => {
+				const name = formData.get('name') as string;
+				const intervalMonths = parseInt(formData.get('intervalMonths') as string, 10) || 0;
+				const validFrom = (formData.get('validFrom') as string) || new Date().toISOString().split('T')[0];
+				
+				return async ({ result, update }) => {
+					if (result.type === 'success') {
+						const dateParts = validFrom.split('-');
+						const y = parseInt(dateParts[0], 10);
+						const m = parseInt(dateParts[1], 10);
+						const dateObj = new Date(y, m - 1, 1);
+						const formattedDate = dateObj.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+						const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+						
+						if (intervalMonths === 0) {
+							toasts.show(t('toastCreatedFor', { name, date: capitalizedDate }), 'success');
+						} else {
+							toasts.show(t('toastCreatedFrom', { name, date: capitalizedDate }), 'success');
+						}
+					}
+					await update();
+				};
+			}}
+			bind:this={editFormElement}
+			class="space-y-12"
+		>
+			<div class="flex justify-between items-start pb-8 border-b border-[#efeeea] gap-4">
+				<!-- Title & Badges -->
+				<div class="flex-grow min-w-0 space-y-3">
+					<div class="inline-grid grid-cols-1 max-w-full min-w-[1ch]">
+						<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre-wrap break-words">{editName || t('name')}</span>
+						<textarea
+							bind:this={titleInputEl}
+							name="name"
+							bind:value={editName}
+							rows="1"
+							required
+							placeholder={t('name')}
+							class="col-start-1 row-start-1 w-0 min-w-full h-full resize-none overflow-hidden font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none pb-1 transition-colors duration-200 whitespace-pre-wrap break-words"
+							onkeydown={(e) => {
+								if (e.key === 'Enter' && !e.shiftKey) {
+									e.preventDefault();
+									e.currentTarget.form?.requestSubmit();
+								}
+							}}
+						></textarea>
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#ff7361]/10 text-[#ff7361] border border-[#ff7361]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
+							<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#ff7361]' : 'bg-[#4fd1c5]'}"></span>
+							{editPaidBy === 'A' ? namePersonA : namePersonB}
+						</div>
+					</div>
+				</div>
+
+				<!-- Amount and Date Box -->
+				<div class="flex flex-col items-end space-y-3.5">
+					<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2">
+						{#if currencyConfig.isPrefix}
+							<span class="text-[#9ca3af] mr-1 inline-block -translate-y-[2px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
+						{/if}
+						<div class="inline-grid grid-cols-1">
+							<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[1px] pr-[6px] pb-[4px] whitespace-pre tracking-tight">{editAmountVal || '0'}</span>
+							<input
+								type="text"
+								inputmode="numeric"
+								pattern="[0-9\s]*"
+								value={editAmountVal}
+								oninput={handleAmountInput}
+								required
+								class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pr-[6px] pb-[4px] tracking-tight transition-colors duration-200"
+								placeholder="0"
+							/>
+						</div>
+						<input type="hidden" name="amount" value={editAmountVal.replace(/\D/g, '')} />
+						{#if !currencyConfig.isPrefix}
+							<span class="text-[#9ca3af] ml-1 inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
+						{/if}
+					</div>
+
+					<div class="flex items-center">
+						<input
+							name="validFrom"
+							type="date"
+							bind:value={editAmountDate}
+							required
+							class="w-[125px] px-2 py-1 rounded-xl border border-[#efeeea] bg-[#fbf9f5] text-[12px] font-bold text-[#2d3142] focus:border-[#ff7361] focus:ring-2 focus:ring-[#ff7361]/20 outline-none transition-all cursor-pointer"
+						/>
+					</div>
+				</div>
+			</div>
+
+			<input type="hidden" name="paidBy" value={editPaidBy} />
+
+			<!-- Split Ratio -->
+			<div>
+				<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('splittingRatio')}</p>
+				<div class="space-y-4">
+					<div class="grid grid-cols-2 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
+						<button
+							type="button"
+							onclick={() => editSplitType = 'static'}
+							class="py-1.5 rounded-full text-xs font-bold transition-all {editSplitType === 'static' ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
+						>
+							{t('static')}
+						</button>
+						<button
+							type="button"
+							onclick={() => editSplitType = 'dynamic'}
+							class="py-1.5 rounded-full text-xs font-bold transition-all {editSplitType === 'dynamic' ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
+						>
+							{t('dynamic')}
+						</button>
+					</div>
+					<input type="hidden" name="splitType" value={editSplitType} />
+
+					{#if editSplitType === 'static'}
+						{@const parsedAmt = parseFloat(editAmountVal.replace(/\s/g, '')) || 0}
+						<div class="space-y-1 pt-0.5">
+							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
+								<span>{namePersonA} <span class="text-[#ff7361] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
+								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - editRatio) * 100)}%</span></span>
+							</div>
+							<div class="h-6 flex items-center">
+								<input
+									name="staticSplitRatio"
+									type="range"
+									min="0"
+									max="1"
+									step="0.01"
+									bind:value={editRatio}
+									oninput={(e) => {
+										editRatio = snapRatio(parseFloat(e.currentTarget.value));
+										e.currentTarget.value = editRatio.toString();
+									}}
+									class="w-full cursor-pointer appearance-none rounded-lg"
+									style="background: linear-gradient(to right, #ff7361 0%, #ff7361 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
+								/>
+							</div>
+							<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
+								<span>{formatter.format(Math.round(parsedAmt * editRatio))}</span>
+								<span>{formatter.format(Math.round(parsedAmt * (1 - editRatio)))}</span>
+							</div>
+						</div>
+					{:else}
+						{@const parsedAmt = parseFloat(editAmountVal.replace(/\s/g, '')) || 0}
+						<div class="space-y-1 pt-0.5">
+							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
+								<span>{namePersonA} <span class="text-[#ff7361] ml-0.5">{Math.round(dynamicSplitRatioA * 100)}%</span></span>
+								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - dynamicSplitRatioA) * 100)}%</span></span>
+							</div>
+							<!-- Styled share bar gradient without handle for dynamic split type -->
+							<div class="h-6 flex items-center">
+								<div class="w-full h-3 rounded-full overflow-hidden flex bg-[#4fd1c5]">
+									<div class="bg-[#ff7361] h-full" style="width: {dynamicSplitRatioA * 100}%"></div>
+								</div>
+							</div>
+							<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
+								<span>{formatter.format(Math.round(parsedAmt * dynamicSplitRatioA))}</span>
+								<span>{formatter.format(Math.round(parsedAmt * (1 - dynamicSplitRatioA)))}</span>
+							</div>
+						</div>
+					{/if}
+				</div>
+			</div>
+
+			<!-- Source Account -->
+			<div>
+				<div class="flex items-center justify-between mb-3">
+					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest">{t('source')}</p>
+					{#if accounts.length > 0}
+						<button
+							type="button"
+							onclick={() => isEditingAccounts = !isEditingAccounts}
+							class="text-[#ff7361] hover:text-[#ff7361]/80 flex items-center gap-1 transition-colors focus:outline-none text-xs font-bold"
+							title={t('editAccounts')}
+						>
+							{#if isEditingAccounts}
+								<span class="material-symbols-outlined font-bold flex items-center justify-center" style="font-size: 20px; width: 20px; height: 20px;">check</span>
+								<span>{t('done')}</span>
+							{:else}
+								<span class="material-symbols-outlined flex items-center justify-center" style="font-size: 20px; width: 20px; height: 20px;">edit</span>
+								<span>{t('edit')}</span>
+							{/if}
+						</button>
+					{/if}
+				</div>
+				<div class="flex flex-wrap gap-2 items-center">
+					{#each accounts as acc}
+						<div class="relative">
+							<button
+								type="button"
+								disabled={isEditingAccounts}
+								onclick={() => {
+									if (editAccountId === acc.id) {
+										editAccountId = null; // Unselect
+									} else {
+										editAccountId = acc.id;
+									}
+								}}
+								class="px-3.5 py-1.5 rounded-lg border-2 text-xs font-bold transition-all 
+								{editAccountId === acc.id ? 'border-[#ff7361] bg-[#ff7361]/5 text-[#ff7361]' : 'border-[#efeeea] bg-white text-[#2d3142]/80 hover:text-[#2d3142] hover:border-[#ff7361]/30 hover:bg-[#fbf9f5]/50'}
+								{isEditingAccounts ? 'cursor-default opacity-80' : 'cursor-pointer'}"
+							>
+								{acc.name}
+							</button>
+							{#if isEditingAccounts}
+								<button
+									type="button"
+									onclick={() => deleteAccount(acc.id)}
+									class="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-[#ff7361] text-white flex items-center justify-center shadow hover:bg-[#ff7361]/90 transition-colors focus:outline-none"
+									title={t('delete')}
+								>
+									<span class="material-symbols-outlined text-[18px] font-bold scale-[0.45]">close</span>
+								</button>
+							{/if}
+						</div>
+					{/each}
+
+					{#if isEditingAccounts || accounts.length === 0}
+						{#if isCreatingAccountInline}
+							<div class="flex items-center gap-2">
+								<div class="flex items-center border border-[#efeeea] bg-[#fbf9f5] rounded-lg px-2 h-[30px]">
+									<input
+										bind:this={inlineAccountInputEl}
+										type="text"
+										bind:value={inlineAccountName}
+										placeholder={t('accountName')}
+										class="bg-transparent border-none text-xs font-bold p-0 w-24 focus:ring-0 outline-none text-[#2d3142]"
+										onkeydown={(e) => {
+											if (e.key === 'Enter') {
+												e.preventDefault();
+												saveAccountInline();
+											} else if (e.key === 'Escape') {
+												cancelAccountInline();
+											}
+										}}
+									/>
+								</div>
+								<button
+									type="button"
+									onclick={saveAccountInline}
+									class="text-[#ff7361] hover:text-[#ff7361]/80 text-xs font-bold transition-colors focus:underline focus:outline-none cursor-pointer"
+								>
+									{t('save')}
+								</button>
+								<button
+									type="button"
+									onclick={cancelAccountInline}
+									class="text-[#9ca3af] hover:text-[#2d3142] text-xs font-bold transition-colors focus:underline focus:outline-none cursor-pointer"
+								>
+									{t('cancel')}
+								</button>
+							</div>
+						{:else}
+							<button
+								type="button"
+								onclick={() => isCreatingAccountInline = true}
+								class="pl-2.5 pr-3 py-1.5 rounded-lg border-2 border-dashed border-[#ff7361]/30 text-xs font-bold text-[#ff7361] hover:bg-[#ff7361]/5 transition-all flex items-center gap-1 focus:outline-none h-[32px]"
+							>
+								<span class="material-symbols-outlined text-[10px] font-bold">add</span>
+								<span>{t('add')}</span>
+							</button>
+						{/if}
+					{/if}
+					<input type="hidden" name="accountId" value={editAccountId || ''} />
+				</div>
+			</div>
+
+			<!-- Frequency -->
+			<div>
+				<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('frequency')}</p>
+				<div class="grid grid-cols-4 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
+					<button
+						type="button"
+						onclick={() => editInterval = 0}
+						class="py-1.5 px-1 rounded-full text-[11px] font-bold text-center transition-all {editInterval === 0 ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
+					>
+						{t('oneTime')}
+					</button>
+					<button
+						type="button"
+						onclick={() => editInterval = 1}
+						class="py-1.5 px-1 rounded-full text-[11px] font-bold text-center transition-all {editInterval === 1 ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
+					>
+						{t('monthly')}
+					</button>
+					<button
+						type="button"
+						onclick={() => editInterval = 3}
+						class="py-1.5 px-1 rounded-full text-[11px] font-bold text-center transition-all {editInterval === 3 ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
+					>
+						{t('quarterly')}
+					</button>
+					<button
+						type="button"
+						onclick={() => editInterval = 12}
+						class="py-1.5 px-1 rounded-full text-[11px] font-bold text-center transition-all {editInterval === 12 ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
+					>
+						{t('yearly')}
+					</button>
+				</div>
+				<input type="hidden" name="intervalMonths" value={editInterval} />
+
+				<!-- Dynamic Calendar Grid from Stitch view -->
+				<div class="mt-6 px-1">
+					<div class="relative pt-2">
+						<div class="grid grid-cols-7 gap-y-4 text-center items-center">
+							<div class="pt-1 pb-2 text-[11px] font-black uppercase tracking-widest text-[#2d3142] flex items-center justify-center -translate-y-[1px]">{calendarMonths[0].year}</div>
+							{#each calendarMonths as item}
+								{@const isPaid = isPaymentMonth(item.year, item.month, editInterval, editAmountDate)}
+								{@const monthName = new Date(item.year, item.month - 1, 1).toLocaleString(locale, { month: 'short' }).toUpperCase().substring(0, 3)}
+								<div class="relative flex flex-col items-center justify-center pt-1 pb-2 {item.month === 1 ? 'border-l border-[#ff7361]/20' : ''}">
+									{#if isPaid}
+										<span class="text-[10px] font-bold text-[#ff7361]">{monthName}</span>
+										<span class="w-1 h-1 rounded-full bg-[#ff7361] absolute bottom-0"></span>
+									{:else}
+										<span class="text-[10px] font-bold text-[#9ca3af]">{monthName}</span>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Footer Buttons -->
+			<div class="flex gap-4 pt-4">
+				<a
+					href={cancelHref}
+					class="flex-1 py-3 text-center rounded-xl bg-[#fbf9f5] border border-[#efeeea] text-xs font-bold text-[#9ca3af] hover:text-[#2d3142] transition-colors"
+				>
+					{t('cancel')}
+				</a>
+				<button
+					type="submit"
+					class="flex-1 py-3 rounded-xl bg-[#ff7361] text-white text-xs font-bold hover:bg-[#ff7361]/90 shadow-sm transition-colors"
+				>
+					{t('createTemplate')}
+				</button>
+			</div>
+		</form>
+	{:else if expense}
+		<!-- VIEW/EDIT EXISTING TEMPLATE FORM -->
+		<form
+			method="POST"
+			action="{actionRoute}?/update"
+			use:enhance={({ action }) => {
+				const actionName = action.search || '';
+				return async ({ result, update }) => {
+					if (result.type === 'success') {
+						if (actionName.includes('archive')) {
+							toasts.show(t('toastArchived'), 'success');
+						} else if (actionName.includes('updateAmount')) {
+							const dateParts = editAmountDate.split('-');
+							const y = parseInt(dateParts[0], 10);
+							const m = parseInt(dateParts[1], 10);
+							const dateObj = new Date(y, m - 1, 1);
+							const formattedDate = dateObj.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+							const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+							toasts.show(t('toastAmountSaved', { name: editName, date: capitalizedDate }), 'success');
+						} else if (actionName.includes('update')) {
+							if (expense && editPaidBy !== expense.paidBy) {
+								const targetPersonName = editPaidBy === 'A' ? namePersonA : namePersonB;
+								toasts.show(t('toastMoved', { name: targetPersonName }), 'success');
+							}
+						}
+					}
+					await update({ reset: false });
+				};
+			}}
+			bind:this={editFormElement}
+			class="space-y-12"
+		>
+			<input type="hidden" name="id" value={expense.id} />
+
+			<div class="flex justify-between items-start pb-8 border-b border-[#efeeea] gap-4">
+				<!-- Title & Badges -->
+				<div class="flex-grow min-w-0 space-y-3">
+					<div class="inline-grid grid-cols-1 max-w-full min-w-[1ch]">
+						<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre-wrap break-words">{editName || t('name')}</span>
+						<textarea
+							name="name"
+							bind:value={editName}
+							rows="1"
+							required
+							class="col-start-1 row-start-1 w-0 min-w-full h-full resize-none overflow-hidden font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none pb-1 transition-colors duration-200 whitespace-pre-wrap break-words"
+							onblur={triggerAutoSave}
+							onkeydown={(e) => {
+								if (e.key === 'Enter' && !e.shiftKey) {
+									e.preventDefault();
+									e.currentTarget.form?.requestSubmit();
+								}
+							}}
+						></textarea>
+					</div>
+					<div class="flex items-center gap-2">
+						{#if expense.archivedDate}
+							<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#ff7361]/10 text-[#ff7361] border border-[#ff7361]/20 font-bold text-[10px] uppercase tracking-wider">
+								<span class="w-1.5 h-1.5 rounded-full bg-[#ff7361]"></span>
+								{t('archived')}
+							</div>
+						{:else}
+							<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px] uppercase tracking-wider">
+								<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+								{t('active')}
+							</div>
+						{/if}
+						<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#ff7361]/10 text-[#ff7361] border border-[#ff7361]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
+							<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#ff7361]' : 'bg-[#4fd1c5]'}"></span>
+							{editPaidBy === 'A' ? namePersonA : namePersonB}
+						</div>
+					</div>
+				</div>
+
+				<!-- Amount and Date Box -->
+				<div class="flex flex-col items-end space-y-1.5">
+					{#if !isAmountEdit}
+						<button
+							type="button"
+							onclick={async () => {
+								isAmountEdit = true;
+								editAmountVal = formatAmount(Math.round(expense.currentAmount).toString());
+								editAmountDate = expense.history?.[expense.history.length - 1]?.validFrom || new Date().toISOString().split('T')[0];
+								await import('svelte').then(({ tick }) => tick());
+								amountInputEl?.focus();
+							}}
+							class="group cursor-pointer border border-transparent hover:border-[#ff7361]/20 hover:bg-[#fbf9f5] p-2 -m-2 rounded-xl transition-all flex flex-col items-end relative text-[#2d3142]"
+						>
+							<div class="flex items-center">
+								<span class="text-2xl font-bold text-[#2d3142] tracking-tight">
+									{#if currencyConfig.isPrefix}
+										<span class="text-[#9ca3af] mr-1 inline-block" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
+									{/if}
+									{new Intl.NumberFormat(locale).format(Math.round(expense.currentAmount))}
+									{#if !currencyConfig.isPrefix}
+										<span class="text-[#9ca3af] ml-1 inline-block">{currencyConfig.symbol}</span>
+									{/if}
+								</span>
+							</div>
+							{#if expense.intervalMonths !== 0}
+								<div class="mt-1 text-right flex items-center gap-1">
+									<span class="text-[12px] text-[#9ca3af]">{t('since')} <span class="font-bold text-[#2d3142]">{formatSinceDate(expense.history[expense.history.length - 1]?.validFrom || '', locale)}</span></span>
+								</div>
+							{:else}
+								<div class="mt-1 text-right flex items-center gap-1">
+									<span class="text-[12px] font-bold text-[#2d3142]">{formatOneTimeDate(expense.history[expense.history.length - 1]?.validFrom || '', locale)}</span>
+								</div>
+							{/if}
+							<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none w-8 h-8 bg-white/90 backdrop-blur shadow-sm rounded-full border border-[#ff7361]/20 flex items-center justify-center">
+								<span class="material-symbols-outlined text-[#ff7361] text-[16px]">edit</span>
+							</div>
+						</button>
+					{:else}
+						<!-- Amount Edit Mode input block -->
+						<div class="flex flex-col items-end space-y-2">
+							<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2">
+								{#if currencyConfig.isPrefix}
+									<span class="text-[#9ca3af] mr-1 inline-block -translate-y-[2px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
+								{/if}
+								<div class="inline-grid grid-cols-1">
+									<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[1px] pr-[6px] pb-[4px] whitespace-pre tracking-tight">{editAmountVal || '0'}</span>
+									<input
+										bind:this={amountInputEl}
+										type="text"
+										inputmode="numeric"
+										pattern="[0-9\s]*"
+										value={editAmountVal}
+										oninput={handleAmountInput}
+										class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pr-[6px] pb-[4px] tracking-tight transition-colors duration-200"
+										placeholder="0"
+									/>
+								</div>
+								<input type="hidden" name="amount" value={editAmountVal.replace(/\D/g, '')} />
+								{#if !currencyConfig.isPrefix}
+									<span class="text-[#9ca3af] ml-1 inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
+								{/if}
+							</div>
+							
+							<div class="flex items-center mt-2.5">
+								<input
+									name="validFrom"
+									type="date"
+									bind:value={editAmountDate}
+									class="px-1.5 py-0.5 rounded border border-[#efeeea] bg-[#fbf9f5] text-[12px] font-bold text-[#2d3142] focus:border-[#ff7361] focus:ring-0 outline-none cursor-pointer"
+								/>
+							</div>
+							
+							<div class="flex gap-2 pt-1">
+								<button
+									type="button"
+									class="px-2 py-1 text-[#9ca3af] font-bold text-[12px] hover:text-[#2d3142]"
+									onclick={() => isAmountEdit = false}
+								>
+									{t('cancel')}
+								</button>
+								<button
+									formaction="{actionRoute}?/updateAmount"
+									type="submit"
+									class="px-3 py-1 bg-[#ff7361] text-white rounded text-[12px] font-bold hover:bg-[#ff7361]/90 transition-all shadow-sm"
+									onclick={() => isAmountEdit = false}
+								>
+									{t('save')}
+								</button>
+							</div>
+						</div>
+					{/if}
+				</div>
+			</div>
+
+			<!-- Paid By Hidden input (updated via Move button) -->
+			<input type="hidden" name="paidBy" value={editPaidBy} />
+
+			<!-- Split Ratio -->
+			<div>
+				<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('splittingRatio')}</p>
+				<div class="space-y-4">
+					<div class="grid grid-cols-2 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
+						<button
+							type="button"
+							onclick={() => { editSplitType = 'static'; triggerAutoSave(); }}
+							class="py-1.5 rounded-full text-xs font-bold transition-all {editSplitType === 'static' ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
+						>
+							{t('static')}
+						</button>
+						<button
+							type="button"
+							onclick={() => { editSplitType = 'dynamic'; triggerAutoSave(); }}
+							class="py-1.5 rounded-full text-xs font-bold transition-all {editSplitType === 'dynamic' ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
+						>
+							{t('dynamic')}
+						</button>
+					</div>
+					<input type="hidden" name="splitType" value={editSplitType} />
+
+					{#if editSplitType === 'static'}
+						<div class="space-y-1 pt-0.5">
+							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
+								<span>{namePersonA} <span class="text-[#ff7361] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
+								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - editRatio) * 100)}%</span></span>
+							</div>
+							<div class="h-6 flex items-center">
+								<input
+									name="staticSplitRatio"
+									type="range"
+									min="0"
+									max="1"
+									step="0.01"
+									bind:value={editRatio}
+									oninput={(e) => {
+										editRatio = snapRatio(parseFloat(e.currentTarget.value));
+										e.currentTarget.value = editRatio.toString();
+									}}
+									onchange={triggerAutoSave}
+									class="w-full cursor-pointer appearance-none rounded-lg"
+									style="background: linear-gradient(to right, #ff7361 0%, #ff7361 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
+								/>
+							</div>
+							<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
+								<span>{formatter.format(Math.round(expense.currentAmount * editRatio))}</span>
+								<span>{formatter.format(Math.round(expense.currentAmount * (1 - editRatio)))}</span>
+							</div>
+						</div>
+					{:else}
+						<div class="space-y-1 pt-0.5">
+							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
+								<span>{namePersonA} <span class="text-[#ff7361] ml-0.5">{Math.round(dynamicSplitRatioA * 100)}%</span></span>
+								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - dynamicSplitRatioA) * 100)}%</span></span>
+							</div>
+							<!-- Styled share bar gradient without handle for dynamic split type -->
+							<div class="h-6 flex items-center">
+								<div class="w-full h-3 rounded-full overflow-hidden flex bg-[#4fd1c5]">
+									<div class="bg-[#ff7361] h-full" style="width: {dynamicSplitRatioA * 100}%"></div>
+								</div>
+							</div>
+							<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
+								<span>{formatter.format(Math.round(expense.currentAmount * dynamicSplitRatioA))}</span>
+								<span>{formatter.format(Math.round(expense.currentAmount * (1 - dynamicSplitRatioA)))}</span>
+							</div>
+						</div>
+					{/if}
+				</div>
+			</div>
+
+			<!-- Source Account -->
+			<div>
+				<div class="flex items-center justify-between mb-3">
+					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest">{t('source')}</p>
+					{#if accounts.length > 0}
+						<button
+							type="button"
+							onclick={() => isEditingAccounts = !isEditingAccounts}
+							class="text-[#ff7361] hover:text-[#ff7361]/80 flex items-center gap-1 transition-colors focus:outline-none text-xs font-bold"
+							title={t('editAccounts')}
+						>
+							{#if isEditingAccounts}
+								<span class="material-symbols-outlined font-bold flex items-center justify-center" style="font-size: 20px; width: 20px; height: 20px;">check</span>
+								<span>{t('done')}</span>
+							{:else}
+								<span class="material-symbols-outlined flex items-center justify-center" style="font-size: 20px; width: 20px; height: 20px;">edit</span>
+								<span>{t('edit')}</span>
+							{/if}
+						</button>
+					{/if}
+				</div>
+				<div class="flex flex-wrap gap-2 items-center">
+					{#each accounts as acc}
+						<div class="relative">
+							<button
+								type="button"
+								disabled={isEditingAccounts}
+								onclick={() => {
+									if (editAccountId === acc.id) {
+										editAccountId = null; // Unselect
+									} else {
+										editAccountId = acc.id;
+									}
+									triggerAutoSave();
+								}}
+								class="px-3.5 py-1.5 rounded-lg border-2 text-xs font-bold transition-all 
+								{editAccountId === acc.id ? 'border-[#ff7361] bg-[#ff7361]/5 text-[#ff7361]' : 'border-[#efeeea] bg-white text-[#2d3142]/80 hover:text-[#2d3142] hover:border-[#ff7361]/30 hover:bg-[#fbf9f5]/50'}
+								{isEditingAccounts ? 'cursor-default opacity-80' : 'cursor-pointer'}"
+							>
+								{acc.name}
+							</button>
+							{#if isEditingAccounts}
+								<button
+									type="button"
+									onclick={() => deleteAccount(acc.id)}
+									class="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-[#ff7361] text-white flex items-center justify-center shadow hover:bg-[#ff7361]/90 transition-colors focus:outline-none"
+									title={t('delete')}
+								>
+									<span class="material-symbols-outlined text-[18px] font-bold scale-[0.45]">close</span>
+								</button>
+							{/if}
+						</div>
+					{/each}
+
+					{#if isEditingAccounts || accounts.length === 0}
+						{#if isCreatingAccountInline}
+							<div class="flex items-center gap-2">
+								<div class="flex items-center border border-[#efeeea] bg-[#fbf9f5] rounded-lg px-2 h-[30px]">
+									<input
+										bind:this={inlineAccountInputEl}
+										type="text"
+										bind:value={inlineAccountName}
+										placeholder={t('accountName')}
+										class="bg-transparent border-none text-xs font-bold p-0 w-24 focus:ring-0 outline-none text-[#2d3142]"
+										onkeydown={(e) => {
+											if (e.key === 'Enter') {
+												e.preventDefault();
+												saveAccountInline();
+											} else if (e.key === 'Escape') {
+												cancelAccountInline();
+											}
+										}}
+									/>
+								</div>
+								<button
+									type="button"
+									onclick={saveAccountInline}
+									class="text-[#ff7361] hover:text-[#ff7361]/80 text-xs font-bold transition-colors focus:underline focus:outline-none cursor-pointer"
+								>
+									{t('save')}
+								</button>
+								<button
+									type="button"
+									onclick={cancelAccountInline}
+									class="text-[#9ca3af] hover:text-[#2d3142] text-xs font-bold transition-colors focus:underline focus:outline-none cursor-pointer"
+								>
+									{t('cancel')}
+								</button>
+							</div>
+						{:else}
+							<button
+								type="button"
+								onclick={() => isCreatingAccountInline = true}
+								class="pl-2.5 pr-3 py-1.5 rounded-lg border-2 border-dashed border-[#ff7361]/30 text-xs font-bold text-[#ff7361] hover:bg-[#ff7361]/5 transition-all flex items-center gap-1 focus:outline-none h-[32px]"
+							>
+								<span class="material-symbols-outlined text-[10px] font-bold">add</span>
+								<span>{t('add')}</span>
+							</button>
+						{/if}
+					{/if}
+					<input type="hidden" name="accountId" value={editAccountId || ''} />
+				</div>
+			</div>
+
+			<!-- Frequency -->
+			<div>
+				<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('frequency')}</p>
+				<div class="grid grid-cols-4 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
+					<button
+						type="button"
+						onclick={() => { editInterval = 0; triggerAutoSave(); }}
+						class="py-1.5 px-1 rounded-full text-[11px] font-bold text-center transition-all {editInterval === 0 ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
+					>
+						{t('oneTime')}
+					</button>
+					<button
+						type="button"
+						onclick={() => { editInterval = 1; triggerAutoSave(); }}
+						class="py-1.5 px-1 rounded-full text-[11px] font-bold text-center transition-all {editInterval === 1 ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
+					>
+						{t('monthly')}
+					</button>
+					<button
+						type="button"
+						onclick={() => { editInterval = 3; triggerAutoSave(); }}
+						class="py-1.5 px-1 rounded-full text-[11px] font-bold text-center transition-all {editInterval === 3 ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
+					>
+						{t('quarterly')}
+					</button>
+					<button
+						type="button"
+						onclick={() => { editInterval = 12; triggerAutoSave(); }}
+						class="py-1.5 px-1 rounded-full text-[11px] font-bold text-center transition-all {editInterval === 12 ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
+					>
+						{t('yearly')}
+					</button>
+				</div>
+				<input type="hidden" name="intervalMonths" value={editInterval} />
+
+				<!-- Dynamic Calendar Grid from Stitch view -->
+				<div class="mt-6 px-1">
+					<div class="relative pt-2">
+						<div class="grid grid-cols-7 gap-y-4 text-center items-center">
+							<div class="pt-1 pb-2 text-[11px] font-black uppercase tracking-widest text-[#2d3142] flex items-center justify-center -translate-y-[1px]">{calendarMonths[0].year}</div>
+							{#each calendarMonths as item}
+								{@const isPaid = isPaymentMonth(item.year, item.month, editInterval, editAmountDate)}
+								{@const monthName = new Date(item.year, item.month - 1, 1).toLocaleString(locale, { month: 'short' }).toUpperCase().substring(0, 3)}
+								<div class="relative flex flex-col items-center justify-center pt-1 pb-2 {item.month === 1 ? 'border-l border-[#ff7361]/20' : ''}">
+									{#if isPaid}
+										<span class="text-[10px] font-bold text-[#ff7361]">{monthName}</span>
+										<span class="w-1 h-1 rounded-full bg-[#ff7361] absolute bottom-0"></span>
+									{:else}
+										<span class="text-[10px] font-bold text-[#9ca3af]">{monthName}</span>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Price History Section (Only if not one-time) -->
+			{#if editInterval !== 0}
+				<div>
+					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('history')}</p>
+					<table class="w-full text-xs">
+						<tbody class="divide-y divide-[#efeeea] text-[#2d3142]">
+							{#if expense.archivedDate}
+								<tr>
+									<td class="py-2 font-bold text-sm text-[#2d3142]">{formatHistoryDate(expense.archivedDate, locale)}</td>
+									<td class="py-2 text-right font-bold text-sm text-[#2d3142]">
+										{t('archived')}
+									</td>
+								</tr>
+							{/if}
+							{#each uniqueHistory as hist}
+								<tr>
+									<td class="py-2 font-bold text-sm text-[#2d3142]">{formatHistoryDate(hist.validFrom, locale)}</td>
+									<td class="py-2 text-right font-bold text-sm text-[#2d3142] font-sans">
+										{formatter.format(Math.round(hist.amount))}
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{/if}
+
+			<!-- Actions (Archive, Move, & Hide) -->
+			<div class="pt-4 flex flex-col gap-3">
+				<div class="flex items-center justify-between gap-3">
+					<button
+						formaction="{actionRoute}?/archive"
+						type="submit"
+						class="flex-grow flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 rounded-xl text-[#ff7361] transition-all font-bold group border-[#ff7361] hover:bg-[#ff7361] hover:text-white"
+					>
+						<span class="material-symbols-outlined text-[20px]">archive</span>
+						<span class="text-xs font-bold text-center">{t('archiveExpense')}</span>
+					</button>
+
+					<button
+						type="button"
+						onclick={() => {
+							editPaidBy = editPaidBy === 'A' ? 'B' : 'A';
+							triggerAutoSave();
+						}}
+						class="flex-grow flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 rounded-xl text-[#ff7361] transition-all font-bold group border-[#ff7361] hover:bg-[#ff7361] hover:text-white"
+					>
+						<span class="text-xs font-bold text-center">
+							{t('moveTo', { name: editPaidBy === 'A' ? namePersonB : namePersonA })}
+						</span>
+						<span class="material-symbols-outlined text-[20px] font-bold">arrow_forward</span>
+					</button>
+				</div>
+			</div>
+		</form>
+	{/if}
+</div>
+
+<style>
+	.floating-sidebar-card {
+		/* Consistent shadow-lg (same as other dashboard cards) for all desktop viewports */
+		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+		border: 1px solid #efeeea;
+	}
+	@media (max-width: 1023.98px) {
+		.floating-sidebar-card {
+			/* No shadow and no border on tablet/mobile full screen */
+			box-shadow: none;
+			border: none;
+			border-top-left-radius: 1rem;
+			border-top-right-radius: 1rem;
+		}
+	}
+</style>
