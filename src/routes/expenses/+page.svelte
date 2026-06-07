@@ -564,11 +564,8 @@
 										<button
 											type="button"
 											onclick={() => editAccountId = acc.id}
-											class="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 text-xs font-bold transition-all {editAccountId === acc.id ? 'border-[#ff7361] bg-[#ff7361]/5 text-[#2d3142]' : 'border-[#efeeea] bg-[#fbf9f5]/50 text-[#9ca3af] hover:text-[#2d3142]'}"
+											class="px-3.5 py-1.5 rounded-lg border-2 text-xs font-bold transition-all {editAccountId === acc.id ? 'border-[#ff7361] bg-[#ff7361]/5 text-[#2d3142]' : 'border-[#efeeea] bg-[#fbf9f5]/50 text-[#9ca3af] hover:text-[#2d3142]'}"
 										>
-											<span class="material-symbols-outlined text-[18px] {editAccountId === acc.id ? 'text-[#ff7361]' : ''}">
-												{acc.owner === 'A' ? 'account_balance' : 'credit_card'}
-											</span>
 											{acc.name}
 										</button>
 									{/each}
