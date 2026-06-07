@@ -354,18 +354,34 @@
 				<div class="relative w-full mt-10">
 					<div class="w-full flex rounded-full overflow-hidden shadow-inner h-10 bg-[#fbf9f5]">
 						{#if currentTotalIncome > 0}
-							<div
-								class="h-full flex items-center px-4 justify-start text-white text-xs font-medium border-r-8 border-white transition-all duration-500"
-								style="width: {currentPctA * 100}%; background-color: #ff7361;"
-							>
-								{Math.round(currentPctA * 100)}%
-							</div>
-							<div
-								class="h-full flex items-center px-4 justify-end text-white text-xs font-medium transition-all duration-500"
-								style="width: {currentPctB * 100}%; background-color: #4fd1c5;"
-							>
-								{Math.round(currentPctB * 100)}%
-							</div>
+							{#if Math.round(currentPctA * 100) === 100}
+								<div
+									class="h-full flex items-center px-4 justify-start text-white text-xs font-medium transition-all duration-500"
+									style="width: 100%; background-color: #ff7361;"
+								>
+									100%
+								</div>
+							{:else if Math.round(currentPctB * 100) === 100}
+								<div
+									class="h-full flex items-center px-4 justify-end text-white text-xs font-medium transition-all duration-500"
+									style="width: 100%; background-color: #4fd1c5;"
+								>
+									100%
+								</div>
+							{:else}
+								<div
+									class="h-full flex items-center px-4 justify-start text-white text-xs font-medium border-r-8 border-white transition-all duration-500"
+									style="width: {currentPctA * 100}%; min-width: 48px; background-color: #ff7361;"
+								>
+									{Math.round(currentPctA * 100)}%
+								</div>
+								<div
+									class="h-full flex items-center px-4 justify-end text-white text-xs font-medium transition-all duration-500"
+									style="width: {currentPctB * 100}%; min-width: 48px; background-color: #4fd1c5;"
+								>
+									{Math.round(currentPctB * 100)}%
+								</div>
+							{/if}
 						{:else}
 							<div
 								class="h-full border-r-8 border-white"
