@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { getContext } from 'svelte';
-	import { goto } from '$app/navigation';
+	import ExpenseFormCard from '$lib/components/ExpenseFormCard.svelte';
 
 	const { locale, t, currencyConfig, formatter } = getContext<{
 		locale: string;
@@ -13,7 +13,7 @@
 
 	let { data } = $props();
 
-	// Read selected expense ID from query parameter or default to first active expense
+	// Read selected expense ID from query parameter
 	let selectedId = $derived(parseInt(page.url.searchParams.get('id') || '', 10) || null);
 	
 	// Create mode
@@ -28,169 +28,12 @@
 	// Currently selected expense
 	let selectedExpense = $derived(data.expenses.find(e => e.id === selectedId) || null);
 
-	// Reactive edit states for details sidebar
-	let editName = $state('');
-	let editPaidBy = $state<'A' | 'B'>('A');
-	let editInterval = $state(1);
-	let editSplitType = $state<'dynamic' | 'static'>('dynamic');
-	let editRatio = $state(0.5);
-	let editAccountId = $state<number | null>(null);
-
-	// Sync edit states when selection changes
-	$effect(() => {
-		if (selectedExpense) {
-			editName = selectedExpense.name;
-			editPaidBy = selectedExpense.paidBy;
-			editInterval = selectedExpense.intervalMonths;
-			editSplitType = selectedExpense.splitType;
-			editRatio = selectedExpense.staticSplitRatio ?? 0.5;
-			editAccountId = selectedExpense.accountId;
-		}
-	});
-
-	function snapRatio(val: number): number {
-		const snapPoints = [0, 0.1, 0.2, 0.3, 0.33, 0.4, 0.5, 0.6, 0.66, 0.7, 0.8, 0.9, 1.0];
-		const tolerance = 0.02; // Snap if within 2%
-		for (const pt of snapPoints) {
-			if (Math.abs(val - pt) < tolerance) {
-				return pt;
-			}
-		}
-		return val;
-	}
-
-	function formatSinceDate(dateStr: string, localeStr: string): string {
-		if (!dateStr) return '';
-		const date = new Date(dateStr + 'T00:00:00');
-		if (isNaN(date.getTime())) return dateStr;
-		return date.toLocaleDateString(localeStr, { month: 'short', year: 'numeric' }).toLowerCase();
-	}
-
-	function formatHistoryDate(dateStr: string, localeStr: string): string {
-		if (!dateStr) return '';
-		const date = new Date(dateStr + 'T00:00:00');
-		if (isNaN(date.getTime())) return dateStr;
-		const formatted = date.toLocaleDateString(localeStr, { month: 'long', year: 'numeric' });
-		return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-	}
-
-	// Price edit state
-	let isPriceEdit = $state(false);
-	let editPriceVal = $state('');
-	let editPriceDate = $state('');
-
-	function formatCost(val: string): string {
-		const clean = val.replace(/\D/g, '');
-		if (!clean) return '';
-		return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-	}
-
-	function handleCostInput(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const cursorPosition = input.selectionStart || 0;
-		const originalValue = input.value;
-
-		let clean = originalValue.replace(/\D/g, '');
-		if (clean.startsWith('0') && clean.length > 1) {
-			clean = clean.replace(/^0+/, '');
-		}
-		if (clean === '') clean = '0';
-		clean = clean.slice(0, 7); // Max 7 digits
-		const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-
-		const digitsBeforeCursor = originalValue.slice(0, cursorPosition).replace(/\D/g, '').length;
-
-		editPriceVal = formatted;
-		input.value = formatted;
-
-		let newCursorPosition = 0;
-		let digitsFound = 0;
-		for (let i = 0; i < formatted.length; i++) {
-			if (formatted[i] !== ' ') {
-				digitsFound++;
-			}
-			newCursorPosition = i + 1;
-			if (digitsFound === digitsBeforeCursor) {
-				break;
-			}
-		}
-
-		queueMicrotask(() => {
-			input.setSelectionRange(newCursorPosition, newCursorPosition);
-		});
-	}
-
-	$effect(() => {
-		if (selectedExpense) {
-			editPriceVal = formatCost(Math.round(selectedExpense.currentAmount).toString());
-			editPriceDate = new Date().toISOString().split('T')[0];
-		}
-	});
-
-	// Check if the form is dirty
-	let isDirty = $derived.by(() => {
-		if (!selectedExpense) return false;
-		return (
-			editName !== selectedExpense.name ||
-			editPaidBy !== selectedExpense.paidBy ||
-			editInterval !== selectedExpense.intervalMonths ||
-			editSplitType !== selectedExpense.splitType ||
-			editRatio !== (selectedExpense.staticSplitRatio ?? 0.5) ||
-			editAccountId !== selectedExpense.accountId
-		);
-	});
-
-	let reactiveNextPaymentDate = $derived.by(() => {
-		if (!selectedExpense || editInterval === 0) return null;
-
-		const year = data.period.year;
-		const month = data.period.month;
-		const targetLastDay = `${year}-${String(month).padStart(2, '0')}-31`;
-
-		const activeCost = [...selectedExpense.history]
-			.filter(c => c.validFrom <= targetLastDay)
-			.sort((a, b) => b.validFrom.localeCompare(a.validFrom))[0];
-
-		if (!activeCost) return null;
-
-		const costParts = activeCost.validFrom.split('-');
-		const costY = parseInt(costParts[0], 10);
-		const costM = parseInt(costParts[1], 10);
-
-		const diff = (year - costY) * 12 + (month - costM);
-		if (diff < 0) return null;
-
-		const remainder = diff % editInterval;
-		const monthsToAdd = editInterval - remainder;
-		const nextMonthTotal = month + (remainder === 0 ? 0 : monthsToAdd);
-		const nextY = year + Math.floor((nextMonthTotal - 1) / 12);
-		const nextM = ((nextMonthTotal - 1) % 12) + 1;
-
-		const date = new Date(nextY, nextM - 1, 1);
-		const formatted = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(date);
-		return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-	});
-
 	// Account creation dialog
 	let showAddAccount = $state(false);
 	let newAccountName = $state('');
 	let newAccountOwner = $state<'A' | 'B'>('A');
 
-	// Period parameters preservation
-	let currentYear = $derived(page.url.searchParams.get('year'));
-	let currentMonth = $derived(page.url.searchParams.get('month'));
-	let periodParams = $derived(currentYear && currentMonth ? `&year=${currentYear}&month=${currentMonth}` : '');
-	let cancelHref = $derived(currentYear && currentMonth ? `/expenses?year=${currentYear}&month=${currentMonth}` : '/expenses');
-
-	let editFormElement = $state<HTMLFormElement | null>(null);
-
-	function triggerAutoSave() {
-		queueMicrotask(() => {
-			if (isDirty && editFormElement) {
-				editFormElement.requestSubmit();
-			}
-		});
-	}
+	let cancelHref = '/expenses';
 </script>
 
 <div class="py-8">
@@ -205,14 +48,17 @@
 				</h2>
 				<div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(45,49,66,0.04)] border border-[#efeeea] overflow-hidden">
 					{#if expensesA.length > 0}
-						<div class="divide-y divide-[#efeeea]">
-							{#each expensesA as item}
+						<div class="flex flex-col">
+							{#each expensesA as item, idx}
 								<a
-									href={selectedId === item.id ? cancelHref : `?id=${item.id}${periodParams}`}
-									class="px-4 py-3 flex items-center justify-between hover:bg-[#fbf9f5] transition-colors border-l-4 {selectedId === item.id ? 'border-[#ff7361] bg-[#ff7361]/5' : 'border-transparent'}"
+									href={selectedId === item.id ? cancelHref : `?id=${item.id}`}
+									class="px-4 py-3 flex items-center justify-between hover:bg-[#ff7361]/5 transition-colors border-l-4 border-b border-[#efeeea] 
+									{selectedId === item.id ? 'border-l-[#ff7361] bg-[#ff7361]/5 border-b-transparent' : 'border-l-transparent'}
+									{idx === expensesA.length - 1 ? 'border-b-0' : ''}
+									{expensesA[idx + 1]?.id === selectedId ? 'border-b-transparent' : ''}"
 								>
 									<div class="flex flex-col flex-grow">
-										<span class="font-bold text-sm text-[#2d3142] hover:text-[#ff7361] transition-colors underline decoration-[#efeeea] hover:decoration-[#ff7361]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
+										<span class="font-bold text-sm text-[#2d3142] hover:text-[#ff7361] transition-colors decoration-[#efeeea] hover:decoration-[#ff7361]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
 										<div class="mt-1.5 w-24 h-1.5 bg-[#4fd1c5] rounded-full overflow-hidden flex">
 											{#if item.splitType === 'static'}
 												<div class="bg-[#ff7361] h-full" style="width: {(item.staticSplitRatio ?? 0.5) * 100}%"></div>
@@ -223,7 +69,7 @@
 									</div>
 									<div class="text-right">
 										<p class="font-bold text-sm text-[#2d3142]">{formatter.format(Math.round(item.currentAmount))}</p>
-										<p class="text-[10px] font-medium uppercase tracking-tighter {selectedId === item.id ? 'text-[#ff7361]' : 'text-[#9ca3af]'}">
+										<p class="text-[10px] font-bold uppercase tracking-wider {selectedId === item.id ? 'text-[#ff7361]' : 'text-[#9ca3af]'}">
 											{item.intervalMonths === 0 ? t('oneTime') : item.intervalMonths === 1 ? t('monthly') : item.intervalMonths === 3 ? t('quarterly') : item.intervalMonths === 12 ? t('yearly') : ''}
 										</p>
 									</div>
@@ -235,7 +81,7 @@
 					{/if}
 					<div class="px-4 py-3.5 bg-[#fbf9f5]/50 border-t border-[#efeeea]">
 						<a
-							href="?new=true&paidBy=A{periodParams}"
+							href="?new=true&paidBy=A"
 							class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
 						>
 							<span class="material-symbols-outlined text-sm">add</span>
@@ -253,14 +99,17 @@
 				</h2>
 				<div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(45,49,66,0.04)] border border-[#efeeea] overflow-hidden">
 					{#if expensesB.length > 0}
-						<div class="divide-y divide-[#efeeea]">
-							{#each expensesB as item}
+						<div class="flex flex-col">
+							{#each expensesB as item, idx}
 								<a
-									href={selectedId === item.id ? cancelHref : `?id=${item.id}${periodParams}`}
-									class="px-4 py-3 flex items-center justify-between hover:bg-[#fbf9f5] transition-colors border-l-4 {selectedId === item.id ? 'border-[#4fd1c5] bg-[#4fd1c5]/5' : 'border-transparent'}"
+									href={selectedId === item.id ? cancelHref : `?id=${item.id}`}
+									class="px-4 py-3 flex items-center justify-between hover:bg-[#4fd1c5]/5 transition-colors border-l-4 border-b border-[#efeeea]
+									{selectedId === item.id ? 'border-l-[#4fd1c5] bg-[#4fd1c5]/5 border-b-transparent' : 'border-l-transparent'}
+									{idx === expensesB.length - 1 ? 'border-b-0' : ''}
+									{expensesB[idx + 1]?.id === selectedId ? 'border-b-transparent' : ''}"
 								>
 									<div class="flex flex-col flex-grow">
-										<span class="font-bold text-sm text-[#2d3142] hover:text-[#ff7361] transition-colors underline decoration-[#efeeea] hover:decoration-[#ff7361]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
+										<span class="font-bold text-sm text-[#2d3142] hover:text-[#ff7361] transition-colors decoration-[#efeeea] hover:decoration-[#ff7361]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
 										<div class="mt-1.5 w-24 h-1.5 bg-[#4fd1c5] rounded-full overflow-hidden flex">
 											{#if item.splitType === 'static'}
 												<div class="bg-[#ff7361] h-full" style="width: {(item.staticSplitRatio ?? 0.5) * 100}%"></div>
@@ -271,7 +120,7 @@
 									</div>
 									<div class="text-right">
 										<p class="font-bold text-sm text-[#2d3142]">{formatter.format(Math.round(item.currentAmount))}</p>
-										<p class="text-[10px] font-medium uppercase tracking-tighter {selectedId === item.id ? 'text-[#4fd1c5]' : 'text-[#9ca3af]'}">
+										<p class="text-[10px] font-bold uppercase tracking-wider {selectedId === item.id ? 'text-[#4fd1c5]' : 'text-[#9ca3af]'}">
 											{item.intervalMonths === 0 ? t('oneTime') : item.intervalMonths === 1 ? t('monthly') : item.intervalMonths === 3 ? t('quarterly') : item.intervalMonths === 12 ? t('yearly') : ''}
 										</p>
 									</div>
@@ -283,7 +132,7 @@
 					{/if}
 					<div class="px-4 py-3.5 bg-[#fbf9f5]/50 border-t border-[#efeeea]">
 						<a
-							href="?new=true&paidBy=B{periodParams}"
+							href="?new=true&paidBy=B"
 							class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
 						>
 							<span class="material-symbols-outlined text-sm">add</span>
@@ -296,482 +145,40 @@
 
 		<!-- Right Column: Details Card -->
 		<div class="lg:col-span-5">
-			{#if isCreateMode}
-				<!-- Create New Template Panel -->
-				<div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(45,49,66,0.04)] p-8 border border-[#efeeea] sticky top-8">
-					<h3 class="text-lg font-black text-[#2d3142] font-display mb-6">{t('createNewTemplate')}</h3>
-					<form method="POST" action="?/create" use:enhance class="space-y-6">
-						<div class="space-y-1.5">
-					<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-name">{t('expenseName')}</label>
-					<input
-						id="new-name"
-						name="name"
-						type="text"
-						required
-						class="w-full px-4 py-2.5 rounded-xl border border-[#efeeea] focus:border-[#ff7361] focus:ring-0 text-sm"
-						placeholder={t('placeholderExpenseName')}
-					/>
-				</div>
-
-				<div class="grid grid-cols-2 gap-4">
-					<div class="space-y-1.5">
-						<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-paidBy">{t('detailPaidBy')}</label>
-						<select
-							id="new-paidBy"
-							name="paidBy"
-							value={initialPaidBy}
-							class="w-full px-4 py-2.5 rounded-xl border border-[#efeeea] focus:border-[#ff7361] focus:ring-0 text-sm"
-						>
-							<option value="A">{data.personAName}</option>
-							<option value="B">{data.personBName}</option>
-						</select>
-					</div>
-
-					<div class="space-y-1.5">
-						<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-interval">{t('frequency')}</label>
-						<select
-							id="new-interval"
-							name="intervalMonths"
-							class="w-full px-4 py-2.5 rounded-xl border border-[#efeeea] focus:border-[#ff7361] focus:ring-0 text-sm"
-						>
-							<option value="1">{t('monthly')}</option>
-							<option value="0">{t('oneTime')}</option>
-							<option value="3">{t('quarterly')}</option>
-							<option value="12">{t('yearly')}</option>
-						</select>
-					</div>
-				</div>
-
-				<div class="grid grid-cols-2 gap-4">
-					<div class="space-y-1.5">
-						<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-amount">{t('amountLabel', { symbol: currencyConfig.symbol })}</label>
-						<div class="relative flex items-center">
-							{#if currencyConfig.isPrefix}
-								<span class="absolute left-4 text-xs font-bold text-[#9ca3af]">{currencyConfig.symbol}</span>
-							{/if}
-							<input
-								id="new-amount"
-								name="amount"
-								type="number"
-								step="1"
-								required
-								class="w-full py-2.5 rounded-xl border border-[#efeeea] focus:border-[#ff7361] focus:ring-0 text-sm {currencyConfig.isPrefix ? 'pl-8 pr-4' : 'pl-4 pr-12'}"
-								placeholder="0"
-							/>
-							{#if !currencyConfig.isPrefix}
-								<span class="absolute right-4 text-xs font-bold text-[#9ca3af]">{currencyConfig.symbol}</span>
-							{/if}
-						</div>
-					</div>
-
-					<div class="space-y-1.5">
-						<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-validFrom">{t('startMonth')}</label>
-						<input
-							id="new-validFrom"
-							name="validFrom"
-							type="date"
-							required
-							value={new Date().toISOString().split('T')[0]}
-							class="w-full px-4 py-2.5 rounded-xl border border-[#efeeea] bg-[#fbf9f5]/50 font-bold text-sm text-[#2d3142] focus:border-[#ff7361] focus:ring-2 focus:ring-[#ff7361]/20 outline-none transition-all cursor-pointer"
-						/>
-					</div>
-				</div>
-
-				<div class="space-y-3">
-					<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider block" for="new-splitType">{t('splitType')}</label>
-					<div class="grid grid-cols-2 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
-						<button
-							type="button"
-							onclick={() => editSplitType = 'dynamic'}
-							class="py-2 rounded-full text-xs font-bold transition-all {editSplitType === 'dynamic' ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
-						>
-							{t('dynamic')}
-						</button>
-						<button
-							type="button"
-							onclick={() => editSplitType = 'static'}
-							class="py-2 rounded-full text-xs font-bold transition-all {editSplitType === 'static' ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
-						>
-							{t('static')}
-						</button>
-					</div>
-					<input type="hidden" name="splitType" value={editSplitType} />
-				</div>
-
-				{#if editSplitType === 'static'}
-					<div class="space-y-1 pt-1.5">
-						<div class="flex justify-between text-xs font-bold text-[#2d3142]">
-							<span>{data.personAName}: {Math.round(editRatio * 100)}%</span>
-							<span>{data.personBName}: {Math.round((1 - editRatio) * 100)}%</span>
-						</div>
-						<input
-							name="staticSplitRatio"
-							type="range"
-							min="0"
-							max="1"
-							step="0.01"
-							value={editRatio}
-							oninput={(e) => {
-								editRatio = snapRatio(parseFloat((e.target as HTMLInputElement).value));
-							}}
-							class="w-full cursor-pointer appearance-none rounded-lg"
-							style="background: linear-gradient(to right, #ff7361 0%, #ff7361 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
-						/>
-					</div>
-				{/if}
-
-				<div class="space-y-1.5">
-					<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-account">{t('paidFrom')}</label>
-					<select
-						id="new-account"
-						name="accountId"
-						class="w-full px-4 py-2.5 rounded-xl border border-[#efeeea] focus:border-[#ff7361] focus:ring-0 text-sm"
-					>
-						<option value="">{t('noAccount')}</option>
-						{#each data.accounts as acc}
-							<option value={acc.id}>{acc.name} ({acc.owner === 'A' ? data.personAName : data.personBName})</option>
-						{/each}
-					</select>
-				</div>
-
-				<div class="flex gap-4 pt-4 border-t border-[#efeeea]">
+			{#if isCreateMode || selectedExpense}
+				<div class="mobile-overlay-container animate-slide-in-fade">
 					<a
 						href={cancelHref}
-						class="flex-1 py-3 text-center rounded-xl bg-[#fbf9f5] border border-[#efeeea] text-xs font-bold text-[#9ca3af] hover:text-[#2d3142] transition-colors"
+						class="close-btn-floater"
+						aria-label={t('cancel')}
 					>
-						{t('cancel')}
+						<span class="material-symbols-outlined" style="font-weight: 200;">arrow_back</span>
 					</a>
-					<button
-						type="submit"
-						class="flex-1 py-3 rounded-xl bg-[#ff7361] text-white text-xs font-bold hover:bg-[#ff7361]/90 shadow-sm transition-colors"
-					>
-						{t('createTemplate')}
-					</button>
-				</div>
-			</form>
+					<ExpenseFormCard
+						expense={selectedExpense}
+						isCreateMode={isCreateMode}
+						initialPaidBy={initialPaidBy}
+						accounts={data.accounts}
+						namePersonA={data.personAName}
+						namePersonB={data.personBName}
+						dynamicSplitRatioA={data.dynamicSplitRatioA}
+						cancelHref={cancelHref}
+						actionRoute=""
+						currentYear={data.period.year}
+						currentMonth={data.period.month}
+					/>
 				</div>
 			{:else}
-				<!-- View/Edit selected template details -->
-				<div class="@container bg-white rounded-2xl shadow-[0_8px_30px_rgb(45,49,66,0.04)] p-8 md:p-10 border border-[#efeeea] sticky top-8">
-					{#if selectedExpense}
-
-
-						<form method="POST" action="?/update" use:enhance bind:this={editFormElement} class="space-y-6">
-				<input type="hidden" name="id" value={selectedExpense.id} />
-
-				<div class="flex justify-between items-start pb-6 gap-4">
-					<div class="flex-grow min-w-0 space-y-3">
-						<div class="inline-grid grid-cols-1 max-w-full min-w-[1ch]">
-							<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre-wrap break-words">{editName || ' '}</span>
-							<textarea
-								name="name"
-								bind:value={editName}
-								rows="1"
-								class="col-start-1 row-start-1 w-0 min-w-full h-full resize-none overflow-hidden font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none pb-1 transition-colors duration-200 whitespace-pre-wrap break-words"
-								onblur={triggerAutoSave}
-								onkeydown={(e) => {
-									if (e.key === 'Enter' && !e.shiftKey) {
-										e.preventDefault();
-										e.currentTarget.form?.requestSubmit();
-									}
-								}}
-							></textarea>
-						</div>
-						<div class="flex items-center gap-2">
-							<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px] uppercase tracking-wider">
-								<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-								{t('active')}
-							</div>
-							<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#ff7361]/10 text-[#ff7361] border border-[#ff7361]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
-								<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#ff7361]' : 'bg-[#4fd1c5]'}"></span>
-								{editPaidBy === 'A' ? data.personAName : data.personBName}
-							</div>
-						</div>
-					</div>
-
-					<!-- Price Display with edit trigger -->
-					<div class="flex flex-col items-end">
-						{#if !isPriceEdit}
-							<button
-								type="button"
-								onclick={() => {
-									isPriceEdit = true;
-									editPriceVal = formatCost(Math.round(selectedExpense.currentAmount).toString());
-									editPriceDate = new Date().toISOString().split('T')[0];
-								}}
-								class="group cursor-pointer border border-transparent hover:border-[#ff7361]/20 hover:bg-[#fbf9f5] p-2 -m-2 rounded-xl transition-all flex flex-col items-end relative min-w-[140px] whitespace-nowrap text-[#2d3142]"
-							>
-								<div class="flex items-center">
-									<span class="text-2xl font-bold text-[#2d3142] tracking-tight">
-										{#if currencyConfig.isPrefix}
-											<span class="text-[#9ca3af] mr-1 inline-block" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
-										{/if}
-										{new Intl.NumberFormat(locale).format(Math.round(selectedExpense.currentAmount))}
-										{#if !currencyConfig.isPrefix}
-											<span class="text-[#9ca3af] ml-1 inline-block">{currencyConfig.symbol}</span>
-										{/if}
-									</span>
-								</div>
-								{#if selectedExpense.intervalMonths !== 0}
-									<div class="mt-1 text-right flex items-center gap-1">
-										<span class="text-[12px] text-[#9ca3af]">{t('since')} <span class="font-bold text-[#2d3142]">{formatSinceDate(selectedExpense.history[selectedExpense.history.length - 1]?.validFrom || '', locale)}</span></span>
-									</div>
-								{/if}
-								<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none w-8 h-8 bg-white/90 backdrop-blur shadow-sm rounded-full border border-[#ff7361]/20 flex items-center justify-center">
-									<span class="material-symbols-outlined text-[#ff7361] text-[16px]">edit</span>
-								</div>
-							</button>
-						{:else}
-							<!-- Edit Mode: Inline price transformation -->
-							<div class="flex flex-col items-end space-y-1.5">
-								<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2">
-									{#if currencyConfig.isPrefix}
-										<span class="text-[#9ca3af] mr-1 inline-block -translate-y-[2px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
-									{/if}
-									<div class="inline-grid grid-cols-1">
-										<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[1px] pr-[6px] pb-[4px] whitespace-pre tracking-tight">{editPriceVal || '0'}</span>
-										<input
-											type="text"
-											inputmode="numeric"
-											pattern="[0-9\s]*"
-											value={editPriceVal}
-											oninput={handleCostInput}
-											class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pr-[6px] pb-[4px] tracking-tight transition-colors duration-200"
-											placeholder="0"
-										/>
-									</div>
-									<input type="hidden" name="amount" value={editPriceVal.replace(/\D/g, '')} />
-									{#if !currencyConfig.isPrefix}
-										<span class="text-[#9ca3af] ml-1 inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
-									{/if}
-								</div>
-								<div class="flex flex-col items-end space-y-1 mt-1">
-									{#if selectedExpense.intervalMonths !== 0}
-										<input
-											name="validFrom"
-											type="date"
-											bind:value={editPriceDate}
-											class="w-[125px] px-2 py-1 rounded-xl border border-[#efeeea] bg-[#fbf9f5] text-[12px] font-bold text-[#2d3142] focus:border-[#ff7361] focus:ring-2 focus:ring-[#ff7361]/20 outline-none transition-all cursor-pointer"
-										/>
-									{:else}
-										<input type="hidden" name="validFrom" value={selectedExpense.history[selectedExpense.history.length - 1]?.validFrom || ''} />
-									{/if}
-									<div class="flex gap-1.5 pt-0.5">
-										<button
-											type="button"
-											class="px-2 py-1 text-[#9ca3af] font-bold text-[12px] hover:text-[#2d3142]"
-											onclick={() => isPriceEdit = false}
-										>
-											{t('cancel')}
-										</button>
-										<button
-											formaction="?/updatePrice"
-											type="submit"
-											class="px-3 py-1 bg-[#ff7361] text-white rounded text-[12px] font-bold hover:bg-[#ff7361]/90 transition-all shadow-sm"
-											onclick={() => isPriceEdit = false}
-										>
-											{t('save')}
-										</button>
-									</div>
-								</div>
-							</div>
-						{/if}
-					</div>
+				<div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(45,49,66,0.04)] p-8 md:p-10 border border-[#efeeea] sticky top-8 text-center py-20">
+					<span class="material-symbols-outlined text-6xl text-[#9ca3af]/40 mb-3">receipt_long</span>
+					<h3 class="text-lg font-bold text-[#2d3142]">{t('selectTemplate')}</h3>
+					<p class="text-xs text-[#9ca3af] max-w-xs mx-auto mt-1">
+						{t('selectTemplateDesc')}
+					</p>
 				</div>
-
-				<!-- Hidden Paid By Input -->
-				<input type="hidden" name="paidBy" value={editPaidBy} />
-
-				<!-- Splitting Ratio Section -->
-				<div class="pt-2">
-					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('splittingRatio')}</p>
-					<div class="space-y-4">
-						<div class="grid grid-cols-2 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
-							<button
-								type="button"
-								onclick={() => { editSplitType = 'static'; triggerAutoSave(); }}
-								class="py-1.5 rounded-full text-xs font-bold transition-all {editSplitType === 'static' ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142]'}"
-							>
-								{t('static')}
-							</button>
-							<button
-								type="button"
-								onclick={() => { editSplitType = 'dynamic'; triggerAutoSave(); }}
-								class="py-1.5 rounded-full text-xs font-bold transition-all {editSplitType === 'dynamic' ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142]'}"
-							>
-								{t('dynamic')}
-							</button>
-						</div>
-						<input type="hidden" name="splitType" value={editSplitType} />
-
-						{#if editSplitType === 'static'}
-							<div class="space-y-1 pt-0.5">
-								<div class="flex justify-between text-sm font-bold text-[#2d3142]">
-									<span>{data.personAName} <span class="text-[#ff7361] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
-									<span><span class="mr-0.5">{data.personBName}</span> <span class="text-[#4fd1c5]">{Math.round((1 - editRatio) * 100)}%</span></span>
-								</div>
-								<input
-									name="staticSplitRatio"
-									type="range"
-									min="0"
-									max="1"
-									step="0.01"
-									value={editRatio}
-									oninput={(e) => {
-										editRatio = snapRatio(parseFloat((e.target as HTMLInputElement).value));
-									}}
-									onchange={triggerAutoSave}
-									class="w-full cursor-pointer appearance-none rounded-lg"
-									style="background: linear-gradient(to right, #ff7361 0%, #ff7361 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
-								/>
-								<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
-									<span>{formatter.format(Math.round(selectedExpense.currentAmount * editRatio))}</span>
-									<span>{formatter.format(Math.round(selectedExpense.currentAmount * (1 - editRatio)))}</span>
-								</div>
-
-							</div>
-						{:else}
-							<div class="space-y-1 pt-0.5">
-								<div class="flex justify-between text-sm font-bold text-[#2d3142]">
-									<span>{data.personAName} <span class="text-[#ff7361] ml-0.5">{Math.round(data.dynamicSplitRatioA * 100)}%</span></span>
-									<span><span class="mr-0.5">{data.personBName}</span> <span class="text-[#4fd1c5]">{Math.round((1 - data.dynamicSplitRatioA) * 100)}%</span></span>
-								</div>
-								<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
-									<span>{formatter.format(Math.round(selectedExpense.currentAmount * data.dynamicSplitRatioA))}</span>
-									<span>{formatter.format(Math.round(selectedExpense.currentAmount * (1 - data.dynamicSplitRatioA)))}</span>
-								</div>
-							</div>
-						{/if}
-					</div>
-				</div>
-
-				<!-- Source Account -->
-				<div class="pt-6 border-t border-[#efeeea]">
-					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('source')}</p>
-					<div class="flex flex-wrap gap-2">
-						{#each data.accounts as acc}
-							<button
-								type="button"
-								onclick={() => { editAccountId = acc.id; triggerAutoSave(); }}
-								class="px-3.5 py-1.5 rounded-lg border-2 text-xs font-bold transition-all {editAccountId === acc.id ? 'border-[#ff7361] bg-[#ff7361]/5 text-[#2d3142]' : 'border-[#efeeea] bg-[#fbf9f5]/50 text-[#9ca3af] hover:text-[#2d3142]'}"
-							>
-								{acc.name}
-							</button>
-						{/each}
-						<input type="hidden" name="accountId" value={editAccountId || ''} />
-
-						<button
-							type="button"
-							onclick={() => showAddAccount = true}
-							class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-dashed border-[#ff7361]/20 text-[#ff7361] hover:bg-[#ff7361]/5 text-xs font-bold transition-all"
-						>
-							<span class="material-symbols-outlined text-[18px]">add</span>
-							<span>{t('addSource')}</span>
-						</button>
-					</div>
-				</div>
-
-				<!-- Frequency Section -->
-				<div class="pt-6 border-t border-[#efeeea]">
-					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('frequency')}</p>
-					<div class="grid grid-cols-4 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
-						<button
-							type="button"
-							onclick={() => { editInterval = 0; triggerAutoSave(); }}
-							class="py-1.5 px-1 rounded-full text-[11px] font-bold text-center transition-all {editInterval === 0 ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
-						>
-							{t('oneTime')}
-						</button>
-						<button
-							type="button"
-							onclick={() => { editInterval = 1; triggerAutoSave(); }}
-							class="py-1.5 px-1 rounded-full text-[11px] font-bold text-center transition-all {editInterval === 1 ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
-						>
-							{t('monthly')}
-						</button>
-						<button
-							type="button"
-							onclick={() => { editInterval = 3; triggerAutoSave(); }}
-							class="py-1.5 px-1 rounded-full text-[11px] font-bold text-center transition-all {editInterval === 3 ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
-						>
-							{t('quarterly')}
-						</button>
-						<button
-							type="button"
-							onclick={() => { editInterval = 12; triggerAutoSave(); }}
-							class="py-1.5 px-1 rounded-full text-[11px] font-bold text-center transition-all {editInterval === 12 ? 'bg-[#ff7361] text-white shadow-sm' : 'text-[#2d3142] hover:bg-[#efeeea]'}"
-						>
-							{t('yearly')}
-						</button>
-					</div>
-					<input type="hidden" name="intervalMonths" value={editInterval} />
-
-					{#if reactiveNextPaymentDate}
-						<div class="flex items-center gap-2 mt-4 px-1">
-							<span class="material-symbols-outlined text-[18px] text-[#ff7361]">calendar_month</span>
-							<p class="text-xs font-medium text-[#9ca3af]">
-								{t('nextPaymentDate')} <span class="font-bold text-black ml-1">{reactiveNextPaymentDate}</span>
-							</p>
-						</div>
-					{/if}
-				</div>
-
-				<!-- Price History Section -->
-				<div class="pt-6 border-t border-[#efeeea]">
-					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('priceHistory')}</p>
-					<table class="w-full text-xs">
-						<tbody class="divide-y divide-[#efeeea] text-[#2d3142]">
-							{#each [...selectedExpense.history].sort((a,b) => b.validFrom.localeCompare(a.validFrom)) as hist}
-								<tr>
-									<td class="py-2 font-bold text-sm text-[#2d3142]">{formatHistoryDate(hist.validFrom, locale)}</td>
-									<td class="py-2 text-right font-bold text-sm text-[#2d3142] font-sans">
-										{formatter.format(Math.round(hist.amount))}
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
-
-				<!-- Sidebar Footer: Archive & Move -->
-				<div class="pt-8 border-t border-[#efeeea] flex items-center justify-between gap-3">
-					<button
-						formaction="?/archive"
-						type="submit"
-						class="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl text-[#ff7361] transition-all font-bold group border-[#ff7361] hover:bg-[#ff7361] hover:text-white"
-					>
-						<span class="material-symbols-outlined text-[20px]">archive</span>
-						<span class="text-xs font-bold">{t('archiveExpense')}</span>
-					</button>
-
-					<button
-						type="button"
-						onclick={() => {
-							editPaidBy = editPaidBy === 'A' ? 'B' : 'A';
-							triggerAutoSave();
-						}}
-						class="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl text-[#ff7361] transition-all font-bold group border-[#ff7361] hover:bg-[#ff7361] hover:text-white"
-					>
-						<span class="text-xs font-bold">
-							{t('moveTo', { name: editPaidBy === 'A' ? data.personBName : data.personAName })}
-						</span>
-						<span class="material-symbols-outlined text-[20px] font-bold">arrow_forward</span>
-					</button>
-				</div>
-			</form>
-				{:else}
-					<div class="py-20 text-center">
-						<span class="material-symbols-outlined text-6xl text-[#9ca3af]/40 mb-3">receipt_long</span>
-						<h3 class="text-lg font-bold text-[#2d3142]">{t('selectTemplate')}</h3>
-						<p class="text-xs text-[#9ca3af] max-w-xs mx-auto mt-1">
-							{t('selectTemplateDesc')}
-						</p>
-					</div>
-				{/if}
-			</div>
-		{/if}
+			{/if}
+		</div>
 	</div>
-</div>
 </div>
 
 <!-- Modal: Add Source Account -->
@@ -829,3 +236,105 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	@keyframes slideUpFadeMobile {
+		from {
+			opacity: 0;
+			transform: translateY(100px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	.animate-slide-in-fade {
+		animation: slideUpFadeMobile 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	}
+
+	.mobile-overlay-container {
+		display: block;
+	}
+
+	.close-btn-floater {
+		position: fixed;
+		top: 10px;
+		left: 16px;
+		z-index: 60;
+		color: rgba(255, 255, 255, 0.7);
+		text-decoration: none;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		border-radius: 9999px;
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		background-color: rgba(255, 255, 255, 0.08);
+		opacity: 0.9;
+	}
+
+	.close-btn-floater:hover {
+		background-color: rgba(255, 255, 255, 0.2);
+		border-color: rgba(255, 255, 255, 0.3);
+		opacity: 1;
+	}
+
+	.close-btn-floater:active {
+		background-color: rgba(255, 255, 255, 0.3);
+		scale: 0.95;
+	}
+
+	.close-btn-floater .material-symbols-outlined {
+		font-size: 22px;
+	}
+
+	@media (max-width: 1023.98px) {
+		.mobile-overlay-container {
+			position: fixed;
+			z-index: 50;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			background-color: #ff7361; /* Coral background shows all around */
+			overflow-y: auto;
+			padding-top: 60px; /* Spacing for the background at the top + margin below close button */
+			padding-left: 12px;
+			padding-right: 12px;
+			padding-bottom: 12px;
+		}
+
+
+	}
+
+	@media (min-width: 1024px) {
+		.mobile-overlay-container {
+			margin-top: 0; /* Aligned card top again with other cards */
+			position: relative;
+		}
+
+		.close-btn-floater {
+			display: none !important;
+		}
+
+		.close-btn-floater:hover {
+			background-color: rgba(255, 255, 255, 0.25);
+			opacity: 1;
+		}
+
+		.close-btn-floater:active {
+			background-color: rgba(255, 255, 255, 0.35);
+			opacity: 1;
+		}
+
+		.close-btn-floater .close-icon-content {
+			display: inline-block;
+		}
+
+		.close-btn-floater .close-text-content {
+			display: none;
+		}
+	}
+</style>
