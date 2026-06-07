@@ -18,12 +18,7 @@
 	
 	// Create mode
 	let isCreateMode = $derived(page.url.searchParams.get('new') === 'true');
-	let isOpen = $derived(selectedId !== null || isCreateMode);
 	let initialPaidBy = $derived((page.url.searchParams.get('paidBy') as 'A' | 'B') || 'A');
-
-	function closeSidebar() {
-		goto(cancelHref, { keepFocus: true });
-	}
 
 	// Active and archived templates lists
 	let activeExpenses = $derived(data.expenses.filter(e => e.archivedDate === null));
@@ -198,10 +193,10 @@
 	}
 </script>
 
-<div class="py-8 overflow-x-hidden">
+<div class="py-8">
 	<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 		<!-- Left Column: Recurring Expenses List -->
-		<div class="lg:col-span-12 flex flex-col space-y-6 transition-transform duration-300 ease-out {isOpen ? '-translate-x-full lg:translate-x-0' : 'translate-x-0'}">
+		<div class="lg:col-span-7 flex flex-col space-y-6">
 			<!-- Payer A's templates -->
 			<div class="flex flex-col space-y-3">
 				<h2 class="text-white text-2xl font-bold uppercase tracking-widest flex items-center gap-3 ml-1 mt-2">
@@ -298,41 +293,25 @@
 				</div>
 			</div>
 		</div>
-	</div>
-</div>
 
-<!-- Backdrop Overlay -->
-{#if isOpen}
-	<button
-		type="button"
-		onclick={closeSidebar}
-		class="fixed inset-0 bg-[#2d3142]/40 backdrop-blur-sm z-40 transition-opacity duration-300 cursor-default border-0 w-full h-full"
-		aria-label="Close details"
-	></button>
-{/if}
-
-<!-- Sidebar Panel Overlay -->
-<div
-	class="fixed top-0 right-0 h-full w-full sm:w-[500px] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-out border-l border-[#efeeea] flex flex-col {isOpen ? 'translate-x-0' : 'translate-x-full'}"
->
-	<div class="flex justify-between items-center px-8 pt-8 pb-4 border-b border-[#efeeea]">
-		<h3 class="text-lg font-black text-[#2d3142] font-display">
-			{isCreateMode ? t('createNewTemplate') : t('templateDetails')}
-		</h3>
-		<button
-			type="button"
-			onclick={closeSidebar}
-			class="w-8 h-8 rounded-full border border-[#efeeea] hover:bg-[#fbf9f5] hover:border-[#ff7361]/20 transition-all flex items-center justify-center text-[#9ca3af] hover:text-[#ff7361] focus:outline-none"
-		>
-			<span class="material-symbols-outlined text-lg">close</span>
-		</button>
-	</div>
-	
-	<div class="flex-grow overflow-y-auto p-8">
-		{#if isCreateMode}
-			<!-- Create New Template Panel -->
-			<form method="POST" action="?/create" use:enhance class="space-y-6">
-				<div class="space-y-1.5">
+		<!-- Right Column: Details Card -->
+		<div class="lg:col-span-5">
+			{#if isCreateMode}
+				<!-- Create New Template Panel -->
+				<div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(45,49,66,0.04)] p-8 border border-[#efeeea] sticky top-8">
+					<div class="flex justify-between items-center pb-4 mb-6 border-b border-[#efeeea]">
+						<h3 class="text-lg font-black text-[#2d3142] font-display">
+							{t('createNewTemplate')}
+						</h3>
+						<a
+							href={cancelHref}
+							class="w-8 h-8 rounded-full border border-[#efeeea] hover:bg-[#fbf9f5] hover:border-[#ff7361]/20 transition-all flex items-center justify-center text-[#9ca3af] hover:text-[#ff7361] focus:outline-none"
+						>
+							<span class="material-symbols-outlined text-lg">close</span>
+						</a>
+					</div>
+					<form method="POST" action="?/create" use:enhance class="space-y-6">
+						<div class="space-y-1.5">
 					<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-name">{t('expenseName')}</label>
 					<input
 						id="new-name"
@@ -480,9 +459,24 @@
 					</button>
 				</div>
 			</form>
-		{:else if selectedExpense}
-			<!-- View/Edit selected template details -->
-			<form method="POST" action="?/update" use:enhance bind:this={editFormElement} class="space-y-6">
+				</div>
+			{:else}
+				<!-- View/Edit selected template details -->
+				<div class="@container bg-white rounded-2xl shadow-[0_8px_30px_rgb(45,49,66,0.04)] p-8 md:p-10 border border-[#efeeea] sticky top-8">
+					{#if selectedExpense}
+						<div class="flex justify-between items-center pb-4 mb-6 border-b border-[#efeeea]">
+							<h3 class="text-lg font-black text-[#2d3142] font-display">
+								{t('templateDetails')}
+							</h3>
+							<a
+								href={cancelHref}
+								class="w-8 h-8 rounded-full border border-[#efeeea] hover:bg-[#fbf9f5] hover:border-[#ff7361]/20 transition-all flex items-center justify-center text-[#9ca3af] hover:text-[#ff7361] focus:outline-none"
+							>
+								<span class="material-symbols-outlined text-lg">close</span>
+							</a>
+						</div>
+
+						<form method="POST" action="?/update" use:enhance bind:this={editFormElement} class="space-y-6">
 				<input type="hidden" name="id" value={selectedExpense.id} />
 
 				<div class="flex justify-between items-start pb-6 gap-4">
@@ -785,8 +779,19 @@
 					</button>
 				</div>
 			</form>
+				{:else}
+					<div class="py-20 text-center">
+						<span class="material-symbols-outlined text-6xl text-[#9ca3af]/40 mb-3">receipt_long</span>
+						<h3 class="text-lg font-bold text-[#2d3142]">{t('selectTemplate')}</h3>
+						<p class="text-xs text-[#9ca3af] max-w-xs mx-auto mt-1">
+							{t('selectTemplateDesc')}
+						</p>
+					</div>
+				{/if}
+			</div>
 		{/if}
 	</div>
+</div>
 </div>
 
 <!-- Modal: Add Source Account -->
