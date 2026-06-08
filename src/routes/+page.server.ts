@@ -53,8 +53,33 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	const totalExpensesAmount = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-	let accounts: any[] = [];
-	let allExpensesTemplates: any[] = [];
+	interface Account {
+		id: number;
+		name: string;
+		owner: string;
+	}
+
+	interface ExpenseHistoryItem {
+		amount: number;
+		validFrom: string;
+	}
+
+	interface ExpenseTemplate {
+		id: number;
+		name: string;
+		paidBy: 'A' | 'B';
+		accountId: number | null;
+		intervalMonths: number;
+		splitType: 'dynamic' | 'static';
+		staticSplitRatio: number | null;
+		currentAmount: number;
+		nextPaymentDate: string | null;
+		archivedDate: string | null;
+		history: ExpenseHistoryItem[];
+	}
+
+	let accounts: Account[] = [];
+	let allExpensesTemplates: ExpenseTemplate[] = [];
 	if (url.searchParams.has('id') || url.searchParams.has('new')) {
 		accounts = await getAccounts();
 		
