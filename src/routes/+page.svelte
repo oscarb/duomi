@@ -58,6 +58,29 @@
 		return { year: y, month: m };
 	});
 
+	// Derived navigation links that preserve existing query parameters (like 'new', 'id', 'paidBy')
+	let prevMonthHref = $derived.by(() => {
+		const params = new URLSearchParams(page.url.searchParams);
+		params.set('year', prevMonth.year.toString());
+		params.set('month', prevMonth.month.toString());
+		return `?${params.toString()}`;
+	});
+
+	let nextMonthHref = $derived.by(() => {
+		const params = new URLSearchParams(page.url.searchParams);
+		params.set('year', nextMonth.year.toString());
+		params.set('month', nextMonth.month.toString());
+		return `?${params.toString()}`;
+	});
+
+	let todayHref = $derived.by(() => {
+		const params = new URLSearchParams(page.url.searchParams);
+		params.delete('year');
+		params.delete('month');
+		const str = params.toString();
+		return str ? `/?${str}` : '/';
+	});
+
 	// Dynamically format month names based on locale
 	let monthName = $derived.by(() => {
 		const date = new Date(data.period.year, data.period.month - 1, 1);
@@ -369,7 +392,7 @@
 		<div class="flex items-center gap-3">
 			{#if !isCurrentPeriod}
 				<a
-					href="/"
+					href={todayHref}
 					class="w-12 h-12 rounded-full border border-white/15 bg-white/5 hover:bg-white/20 hover:border-white/30 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center opacity-70 hover:opacity-100 text-white"
 					title="{locale.startsWith('sv') ? 'Gå till' : 'Go to'} {realMonthName} {realYear}"
 				>
@@ -377,13 +400,13 @@
 				</a>
 			{/if}
 			<a
-				href="?year={prevMonth.year}&month={prevMonth.month}"
+				href={prevMonthHref}
 				class="w-12 h-12 rounded-full border border-white/15 bg-white/5 hover:bg-white/20 hover:border-white/30 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center opacity-70 hover:opacity-100 text-white"
 			>
 				<span class="material-symbols-outlined text-3xl" style="font-weight: 200;">arrow_back</span>
 			</a>
 			<a
-				href="?year={nextMonth.year}&month={nextMonth.month}"
+				href={nextMonthHref}
 				class="w-12 h-12 rounded-full border border-white/15 bg-white/5 hover:bg-white/20 hover:border-white/30 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center opacity-70 hover:opacity-100 text-white"
 			>
 				<span class="material-symbols-outlined text-3xl" style="font-weight: 200;">arrow_forward</span>
