@@ -120,8 +120,8 @@
 	}
 
 	// Temporary dynamic edit states
-	let incomeAVal = $state(data.income.isFallback || data.income.person_a === 0 ? '' : formatIncome(data.income.person_a.toString()));
-	let incomeBVal = $state(data.income.isFallback || data.income.person_b === 0 ? '' : formatIncome(data.income.person_b.toString()));
+	let incomeAVal = $state('');
+	let incomeBVal = $state('');
 
 	let currentIncomeANum = $derived.by(() => {
 		const val = incomeAVal.replace(/\s/g, '');
@@ -146,10 +146,16 @@
 
 	let currentSettlement = $derived(calculateSettlement(currentIncomeANum, currentIncomeBNum, data.expenses.items));
 
+	let currentPeriodKey = $state('');
+
 	// Keep input in sync with server data when month changes
 	$effect(() => {
-		incomeAVal = data.income.isFallback || data.income.person_a === 0 ? '' : formatIncome(data.income.person_a.toString());
-		incomeBVal = data.income.isFallback || data.income.person_b === 0 ? '' : formatIncome(data.income.person_b.toString());
+		const periodKey = `${data.period.year}-${data.period.month}`;
+		if (currentPeriodKey !== periodKey) {
+			currentPeriodKey = periodKey;
+			incomeAVal = data.income.isFallback || data.income.person_a === 0 ? '' : formatIncome(data.income.person_a.toString());
+			incomeBVal = data.income.isFallback || data.income.person_b === 0 ? '' : formatIncome(data.income.person_b.toString());
+		}
 	});
 
 	let expenseAmounts = $state<Record<number, string>>({});
