@@ -49,8 +49,8 @@ CREATE TABLE expenses (
     account_id INTEGER REFERENCES accounts(id) ON DELETE SET NULL
 );
 
--- Expense Costs: Price history for expenses
-CREATE TABLE expense_costs (
+-- Expense Amounts: Price history for expenses
+CREATE TABLE expense_amounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     expense_id INTEGER NOT NULL,
     amount INTEGER NOT NULL, -- Stored in whole currency units (no decimals)
