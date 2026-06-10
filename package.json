@@ -10,8 +10,7 @@
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "test": "DATABASE_URL=./data/test.db drizzle-kit migrate && DATABASE_URL=./data/test.db vitest run --fileParallelism=false",
-    "release": "node scripts/release.cjs"
+    "test": "DATABASE_URL=./data/test.db drizzle-kit migrate && DATABASE_URL=./data/test.db vitest run --fileParallelism=false"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.5.4",
