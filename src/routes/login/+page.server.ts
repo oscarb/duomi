@@ -4,7 +4,7 @@ import { env } from '$env/dynamic/private';
 import { dev } from '$app/environment';
 
 export const actions: Actions = {
-	default: async ({ request, cookies }) => {
+	default: async ({ request, cookies, url }) => {
 		const data = await request.formData();
 		const submittedPassphrase = data.get('passphrase');
 		const correctPassphrase = env.SECRET_APP_PASSPHRASE;
@@ -17,7 +17,7 @@ export const actions: Actions = {
 			cookies.set('duomi_auth', correctPassphrase, {
 				path: '/',
 				httpOnly: true,
-				secure: !dev,
+				secure: url.protocol === 'https:',
 				maxAge: 60 * 60 * 24 * 365, // 1 year
 				sameSite: 'lax'
 			});
