@@ -66,8 +66,9 @@ describe('Authentication Flow Integration', () => {
 
 	afterEach(() => {
 		delete process.env.SECRET_APP_PASSPHRASE;
-		delete env.SECRET_APP_PASSPHRASE;
+		delete (env as any).SECRET_APP_PASSPHRASE;
 	});
+
 
 
 
@@ -178,7 +179,8 @@ describe('Authentication Flow Integration', () => {
 				request: event.request,
 				cookies: event.cookies,
 				url: event.url
-			} as any);
+			} as any) as any;
+
 
 			expect(result).toBeDefined();
 			// SvelteKit returns validation errors as object with status (e.g. from fail())

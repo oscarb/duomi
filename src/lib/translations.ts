@@ -102,10 +102,20 @@ export const translations: Record<string, Record<string, string>> = {
 		paidByPerson: 'Paid by {name}',
 		toBePaidByPerson: 'To be paid by {name}',
 		sortAmount: 'Amount',
-		sortTitle: 'Title'
+		sortTitle: 'Title',
+		loginTitle: 'Sign In',
+		loginButton: 'Sign In',
+		loginPlaceholder: 'Enter master passphrase',
+		invalidPassphrase: 'Incorrect passphrase. Please try again.',
+		passphraseLabel: 'Passphrase',
+		hidePassphrase: 'Hide passphrase',
+		showPassphrase: 'Show passphrase'
 	},
 	'sv-SE': {
+
+
 		currentSettlement: 'Aktuell balans',
+
 		allSettled: 'Kvitt och klart!',
 		nothingToSeeHere: 'Här var det tomt',
 		noOutstandingExpenses: 'Inga utgifter att dela den här månaden.',
@@ -185,9 +195,19 @@ export const translations: Record<string, Record<string, string>> = {
 		paidByPerson: 'Betald av {name}',
 		toBePaidByPerson: 'Betalas av {name}',
 		sortAmount: 'Belopp',
-		sortTitle: 'Titel'
+		sortTitle: 'Titel',
+		loginTitle: 'Logga in',
+		loginButton: 'Logga in',
+		loginPlaceholder: 'Ange lösenordsfras',
+		invalidPassphrase: 'Felaktig lösenordsfras. Försök igen.',
+		passphraseLabel: 'Lösenordsfras',
+		hidePassphrase: 'Dölj lösenordsfras',
+		showPassphrase: 'Visa lösenordsfras'
 	}
 };
+
+
+
 
 export function translate(locale: string, key: string, params?: Record<string, string>): string {
 	const dict = translations[locale] || translations['en-US'];

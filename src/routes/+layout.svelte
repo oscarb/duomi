@@ -59,22 +59,25 @@
 </script>
 
 <div class="min-h-screen bg-[#ff7361] font-sans text-[#2d3142] flex flex-col">
-	<header class="w-full py-6 flex justify-center items-center relative bg-transparent text-white">
-		<nav class="flex space-x-8 font-medium">
-			<a
-				class="pb-1 transition-opacity border-b-2 hover:opacity-100 {page.url.pathname === '/' ? 'border-white opacity-100' : 'border-transparent opacity-60'}"
-				href={dashboardHref}
-			>
-				{t('dashboard')}
-			</a>
-			<a
-				class="pb-1 transition-opacity border-b-2 hover:opacity-100 {page.url.pathname.startsWith('/expenses') ? 'border-white opacity-100' : 'border-transparent opacity-60'}"
-				href={expensesHref}
-			>
-				{t('expenses')}
-			</a>
-		</nav>
-	</header>
+	{#if page.url.pathname !== '/login'}
+		<header class="w-full py-6 flex justify-center items-center relative bg-transparent text-white animate-slide-in">
+			<nav class="flex space-x-8 font-medium">
+				<a
+					class="pb-1 transition-opacity border-b-2 hover:opacity-100 {page.url.pathname === '/' ? 'border-white opacity-100' : 'border-transparent opacity-60'}"
+					href={dashboardHref}
+				>
+					{t('dashboard')}
+				</a>
+				<a
+					class="pb-1 transition-opacity border-b-2 hover:opacity-100 {page.url.pathname.startsWith('/expenses') ? 'border-white opacity-100' : 'border-transparent opacity-60'}"
+					href={expensesHref}
+				>
+					{t('expenses')}
+				</a>
+			</nav>
+		</header>
+	{/if}
+
 
 	<!-- Main Content Wrapper -->
 	<div class="flex-grow w-full max-w-6xl mx-auto px-4 md:px-8">
