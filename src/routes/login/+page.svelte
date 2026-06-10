@@ -21,7 +21,7 @@
 			<div class="mx-auto h-16 w-16 bg-[#ff7361]/10 rounded-full flex items-center justify-center mb-4">
 				<span class="material-symbols-outlined text-[#ff7361] text-4xl" style="font-weight: 300;">lock</span>
 			</div>
-			<h1 class="text-3xl font-extrabold text-[#2d3142] font-display">
+			<h1 class="text-2xl font-bold text-[#2d3142] font-display">
 				{t('loginTitle')}
 			</h1>
 		</div>
@@ -39,7 +39,6 @@
 							type={showPassword ? 'text' : 'password'}
 							autocomplete="current-password"
 							required
-							placeholder={t('loginPlaceholder')}
 							class="w-full px-4 py-3.5 rounded-xl border border-[#efeeea] focus:border-[#ff7361] focus:ring-2 focus:ring-[#ff7361]/25 outline-none transition-all pr-12 text-[#2d3142] bg-white font-sans text-base shadow-sm"
 						/>
 						<button
@@ -63,13 +62,13 @@
 				</p>
 			{/if}
 
-			<div>
+			<div class="flex justify-center pt-2">
 				<button
 					type="submit"
-					class="w-full bg-[#ff7361] hover:bg-[#ff7361]/90 active:scale-[0.98] text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-[#ff7361]/25 hover:shadow-xl hover:shadow-[#ff7361]/30 transition-all flex items-center justify-center gap-2 cursor-pointer text-base"
+					class="w-14 h-14 bg-[#ff7361] hover:bg-[#ff7361]/90 active:scale-[0.95] text-white rounded-full shadow-lg shadow-[#ff7361]/25 hover:shadow-xl hover:shadow-[#ff7361]/30 transition-all flex items-center justify-center cursor-pointer"
+					aria-label={t('loginButton')}
 				>
-					<span>{t('loginButton')}</span>
-					<span class="material-symbols-outlined text-lg" style="font-weight: 300;">arrow_forward</span>
+					<span class="material-symbols-outlined text-2xl" style="font-weight: 300;">arrow_forward</span>
 				</button>
 			</div>
 		</form>
