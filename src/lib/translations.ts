@@ -199,7 +199,7 @@ export const translations: Record<string, Record<string, string>> = {
 		loginTitle: 'Logga in',
 		loginButton: 'Logga in',
 		loginPlaceholder: 'Ange lösenordsfras',
-		invalidPassphrase: 'Felaktig lösenordsfras. Försök igen.',
+		invalidPassphrase: 'Fel lösenord. Försök igen.',
 		passphraseLabel: 'Lösenordsfras',
 		hidePassphrase: 'Dölj lösenordsfras',
 		showPassphrase: 'Visa lösenordsfras'
