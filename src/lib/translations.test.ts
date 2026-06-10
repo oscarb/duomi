@@ -32,7 +32,7 @@ describe('translate', () => {
 			receiver: 'Delta',
 			amount: '100 kr'
 		});
-		expect(text).toBe('Charlie är skyldig Delta 100 kr');
+		expect(text).toBe('Charlie ska betala Delta 100 kr');
 	});
 
 	it('should translate correctly for other common keys', () => {

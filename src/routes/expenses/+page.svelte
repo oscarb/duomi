@@ -218,7 +218,7 @@
 									<div class="text-right">
 										<p class="font-bold text-sm text-[#2d3142]">{formatter.format(Math.round(item.latestAmount))}</p>
 										<p class="text-[10px] font-bold uppercase tracking-wider {selectedId === item.id ? 'text-[#ff7361]' : 'text-[#9ca3af]'}">
-											{item.intervalMonths === 0 ? t('oneTime') : item.intervalMonths === 1 ? t('monthly') : item.intervalMonths === 3 ? t('quarterly') : item.intervalMonths === 12 ? t('yearly') : ''}
+											{item.intervalMonths === 0 ? t('frequencyListOneTime') : item.intervalMonths === 1 ? t('frequencyListMonthly') : item.intervalMonths === 3 ? t('frequencyListQuarterly') : item.intervalMonths === 12 ? t('frequencyListYearly') : ''}
 										</p>
 									</div>
 								</a>
@@ -277,7 +277,7 @@
 									<div class="text-right">
 										<p class="font-bold text-sm text-[#2d3142]">{formatter.format(Math.round(item.latestAmount))}</p>
 										<p class="text-[10px] font-bold uppercase tracking-wider {selectedId === item.id ? 'text-[#4fd1c5]' : 'text-[#9ca3af]'}">
-											{item.intervalMonths === 0 ? t('oneTime') : item.intervalMonths === 1 ? t('monthly') : item.intervalMonths === 3 ? t('quarterly') : item.intervalMonths === 12 ? t('yearly') : ''}
+											{item.intervalMonths === 0 ? t('frequencyListOneTime') : item.intervalMonths === 1 ? t('frequencyListMonthly') : item.intervalMonths === 3 ? t('frequencyListQuarterly') : item.intervalMonths === 12 ? t('frequencyListYearly') : ''}
 										</p>
 									</div>
 								</a>
