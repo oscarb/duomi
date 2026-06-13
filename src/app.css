@@ -150,3 +150,16 @@
 .animate-slide-in {
   animation: slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+.dynamic-share-bar {
+  --pct-a: 50%;
+  background: linear-gradient(100deg,
+    #5c67f2 0%,
+    #818cf8 calc(var(--pct-a) - 2px),
+    #ffffff calc(var(--pct-a) - 2px),
+    #ffffff calc(var(--pct-a) + 2px),
+    #76e8df calc(var(--pct-a) + 2px),
+    #4fd1c5 100%
+  );
+}
+
