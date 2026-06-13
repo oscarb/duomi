@@ -147,7 +147,7 @@
 			<div class="toolbar">
 				<!-- Person switcher -->
 				<button class="toolbar-btn" onclick={togglePerson} type="button">
-					<span class="person-dot" style="background:{activePerson === 'B' ? '#4fd1c5' : '#ff7361'}"></span>
+					<span class="person-dot" style="background:{activePerson === 'B' ? '#4fd1c5' : '#5c67f2'}"></span>
 					<span>{activePerson === 'A' ? data.personAName : data.personBName}</span>
 					<span class="material-symbols-outlined toolbar-btn-icon">swap_horiz</span>
 				</button>
@@ -200,7 +200,7 @@
 											type="checkbox"
 											value={acc.id}
 											checked={checkedAccountIds.includes(acc.id)}
-											style="--accent-color: {activePerson === 'B' ? '#4fd1c5' : '#ff7361'};"
+											style="--accent-color: {activePerson === 'B' ? '#4fd1c5' : '#5c67f2'};"
 											onchange={(e) => {
 												const checked = (e.target as HTMLInputElement).checked;
 												if (checked) {
@@ -262,24 +262,42 @@
 							{#each filteredExpensesA as item, idx}
 								<a
 									href={selectedId === item.id ? cancelHref : `?id=${item.id}`}
-									class="px-4 py-3 flex items-center justify-between hover:bg-[#ff7361]/5 transition-colors border-l-4 border-b border-[#efeeea] 
-									{selectedId === item.id ? 'border-l-[#ff7361] bg-[#ff7361]/5 border-b-transparent' : 'border-l-transparent'}
+									class="px-4 py-3 flex items-center justify-between hover:bg-[#5c67f2]/5 transition-colors border-l-4 border-b border-[#efeeea] 
+									{selectedId === item.id ? 'border-l-[#5c67f2] bg-[#5c67f2]/5 border-b-transparent' : 'border-l-transparent'}
 									{idx === filteredExpensesA.length - 1 ? 'border-b-0' : ''}
 									{filteredExpensesA[idx + 1]?.id === selectedId ? 'border-b-transparent' : ''}"
 								>
 									<div class="flex flex-col flex-grow">
-										<span class="font-bold text-sm text-[#2d3142] hover:text-[#ff7361] transition-colors decoration-[#efeeea] hover:decoration-[#ff7361]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
-										<div class="mt-1.5 w-24 h-1.5 bg-[#4fd1c5] rounded-full overflow-hidden flex">
-											{#if item.splitType === 'static'}
-												<div class="bg-[#ff7361] h-full" style="width: {(item.staticSplitRatio ?? 0.5) * 100}%"></div>
+										<span class="font-bold text-sm text-[#2d3142] hover:text-[#5c67f2] transition-colors decoration-[#efeeea] hover:decoration-[#5c67f2]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
+										{#if item.splitType === 'dynamic'}
+											<div class="mt-1.5 w-24 h-[6px] rounded-full overflow-hidden flex">
+												{#if data.dynamicSplitRatioA === 0}
+													<div class="w-full h-full bg-[#4fd1c5]"></div>
+												{:else if data.dynamicSplitRatioA === 1}
+													<div class="w-full h-full bg-[#5c67f2]"></div>
+												{:else}
+													<div class="w-full h-full dynamic-share-bar" style="--pct-a: {data.dynamicSplitRatioA * 100}%"></div>
+												{/if}
+											</div>
+										{:else}
+											{#if (item.staticSplitRatio ?? 0.5) === 0}
+												<div class="mt-1.5 w-24 h-[4px] rounded-full overflow-hidden bg-[#4fd1c5]"></div>
+											{:else if (item.staticSplitRatio ?? 0.5) === 1}
+												<div class="mt-1.5 w-24 h-[4px] rounded-full overflow-hidden bg-[#5c67f2]"></div>
 											{:else}
-												<div class="bg-[#ff7361] h-full" style="width: {data.dynamicSplitRatioA * 100}%"></div>
+												{@const rA = item.staticSplitRatio ?? 0.5}
+												<div class="relative w-24 flex items-center h-[8px] mt-1.5">
+													<div class="flex rounded-full overflow-hidden h-[4px] w-full bg-[#4fd1c5]">
+														<div class="bg-[#5c67f2] h-full" style="width: {rA * 100}%"></div>
+													</div>
+													<div class="absolute w-2 h-2 rounded-full bg-white border border-gray-300 shadow-sm" style="left: calc({rA * 100}% - 4px)"></div>
+												</div>
 											{/if}
-										</div>
+										{/if}
 									</div>
 									<div class="text-right">
 										<p class="font-bold text-sm text-[#2d3142]">{formatter.format(Math.round(item.latestAmount))}</p>
-										<p class="text-[10px] font-bold uppercase tracking-wider {selectedId === item.id ? 'text-[#ff7361]' : 'text-[#9ca3af]'}">
+										<p class="text-[10px] font-bold uppercase tracking-wider {selectedId === item.id ? 'text-[#5c67f2]' : 'text-[#9ca3af]'}">
 											{item.intervalMonths === 0 ? t('frequencyListOneTime') : item.intervalMonths === 1 ? t('frequencyListMonthly') : item.intervalMonths === 3 ? t('frequencyListQuarterly') : item.intervalMonths === 12 ? t('frequencyListYearly') : ''}
 										</p>
 									</div>
@@ -289,7 +307,7 @@
 						<div class="px-4 py-3.5 bg-[#fbf9f5]/50 border-t border-[#efeeea]">
 							<a
 								href="?new=true&paidBy=A"
-								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
+								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#5c67f2]/20 rounded-lg hover:text-[#5c67f2] hover:bg-[#5c67f2]/5 transition-all text-[#5c67f2] justify-center text-xs font-bold"
 							>
 								<span class="material-symbols-outlined text-sm">add</span>
 								<span>{t('addTemplate')}</span>
@@ -297,11 +315,11 @@
 						</div>
 					{:else}
 						<div class="flex flex-col items-center justify-center text-center p-8 space-y-4">
-							<span class="material-symbols-outlined text-4xl text-[#ff7361] opacity-70">receipt_long</span>
+							<span class="material-symbols-outlined text-4xl text-[#5c67f2] opacity-70">receipt_long</span>
 							<p class="text-xs text-[#9ca3af] font-bold max-w-[200px] leading-relaxed">{t('noActiveTemplates', { name: data.personAName })}</p>
 							<a
 								href="?new=true&paidBy=A"
-								class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#ff7361]/10 border border-[#ff7361]/30 hover:bg-[#ff7361] hover:text-white rounded-xl text-[#ff7361] transition-all text-xs font-bold shadow-sm"
+								class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#5c67f2]/10 border border-[#5c67f2]/30 hover:bg-[#5c67f2] hover:text-white rounded-xl text-[#5c67f2] transition-all text-xs font-bold shadow-sm"
 							>
 								<span class="material-symbols-outlined text-sm">add</span>
 								<span>{t('addTemplate')}</span>
@@ -327,14 +345,32 @@
 									{filteredExpensesB[idx + 1]?.id === selectedId ? 'border-b-transparent' : ''}"
 								>
 									<div class="flex flex-col flex-grow">
-										<span class="font-bold text-sm text-[#2d3142] hover:text-[#ff7361] transition-colors decoration-[#efeeea] hover:decoration-[#ff7361]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
-										<div class="mt-1.5 w-24 h-1.5 bg-[#4fd1c5] rounded-full overflow-hidden flex">
-											{#if item.splitType === 'static'}
-												<div class="bg-[#ff7361] h-full" style="width: {(item.staticSplitRatio ?? 0.5) * 100}%"></div>
+										<span class="font-bold text-sm text-[#2d3142] hover:text-[#4fd1c5] transition-colors decoration-[#efeeea] hover:decoration-[#4fd1c5]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
+										{#if item.splitType === 'dynamic'}
+											<div class="mt-1.5 w-24 h-[6px] rounded-full overflow-hidden flex">
+												{#if data.dynamicSplitRatioA === 0}
+													<div class="w-full h-full bg-[#4fd1c5]"></div>
+												{:else if data.dynamicSplitRatioA === 1}
+													<div class="w-full h-full bg-[#5c67f2]"></div>
+												{:else}
+													<div class="w-full h-full dynamic-share-bar" style="--pct-a: {data.dynamicSplitRatioA * 100}%"></div>
+												{/if}
+											</div>
+										{:else}
+											{#if (item.staticSplitRatio ?? 0.5) === 0}
+												<div class="mt-1.5 w-24 h-[4px] rounded-full overflow-hidden bg-[#4fd1c5]"></div>
+											{:else if (item.staticSplitRatio ?? 0.5) === 1}
+												<div class="mt-1.5 w-24 h-[4px] rounded-full overflow-hidden bg-[#5c67f2]"></div>
 											{:else}
-												<div class="bg-[#ff7361] h-full" style="width: {data.dynamicSplitRatioA * 100}%"></div>
+												{@const rA = item.staticSplitRatio ?? 0.5}
+												<div class="relative w-24 flex items-center h-[8px] mt-1.5">
+													<div class="flex rounded-full overflow-hidden h-[4px] w-full bg-[#4fd1c5]">
+														<div class="bg-[#5c67f2] h-full" style="width: {rA * 100}%"></div>
+													</div>
+													<div class="absolute w-2 h-2 rounded-full bg-white border border-gray-300 shadow-sm" style="left: calc({rA * 100}% - 4px)"></div>
+												</div>
 											{/if}
-										</div>
+										{/if}
 									</div>
 									<div class="text-right">
 										<p class="font-bold text-sm text-[#2d3142]">{formatter.format(Math.round(item.latestAmount))}</p>
@@ -348,7 +384,7 @@
 						<div class="px-4 py-3.5 bg-[#fbf9f5]/50 border-t border-[#efeeea]">
 							<a
 								href="?new=true&paidBy=B"
-								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
+								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#4fd1c5]/20 rounded-lg hover:text-[#4fd1c5] hover:bg-[#4fd1c5]/5 transition-all text-[#4fd1c5] justify-center text-xs font-bold"
 							>
 								<span class="material-symbols-outlined text-sm">add</span>
 								<span>{t('addTemplate')}</span>
