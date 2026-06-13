@@ -521,7 +521,7 @@
 
 	@keyframes slideFromRightOnly {
 		from {
-			transform: translateX(24px);
+			transform: translateX(8px);
 		}
 		to {
 			transform: translateX(0);
