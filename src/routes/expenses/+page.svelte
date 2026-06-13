@@ -104,6 +104,11 @@
 			}
 		});
 		result = [...result].sort((a, b) => {
+			// Expenses with no account come first
+			const noAccA = a.accountId === null ? 0 : 1;
+			const noAccB = b.accountId === null ? 0 : 1;
+			if (noAccA !== noAccB) return noAccA - noAccB;
+			// Then apply the user-selected sort
 			let cmp = 0;
 			if (sortBy === 'cost') cmp = a.latestAmount - b.latestAmount;
 			else cmp = a.name.localeCompare(b.name);

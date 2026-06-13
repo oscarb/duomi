@@ -373,7 +373,12 @@
 			}
 			groups[accName].items.push(exp);
 		}
-		return groups;
+		// 'No Account' group always first, then by account creation order (id)
+		return Object.entries(groups).sort(([a, gA], [b, gB]) => {
+			if (a === 'No Account') return -1;
+			if (b === 'No Account') return 1;
+			return (gA.accountId ?? 0) - (gB.accountId ?? 0);
+		});
 	});
 
 	let groupedExpensesB = $derived.by(() => {
@@ -385,7 +390,12 @@
 			}
 			groups[accName].items.push(exp);
 		}
-		return groups;
+		// 'No Account' group always first, then by account creation order (id)
+		return Object.entries(groups).sort(([a, gA], [b, gB]) => {
+			if (a === 'No Account') return -1;
+			if (b === 'No Account') return 1;
+			return (gA.accountId ?? 0) - (gB.accountId ?? 0);
+		});
 	});
 
 	function handleIncomeKeyDown(e: KeyboardEvent, key: 'A' | 'B') {
@@ -724,7 +734,7 @@
 
 					{#if expensesPaidByA.length > 0}
 						<div class="space-y-6">
-							{#each Object.entries(groupedExpensesA) as [accountName, group]}
+							{#each groupedExpensesA as [accountName, group]}
 								{@const groupTotal = group.items.reduce((sum, e) => sum + e.amount, 0)}
 								<div class="mb-6">
 									{#if accountName !== 'No Account'}
@@ -871,7 +881,7 @@
 
 					{#if expensesPaidByB.length > 0}
 						<div class="space-y-6">
-							{#each Object.entries(groupedExpensesB) as [accountName, group]}
+							{#each groupedExpensesB as [accountName, group]}
 								{@const groupTotal = group.items.reduce((sum, e) => sum + e.amount, 0)}
 								<div class="mb-6">
 									{#if accountName !== 'No Account'}

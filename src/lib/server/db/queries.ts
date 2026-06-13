@@ -47,7 +47,7 @@ export async function setMonthlyIncome(year: number, month: number, incomeA: num
 
 // 2. Accounts
 export async function getAccounts() {
-	return db.select().from(accounts).all();
+	return db.select().from(accounts).orderBy(accounts.id).all();
 }
 
 export async function addAccount(name: string, owner: 'A' | 'B') {
