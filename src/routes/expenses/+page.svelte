@@ -495,18 +495,18 @@
 {/if}
 
 <style>
-	@keyframes slideUpFadeMobile {
+	@keyframes slideUpOnly {
 		from {
-			opacity: 0;
 			transform: translateY(100px);
 		}
 		to {
-			opacity: 1;
 			transform: translateY(0);
 		}
 	}
 	.animate-slide-in-fade {
-		animation: slideUpFadeMobile 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+		animation: 
+			slideUpOnly 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+			fadeInOnly 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 	}
 
 	@keyframes fadeInOnly {
@@ -514,13 +514,11 @@
 		to   { opacity: 1; }
 	}
 
-	@keyframes slideFromRight {
+	@keyframes slideFromRightOnly {
 		from {
-			opacity: 0;
 			transform: translateX(24px);
 		}
 		to {
-			opacity: 1;
 			transform: translateX(0);
 		}
 	}
@@ -627,7 +625,9 @@
 		}
 
 		.animate-slide-in-fade {
-			animation: slideFromRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+			animation: 
+				slideFromRightOnly 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+				fadeInOnly 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 		}
 	}
 
