@@ -41,6 +41,8 @@
 	let sortAsc = $state(browser ? localStorage.getItem('expenses_sortAsc') === 'true' : false);
 	let showTypeDropdown = $state(false);
 	let showSortDropdown = $state(false);
+	let checkedAccountIds = $state<number[]>([]);
+	let showAccountDropdown = $state(false);
 
 	$effect(() => {
 		if (browser) {
@@ -53,12 +55,35 @@
 		}
 	});
 
+	$effect(() => {
+		// Reset checked accounts when switching active person
+		const _ = activePerson;
+		checkedAccountIds = [];
+	});
+
+	let personAccounts = $derived(data.accounts.filter(acc => acc.owner === activePerson));
+	let hasAccounts = $derived(personAccounts.length > 0);
+
+	let accountsLabel = $derived.by(() => {
+		if (checkedAccountIds.length === 0) return t('allAccounts');
+		const names = checkedAccountIds
+			.map(id => data.accounts.find(a => a.id === id)?.name)
+			.filter(Boolean);
+		return names.join(', ');
+	});
+
 	function togglePerson() {
 		activePerson = activePerson === 'A' ? 'B' : 'A';
 	}
 
 	function applyFiltersAndSort(expenses: typeof data.expenses) {
 		let result = expenses.filter(e => {
+			if (checkedAccountIds.length > 0) {
+				if (e.accountId === null || !checkedAccountIds.includes(e.accountId)) {
+					return false;
+				}
+			}
+
 			const isArchived = e.archivedDate !== null;
 			const isOneTime = e.intervalMonths === 0;
 			const isRecurring = !isOneTime;
@@ -132,9 +157,9 @@
 					<button
 						class="toolbar-btn {showTypeDropdown ? 'toolbar-btn--active' : ''}"
 						type="button"
-						onclick={() => { showTypeDropdown = !showTypeDropdown; showSortDropdown = false; }}
+						onclick={() => { showTypeDropdown = !showTypeDropdown; showSortDropdown = false; showAccountDropdown = false; }}
 					>
-						<span class="material-symbols-outlined toolbar-btn-icon">filter_list</span>
+						<span class="material-symbols-outlined toolbar-btn-icon">repeat</span>
 						<span>{typeLabel}</span>
 					</button>
 					{#if showTypeDropdown}
@@ -156,12 +181,49 @@
 					{/if}
 				</div>
 
+				<!-- Account filter (only shows if user has accounts) -->
+				{#if hasAccounts}
+					<div class="toolbar-dropdown-wrap" use:clickOutside={() => { showAccountDropdown = false; }}>
+						<button
+							class="toolbar-btn {showAccountDropdown ? 'toolbar-btn--active' : ''}"
+							type="button"
+							onclick={() => { showAccountDropdown = !showAccountDropdown; showTypeDropdown = false; showSortDropdown = false; }}
+						>
+							<span class="material-symbols-outlined toolbar-btn-icon">account_balance</span>
+							<span>{accountsLabel}</span>
+						</button>
+						{#if showAccountDropdown}
+							<div class="toolbar-menu" transition:fade={{ duration: 120 }}>
+								{#each personAccounts as acc}
+									<label class="toolbar-menu-item">
+										<input
+											type="checkbox"
+											value={acc.id}
+											checked={checkedAccountIds.includes(acc.id)}
+											style="--accent-color: {activePerson === 'B' ? '#4fd1c5' : '#ff7361'};"
+											onchange={(e) => {
+												const checked = (e.target as HTMLInputElement).checked;
+												if (checked) {
+													checkedAccountIds = [...checkedAccountIds, acc.id];
+												} else {
+													checkedAccountIds = checkedAccountIds.filter(id => id !== acc.id);
+												}
+											}}
+										/>
+										<span>{acc.name}</span>
+									</label>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
+
 				<!-- Sort (right-aligned) -->
 				<div class="toolbar-dropdown-wrap toolbar-sort" use:clickOutside={() => { showSortDropdown = false; }}>
 					<button
 						class="toolbar-btn {showSortDropdown ? 'toolbar-btn--active' : ''}"
 						type="button"
-						onclick={() => { showSortDropdown = !showSortDropdown; showTypeDropdown = false; }}
+						onclick={() => { showSortDropdown = !showSortDropdown; showTypeDropdown = false; showAccountDropdown = false; }}
 					>
 						<span class="material-symbols-outlined toolbar-btn-icon">sort</span>
 						<span>{sortLabel}</span>
@@ -671,8 +733,8 @@
 	}
 
 	.toolbar-menu-item input[type="checkbox"]:checked {
-		background: #ff7361;
-		border-color: #ff7361;
+		background: var(--accent-color, #ff7361);
+		border-color: var(--accent-color, #ff7361);
 	}
 
 	.toolbar-menu-item input[type="checkbox"]:checked::after {
