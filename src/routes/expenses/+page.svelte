@@ -272,18 +272,18 @@
 										{#if item.splitType === 'dynamic'}
 											<div class="mt-1.5 w-24 h-[6px] rounded-full overflow-hidden flex">
 												{#if data.dynamicSplitRatioA === 0}
-													<div class="w-full h-full bg-[#4fd1c5]"></div>
+													<div class="w-full h-full" style="background: linear-gradient(to right, #76e8df, #4fd1c5)"></div>
 												{:else if data.dynamicSplitRatioA === 1}
-													<div class="w-full h-full bg-[#4a7bb0]"></div>
+													<div class="w-full h-full" style="background: linear-gradient(to right, #4a7bb0, #6192c7)"></div>
 												{:else}
 													<div class="w-full h-full dynamic-share-bar--small" style="--pct-a: {data.dynamicSplitRatioA * 100}%"></div>
 												{/if}
 											</div>
 										{:else}
 											{#if (item.staticSplitRatio ?? 0.5) === 0}
-												<div class="mt-1.5 w-24 h-[4px] rounded-full overflow-hidden bg-[#4fd1c5]"></div>
+												<div class="mt-1.5 w-24 h-[4px] rounded-full overflow-hidden" style="background: linear-gradient(to right, #76e8df, #4fd1c5)"></div>
 											{:else if (item.staticSplitRatio ?? 0.5) === 1}
-												<div class="mt-1.5 w-24 h-[4px] rounded-full overflow-hidden bg-[#4a7bb0]"></div>
+												<div class="mt-1.5 w-24 h-[4px] rounded-full overflow-hidden" style="background: linear-gradient(to right, #4a7bb0, #6192c7)"></div>
 											{:else}
 												{@const rA = item.staticSplitRatio ?? 0.5}
 												<div class="relative w-24 flex items-center h-[8px] mt-1.5">
@@ -349,18 +349,18 @@
 										{#if item.splitType === 'dynamic'}
 											<div class="mt-1.5 w-24 h-[6px] rounded-full overflow-hidden flex">
 												{#if data.dynamicSplitRatioA === 0}
-													<div class="w-full h-full bg-[#4fd1c5]"></div>
+													<div class="w-full h-full" style="background: linear-gradient(to right, #76e8df, #4fd1c5)"></div>
 												{:else if data.dynamicSplitRatioA === 1}
-													<div class="w-full h-full bg-[#4a7bb0]"></div>
+													<div class="w-full h-full" style="background: linear-gradient(to right, #4a7bb0, #6192c7)"></div>
 												{:else}
 													<div class="w-full h-full dynamic-share-bar--small" style="--pct-a: {data.dynamicSplitRatioA * 100}%"></div>
 												{/if}
 											</div>
 										{:else}
 											{#if (item.staticSplitRatio ?? 0.5) === 0}
-												<div class="mt-1.5 w-24 h-[4px] rounded-full overflow-hidden bg-[#4fd1c5]"></div>
+												<div class="mt-1.5 w-24 h-[4px] rounded-full overflow-hidden" style="background: linear-gradient(to right, #76e8df, #4fd1c5)"></div>
 											{:else if (item.staticSplitRatio ?? 0.5) === 1}
-												<div class="mt-1.5 w-24 h-[4px] rounded-full overflow-hidden bg-[#4a7bb0]"></div>
+												<div class="mt-1.5 w-24 h-[4px] rounded-full overflow-hidden" style="background: linear-gradient(to right, #4a7bb0, #6192c7)"></div>
 											{:else}
 												{@const rA = item.staticSplitRatio ?? 0.5}
 												<div class="relative w-24 flex items-center h-[8px] mt-1.5">

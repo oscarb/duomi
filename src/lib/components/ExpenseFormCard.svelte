@@ -584,9 +584,9 @@
 							<!-- Styled share bar gradient without handle for dynamic split type -->
 							<div class="h-6 flex items-center">
 								{#if dynamicSplitRatioA === 0}
-									<div class="w-full h-3 rounded-full bg-[#4fd1c5]"></div>
+									<div class="w-full h-3 rounded-full" style="background: linear-gradient(to right, #76e8df, #4fd1c5)"></div>
 								{:else if dynamicSplitRatioA === 1}
-									<div class="w-full h-3 rounded-full bg-[#4a7bb0]"></div>
+									<div class="w-full h-3 rounded-full" style="background: linear-gradient(to right, #4a7bb0, #6192c7)"></div>
 								{:else}
 									<div class="w-full h-3 rounded-full dynamic-share-bar--small" style="--pct-a: {dynamicSplitRatioA * 100}%"></div>
 								{/if}
@@ -1007,9 +1007,9 @@
 							<!-- Styled share bar gradient without handle for dynamic split type -->
 							<div class="h-6 flex items-center">
 								{#if dynamicSplitRatioA === 0}
-									<div class="w-full h-3 rounded-full bg-[#4fd1c5]"></div>
+									<div class="w-full h-3 rounded-full" style="background: linear-gradient(to right, #76e8df, #4fd1c5)"></div>
 								{:else if dynamicSplitRatioA === 1}
-									<div class="w-full h-3 rounded-full bg-[#4a7bb0]"></div>
+									<div class="w-full h-3 rounded-full" style="background: linear-gradient(to right, #4a7bb0, #6192c7)"></div>
 								{:else}
 									<div class="w-full h-3 rounded-full dynamic-share-bar--small" style="--pct-a: {dynamicSplitRatioA * 100}%"></div>
 								{/if}
