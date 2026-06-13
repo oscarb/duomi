@@ -9,6 +9,7 @@
   body {
     background-color: #ff7361;
     color: #2d3142;
+    overflow-x: hidden;
   }
 
   .tactile-input {

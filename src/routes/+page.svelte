@@ -404,7 +404,7 @@
 <div class="py-8">
 	<!-- Page Title & Month Selector -->
 	<div class="flex flex-col gap-1 mb-10 w-full text-white">
-		<div class="grid grid-cols-1 grid-rows-1 overflow-hidden">
+		<div class="grid grid-cols-1 grid-rows-1">
 			{#key data.period.year}
 				<span
 					class="col-start-1 row-start-1 text-xs md:text-sm font-semibold tracking-widest text-white/60 uppercase"
@@ -416,7 +416,7 @@
 			{/key}
 		</div>
 		<div class="flex items-center justify-between w-full">
-			<div class="grid grid-cols-1 grid-rows-1 overflow-hidden pr-4">
+			<div class="grid grid-cols-1 grid-rows-1 pr-4">
 				{#key data.period.month}
 					<h1
 						class="col-start-1 row-start-1 text-4xl md:text-5xl font-bold"
