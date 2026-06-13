@@ -4,6 +4,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { toasts } from '$lib/toasts.svelte';
 	import ExpenseFormCard from '$lib/components/ExpenseFormCard.svelte';
+	import { fly } from 'svelte/transition';
 
 	let { data } = $props();
 
@@ -381,18 +382,51 @@
 			// Only update state; saving is handled by onblur event listener
 		}
 	}
+
+	// Month/Year transition tracking
+	let prevPeriod = $state({ year: 0, month: 0 });
+	let direction = $state(1); // 1 for forward (right-to-left), -1 for backward (left-to-right)
+
+	$effect.pre(() => {
+		const newTime = data.period.year * 12 + data.period.month;
+		const oldTime = prevPeriod.year * 12 + prevPeriod.month;
+		if (oldTime !== 0) {
+			if (newTime !== oldTime) {
+				direction = newTime >= oldTime ? 1 : -1;
+				prevPeriod = { year: data.period.year, month: data.period.month };
+			}
+		} else {
+			prevPeriod = { year: data.period.year, month: data.period.month };
+		}
+	});
 </script>
 
 <div class="py-8">
 	<!-- Page Title & Month Selector -->
 	<div class="flex flex-col gap-1 mb-10 w-full text-white">
-		<span class="text-xs md:text-sm font-semibold tracking-widest text-white/60 uppercase">
-			{data.period.year}
-		</span>
+		<div class="grid grid-cols-1 grid-rows-1 overflow-hidden">
+			{#key data.period.year}
+				<span
+					class="col-start-1 row-start-1 text-xs md:text-sm font-semibold tracking-widest text-white/60 uppercase"
+					in:fly={{ x: 30 * direction, duration: 300 }}
+					out:fly={{ x: -30 * direction, duration: 300 }}
+				>
+					{data.period.year}
+				</span>
+			{/key}
+		</div>
 		<div class="flex items-center justify-between w-full">
-			<h1 class="text-4xl md:text-5xl font-bold">
-				{monthName}
-			</h1>
+			<div class="grid grid-cols-1 grid-rows-1 overflow-hidden pr-4">
+				{#key data.period.month}
+					<h1
+						class="col-start-1 row-start-1 text-4xl md:text-5xl font-bold"
+						in:fly={{ x: 40 * direction, duration: 300 }}
+						out:fly={{ x: -40 * direction, duration: 300 }}
+					>
+						{monthName}
+					</h1>
+				{/key}
+			</div>
 			<div class="flex items-center gap-3">
 				{#if !isCurrentPeriod}
 					<a
