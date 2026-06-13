@@ -844,21 +844,23 @@
 								</div>
 							{/each}
 						</div>
-						<div class="mt-4 pt-2 border-t border-gray-100/50 flex">
+						<div class="px-1 py-2">
 							<a
 								href="?new=true&paidBy=A&year={data.period.year}&month={data.period.month}"
-								class="inline-flex items-center text-xs font-bold text-[#ff7361] hover:opacity-85 transition-opacity"
+								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
 							>
-								+ {t('addExpense')}
+								<span class="material-symbols-outlined text-sm">add</span>
+								<span>{t('addExpense')}</span>
 							</a>
 						</div>
 					{:else}
-						<div class="text-center py-3 px-4 border border-dashed border-[#efeeea] rounded-xl mb-3 bg-[#fbf9f5]/20 flex flex-col items-center justify-center">
+						<div class="px-1 py-2">
 							<a
 								href="?new=true&paidBy=A&year={data.period.year}&month={data.period.month}"
-								class="inline-flex items-center text-xs font-bold text-[#ff7361] hover:opacity-85 transition-opacity"
+								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
 							>
-								+ {t('addExpense')}
+								<span class="material-symbols-outlined text-sm">add</span>
+								<span>{t('addExpense')}</span>
 							</a>
 						</div>
 					{/if}
@@ -991,21 +993,23 @@
 								</div>
 							{/each}
 						</div>
-						<div class="mt-4 pt-2 border-t border-gray-100/50 flex">
+						<div class="px-1 py-2">
 							<a
 								href="?new=true&paidBy=B&year={data.period.year}&month={data.period.month}"
-								class="inline-flex items-center text-xs font-bold text-[#ff7361] hover:opacity-85 transition-opacity"
+								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
 							>
-								+ {t('addExpense')}
+								<span class="material-symbols-outlined text-sm">add</span>
+								<span>{t('addExpense')}</span>
 							</a>
 						</div>
 					{:else}
-						<div class="text-center py-3 px-4 border border-dashed border-[#efeeea] rounded-xl mb-3 bg-[#fbf9f5]/20 flex flex-col items-center justify-center">
+						<div class="px-1 py-2">
 							<a
 								href="?new=true&paidBy=B&year={data.period.year}&month={data.period.month}"
-								class="inline-flex items-center text-xs font-bold text-[#ff7361] hover:opacity-85 transition-opacity"
+								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
 							>
-								+ {t('addExpense')}
+								<span class="material-symbols-outlined text-sm">add</span>
+								<span>{t('addExpense')}</span>
 							</a>
 						</div>
 					{/if}
@@ -1045,32 +1049,28 @@
 </div>
 
 <style>
-	@keyframes slideInFade {
-		from {
-			opacity: 0;
-			transform: translateX(30px);
-		}
-		to {
-			opacity: 1;
-			transform: translateX(0);
-		}
+	@keyframes slideInFromRight {
+		from { transform: translateX(30px); }
+		to   { transform: translateX(0); }
 	}
-	@keyframes slideUpFadeMobile {
-		from {
-			opacity: 0;
-			transform: translateY(100px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
+	@keyframes slideInFromBottom {
+		from { transform: translateY(100px); }
+		to   { transform: translateY(0); }
+	}
+	@keyframes fadeInCard {
+		from { opacity: 0.4; }
+		to   { opacity: 1; }
 	}
 	.animate-slide-in-fade {
-		animation: slideInFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+		animation:
+			slideInFromRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+			fadeInCard 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 	}
 	@media (max-width: 1023.98px) {
 		.animate-slide-in-fade {
-			animation: slideUpFadeMobile 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+			animation:
+				slideInFromBottom 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+				fadeInCard 0.45s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 		}
 	}
 
