@@ -5,6 +5,7 @@
 	import { toasts } from '$lib/toasts.svelte';
 	import ExpenseFormCard from '$lib/components/ExpenseFormCard.svelte';
 	import { fly } from 'svelte/transition';
+	import { browser } from '$app/environment';
 
 	let { data } = $props();
 
@@ -316,9 +317,48 @@
 		}
 	}
 
-	// Helper to separate expenses by payer
-	let expensesPaidByA = $derived(data.expenses.items.filter(e => e.paidBy === 'A'));
-	let expensesPaidByB = $derived(data.expenses.items.filter(e => e.paidBy === 'B'));
+	let filterPartA = $state(browser ? localStorage.getItem('dashboard_filterPartA') === 'true' : false);
+	let filterPartB = $state(browser ? localStorage.getItem('dashboard_filterPartB') === 'true' : false);
+
+	$effect(() => {
+		if (browser) {
+			localStorage.setItem('dashboard_filterPartA', String(filterPartA));
+			localStorage.setItem('dashboard_filterPartB', String(filterPartB));
+		}
+	});
+
+	function isPartA(item: typeof data.expenses.items[0]) {
+		if (item.splitType === 'static') {
+			return (item.staticSplitRatio ?? 0.5) > 0;
+		}
+		return true;
+	}
+
+	function isPartB(item: typeof data.expenses.items[0]) {
+		if (item.splitType === 'static') {
+			return (item.staticSplitRatio ?? 0.5) < 1;
+		}
+		return true;
+	}
+
+	// Helper to separate expenses by payer with quick filter applied
+	let expensesPaidByA = $derived.by(() => {
+		const base = data.expenses.items.filter(e => e.paidBy === 'A');
+		if (!filterPartA && !filterPartB) return base;
+		if (filterPartA && filterPartB) return base.filter(e => isPartA(e) && isPartB(e));
+		if (filterPartA) return base.filter(e => isPartA(e));
+		if (filterPartB) return base.filter(e => isPartB(e));
+		return base;
+	});
+
+	let expensesPaidByB = $derived.by(() => {
+		const base = data.expenses.items.filter(e => e.paidBy === 'B');
+		if (!filterPartA && !filterPartB) return base;
+		if (filterPartA && filterPartB) return base.filter(e => isPartA(e) && isPartB(e));
+		if (filterPartA) return base.filter(e => isPartA(e));
+		if (filterPartB) return base.filter(e => isPartB(e));
+		return base;
+	});
 
 	let totalPaidByA = $derived(expensesPaidByA.reduce((sum, e) => sum + e.amount, 0));
 	let totalPaidByB = $derived(expensesPaidByB.reduce((sum, e) => sum + e.amount, 0));
@@ -660,6 +700,31 @@
 							{/if}
 						{/each}
 					</span>
+				</div>
+
+				<!-- Toolbar with quick filters -->
+				<div class="toolbar mb-6" data-purpose="quick-filters">
+					<button
+						type="button"
+						class="toolbar-btn {filterPartA ? 'toolbar-btn--active-A' : ''}"
+						onclick={() => {
+							filterPartA = !filterPartA;
+						}}
+					>
+						<span class="person-dot" style="background: #ff7361"></span>
+						<span>{data.personAName}</span>
+					</button>
+
+					<button
+						type="button"
+						class="toolbar-btn {filterPartB ? 'toolbar-btn--active-B' : ''}"
+						onclick={() => {
+							filterPartB = !filterPartB;
+						}}
+					>
+						<span class="person-dot" style="background: #4fd1c5"></span>
+						<span>{data.personBName}</span>
+					</button>
 				</div>
 
 				<!-- Paid by Person A -->
@@ -1093,5 +1158,60 @@
 			background-color: rgba(255, 255, 255, 0.3);
 			scale: 0.95;
 		}
+	}
+
+	/* ---- Toolbar ---- */
+	.toolbar {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-wrap: wrap;
+	}
+
+	.toolbar-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 5px 10px 5px 8px;
+		border-radius: 8px;
+		border: 1px solid rgba(255,255,255,0.22);
+		background: rgba(255,255,255,0.92);
+		color: #2d3142;
+		font-size: 12px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+		white-space: nowrap;
+		letter-spacing: 0.01em;
+		box-shadow: 0 1px 3px rgba(45,49,66,0.08);
+	}
+
+	.toolbar-btn:hover {
+		background: white;
+		box-shadow: 0 2px 6px rgba(45,49,66,0.12);
+	}
+
+	.toolbar-btn:active {
+		scale: 0.97;
+	}
+
+	.toolbar-btn--active-A {
+		background: rgba(255, 115, 97, 0.08) !important;
+		border-color: #ff7361 !important;
+		box-shadow: 0 2px 8px rgba(255, 115, 97, 0.15) !important;
+	}
+
+	.toolbar-btn--active-B {
+		background: rgba(79, 209, 197, 0.08) !important;
+		border-color: #4fd1c5 !important;
+		box-shadow: 0 2px 8px rgba(79, 209, 197, 0.15) !important;
+	}
+
+	.person-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		flex-shrink: 0;
+		transition: background 0.2s;
 	}
 </style>

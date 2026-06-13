@@ -22,6 +22,8 @@ export function getCurrencyConfig(locale: string, currency: string): CurrencyCon
 
 export const translations: Record<string, Record<string, string>> = {
 	'en-US': {
+		all: 'All',
+		sharedExpenses: 'Shared',
 		currentSettlement: 'Current Settlement',
 		allSettled: 'All Settled',
 		nothingToSeeHere: 'Nothing to see here',
@@ -114,10 +116,9 @@ export const translations: Record<string, Record<string, string>> = {
 		showPassphrase: 'Show passphrase'
 	},
 	'sv-SE': {
-
-
+		all: 'Alla',
+		sharedExpenses: 'Gemensamma',
 		currentSettlement: 'Aktuell balans',
-
 		allSettled: 'Kvitt och klart!',
 		nothingToSeeHere: 'Här var det tomt',
 		noOutstandingExpenses: 'Inga utgifter att dela den här månaden.',
