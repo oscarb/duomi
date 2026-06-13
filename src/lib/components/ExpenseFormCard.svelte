@@ -504,8 +504,8 @@
 				<!-- Row 2: Badge and Date -->
 				<div class="flex justify-between items-center gap-4">
 					<div class="flex items-center gap-2">
-						<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#3d5a80]/10 text-[#3d5a80] border border-[#3d5a80]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
-							<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#3d5a80]' : 'bg-[#4fd1c5]'}"></span>
+						<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#4a7bb0]/10 text-[#4a7bb0] border border-[#4a7bb0]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
+							<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#4a7bb0]' : 'bg-[#4fd1c5]'}"></span>
 							{editPaidBy === 'A' ? namePersonA : namePersonB}
 						</div>
 					</div>
@@ -550,7 +550,7 @@
 						{@const parsedAmt = parseFloat(editAmountVal.replace(/\s/g, '')) || 0}
 						<div class="space-y-1 pt-0.5">
 							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
-								<span>{namePersonA} <span class="text-[#3d5a80] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
+								<span>{namePersonA} <span class="text-[#4a7bb0] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
 								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - editRatio) * 100)}%</span></span>
 							</div>
 							<div class="h-6 flex items-center">
@@ -566,7 +566,7 @@
 										e.currentTarget.value = editRatio.toString();
 									}}
 									class="w-full cursor-pointer appearance-none rounded-lg"
-									style="background: linear-gradient(to right, #3d5a80 0%, #3d5a80 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
+									style="background: linear-gradient(to right, #4a7bb0 0%, #4a7bb0 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
 								/>
 							</div>
 							<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
@@ -578,7 +578,7 @@
 						{@const parsedAmt = parseFloat(editAmountVal.replace(/\s/g, '')) || 0}
 						<div class="space-y-1 pt-0.5">
 							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
-								<span>{namePersonA} <span class="text-[#3d5a80] ml-0.5">{Math.round(dynamicSplitRatioA * 100)}%</span></span>
+								<span>{namePersonA} <span class="text-[#4a7bb0] ml-0.5">{Math.round(dynamicSplitRatioA * 100)}%</span></span>
 								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - dynamicSplitRatioA) * 100)}%</span></span>
 							</div>
 							<!-- Styled share bar gradient without handle for dynamic split type -->
@@ -586,7 +586,7 @@
 								{#if dynamicSplitRatioA === 0}
 									<div class="w-full h-3 rounded-full bg-[#4fd1c5]"></div>
 								{:else if dynamicSplitRatioA === 1}
-									<div class="w-full h-3 rounded-full bg-[#3d5a80]"></div>
+									<div class="w-full h-3 rounded-full bg-[#4a7bb0]"></div>
 								{:else}
 									<div class="w-full h-3 rounded-full dynamic-share-bar--small" style="--pct-a: {dynamicSplitRatioA * 100}%"></div>
 								{/if}
@@ -843,8 +843,8 @@
 								{t('active')}
 							</div>
 						{/if}
-						<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#3d5a80]/10 text-[#3d5a80] border border-[#3d5a80]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
-							<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#3d5a80]' : 'bg-[#4fd1c5]'}"></span>
+						<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#4a7bb0]/10 text-[#4a7bb0] border border-[#4a7bb0]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
+							<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#4a7bb0]' : 'bg-[#4fd1c5]'}"></span>
 							{editPaidBy === 'A' ? namePersonA : namePersonB}
 						</div>
 					</div>
@@ -973,7 +973,7 @@
 					{#if editSplitType === 'static'}
 						<div class="space-y-1 pt-0.5">
 							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
-								<span>{namePersonA} <span class="text-[#3d5a80] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
+								<span>{namePersonA} <span class="text-[#4a7bb0] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
 								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - editRatio) * 100)}%</span></span>
 							</div>
 							<div class="h-6 flex items-center">
@@ -990,7 +990,7 @@
 									}}
 									onchange={triggerAutoSave}
 									class="w-full cursor-pointer appearance-none rounded-lg"
-									style="background: linear-gradient(to right, #3d5a80 0%, #3d5a80 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
+									style="background: linear-gradient(to right, #4a7bb0 0%, #4a7bb0 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
 								/>
 							</div>
 							<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
@@ -1001,7 +1001,7 @@
 					{:else}
 						<div class="space-y-1 pt-0.5">
 							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
-								<span>{namePersonA} <span class="text-[#3d5a80] ml-0.5">{Math.round(dynamicSplitRatioA * 100)}%</span></span>
+								<span>{namePersonA} <span class="text-[#4a7bb0] ml-0.5">{Math.round(dynamicSplitRatioA * 100)}%</span></span>
 								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - dynamicSplitRatioA) * 100)}%</span></span>
 							</div>
 							<!-- Styled share bar gradient without handle for dynamic split type -->
@@ -1009,7 +1009,7 @@
 								{#if dynamicSplitRatioA === 0}
 									<div class="w-full h-3 rounded-full bg-[#4fd1c5]"></div>
 								{:else if dynamicSplitRatioA === 1}
-									<div class="w-full h-3 rounded-full bg-[#3d5a80]"></div>
+									<div class="w-full h-3 rounded-full bg-[#4a7bb0]"></div>
 								{:else}
 									<div class="w-full h-3 rounded-full dynamic-share-bar--small" style="--pct-a: {dynamicSplitRatioA * 100}%"></div>
 								{/if}
