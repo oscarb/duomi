@@ -154,7 +154,7 @@
 .dynamic-share-bar--large {
   --pct-a: 50%;
   position: relative;
-  background: linear-gradient(to right,
+  background: linear-gradient(100deg,
     #3d5a80 0%,
     #52749a var(--pct-a),
     #76e8df var(--pct-a),
@@ -176,7 +176,7 @@
 .dynamic-share-bar--small {
   --pct-a: 50%;
   position: relative;
-  background: linear-gradient(to right,
+  background: linear-gradient(100deg,
     #3d5a80 0%,
     #52749a var(--pct-a),
     #76e8df var(--pct-a),
