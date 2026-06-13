@@ -505,12 +505,12 @@
 	}
 	.animate-slide-in-fade {
 		animation: 
-			slideUpOnly 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards,
-			fadeInOnly 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+			slideUpOnly 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+			fadeInOnly 0.45s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 	}
 
 	@keyframes fadeInOnly {
-		from { opacity: 0; }
+		from { opacity: 0.4; }
 		to   { opacity: 1; }
 	}
 
@@ -626,8 +626,8 @@
 
 		.animate-slide-in-fade {
 			animation: 
-				slideFromRightOnly 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards,
-				fadeInOnly 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+				slideFromRightOnly 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+				fadeInOnly 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 		}
 	}
 
