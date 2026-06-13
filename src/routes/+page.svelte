@@ -385,32 +385,37 @@
 
 <div class="py-8">
 	<!-- Page Title & Month Selector -->
-	<div class="flex items-center justify-between mb-10 w-full text-white">
-		<h1 class="text-4xl md:text-5xl font-bold">
-			{monthName} {data.period.year}
-		</h1>
-		<div class="flex items-center gap-3">
-			{#if !isCurrentPeriod}
+	<div class="flex flex-col gap-1 mb-10 w-full text-white">
+		<span class="text-xs md:text-sm font-semibold tracking-widest text-white/60 uppercase">
+			{data.period.year}
+		</span>
+		<div class="flex items-center justify-between w-full">
+			<h1 class="text-4xl md:text-5xl font-bold">
+				{monthName}
+			</h1>
+			<div class="flex items-center gap-3">
+				{#if !isCurrentPeriod}
+					<a
+						href={todayHref}
+						class="w-12 h-12 rounded-full border border-white/15 bg-white/5 hover:bg-white/20 hover:border-white/30 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center opacity-70 hover:opacity-100 text-white"
+						title="{locale.startsWith('sv') ? 'Gå till' : 'Go to'} {realMonthName} {realYear}"
+					>
+						<span class="material-symbols-outlined text-2xl" style="font-weight: 300;">today</span>
+					</a>
+				{/if}
 				<a
-					href={todayHref}
+					href={prevMonthHref}
 					class="w-12 h-12 rounded-full border border-white/15 bg-white/5 hover:bg-white/20 hover:border-white/30 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center opacity-70 hover:opacity-100 text-white"
-					title="{locale.startsWith('sv') ? 'Gå till' : 'Go to'} {realMonthName} {realYear}"
 				>
-					<span class="material-symbols-outlined text-2xl" style="font-weight: 300;">today</span>
+					<span class="material-symbols-outlined text-3xl" style="font-weight: 200;">arrow_back</span>
 				</a>
-			{/if}
-			<a
-				href={prevMonthHref}
-				class="w-12 h-12 rounded-full border border-white/15 bg-white/5 hover:bg-white/20 hover:border-white/30 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center opacity-70 hover:opacity-100 text-white"
-			>
-				<span class="material-symbols-outlined text-3xl" style="font-weight: 200;">arrow_back</span>
-			</a>
-			<a
-				href={nextMonthHref}
-				class="w-12 h-12 rounded-full border border-white/15 bg-white/5 hover:bg-white/20 hover:border-white/30 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center opacity-70 hover:opacity-100 text-white"
-			>
-				<span class="material-symbols-outlined text-3xl" style="font-weight: 200;">arrow_forward</span>
-			</a>
+				<a
+					href={nextMonthHref}
+					class="w-12 h-12 rounded-full border border-white/15 bg-white/5 hover:bg-white/20 hover:border-white/30 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center opacity-70 hover:opacity-100 text-white"
+				>
+					<span class="material-symbols-outlined text-3xl" style="font-weight: 200;">arrow_forward</span>
+				</a>
+			</div>
 		</div>
 	</div>
 
