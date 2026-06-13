@@ -789,7 +789,7 @@
 																	{/if}
 																{/each}
 															{/if}
-															<div class="tactile-input leading-none" style="display: inline-flex; position: relative; align-items: baseline;">
+															<div class="tactile-input tactile-input--person-A leading-none" style="display: inline-flex; position: relative; align-items: baseline;">
 																<span class="invisible font-semibold text-base p-0 whitespace-pre">
 																	{expenseAmounts[item.id] || '0'}
 																</span>
@@ -936,7 +936,7 @@
 																	{/if}
 																{/each}
 															{/if}
-															<div class="tactile-input leading-none" style="display: inline-flex; position: relative; align-items: baseline;">
+															<div class="tactile-input tactile-input--person-B leading-none" style="display: inline-flex; position: relative; align-items: baseline;">
 																<span class="invisible font-semibold text-base p-0 whitespace-pre">
 																	{expenseAmounts[item.id] || '0'}
 																</span>
