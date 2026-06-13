@@ -361,12 +361,14 @@
 		);
 	});
 
+	let autosaveTimeout: ReturnType<typeof setTimeout> | null = null;
 	function triggerAutoSave() {
-		queueMicrotask(() => {
+		if (autosaveTimeout) clearTimeout(autosaveTimeout);
+		autosaveTimeout = setTimeout(() => {
 			if (isDirty && editFormElement && !isCreateMode) {
 				editFormElement.requestSubmit();
 			}
-		});
+		}, 20);
 	}
 
 	// Derive 13 consecutive months starting from the current dashboard view month
