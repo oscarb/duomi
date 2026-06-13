@@ -74,11 +74,11 @@
 	// Title focus states
 	let titleInputEl = $state<HTMLTextAreaElement | null>(null);
 	let lastExpenseId = $state<number | null>(null);
-	let currentTargetId = $state<number | 'new' | null>(null);
+	let currentTargetId = $state<number | string | null>(null);
 
 	// Synchronize local states with expense data changes
 	$effect(() => {
-		const targetId = expense ? expense.id : 'new';
+		const targetId = expense ? expense.id : `new-${initialPaidBy}`;
 		if (currentTargetId !== targetId) {
 			currentTargetId = targetId;
 			if (expense) {
