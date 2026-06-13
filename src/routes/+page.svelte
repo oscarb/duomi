@@ -569,7 +569,7 @@
 							{#if currencyConfig.isPrefix}
 								<span class="text-[#9ca3af] opacity-50 mr-1.5 sm:mr-2">{currencyConfig.symbol}</span>
 							{/if}
-							<div class="tactile-input" style="display: inline-flex; position: relative; align-items: baseline;">
+							<div class="tactile-input tactile-input--person-A" style="display: inline-flex; position: relative; align-items: baseline;">
 								<span class="invisible font-bold income-input-text p-0 whitespace-pre">
 									{incomeAVal || (data.income.person_a > 0 ? formatIncome(data.income.person_a.toString()) : '0')}
 								</span>
@@ -605,7 +605,7 @@
 							{#if currencyConfig.isPrefix}
 								<span class="text-[#9ca3af] opacity-50 mr-1.5 sm:mr-2">{currencyConfig.symbol}</span>
 							{/if}
-							<div class="tactile-input" style="display: inline-flex; position: relative; align-items: baseline;">
+							<div class="tactile-input tactile-input--person-B" style="display: inline-flex; position: relative; align-items: baseline;">
 								<span class="invisible font-bold income-input-text p-0 whitespace-pre">
 									{incomeBVal || (data.income.person_b > 0 ? formatIncome(data.income.person_b.toString()) : '0')}
 								</span>
@@ -1227,5 +1227,19 @@
 		border-radius: 50%;
 		flex-shrink: 0;
 		transition: background 0.2s;
+	}
+
+	.tactile-input--person-A:hover {
+		border-color: #4a7bb0 !important;
+	}
+	.tactile-input--person-A:focus-within {
+		border-color: #4a7bb0 !important;
+	}
+
+	.tactile-input--person-B:hover {
+		border-color: #4fd1c5 !important;
+	}
+	.tactile-input--person-B:focus-within {
+		border-color: #4fd1c5 !important;
 	}
 </style>
