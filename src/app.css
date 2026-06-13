@@ -151,15 +151,47 @@
   animation: slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.dynamic-share-bar {
+.dynamic-share-bar--large {
   --pct-a: 50%;
-  background: linear-gradient(100deg,
-    #5c67f2 0%,
-    #818cf8 calc(var(--pct-a) - 2px),
-    #ffffff calc(var(--pct-a) - 2px),
-    #ffffff calc(var(--pct-a) + 2px),
-    #76e8df calc(var(--pct-a) + 2px),
+  position: relative;
+  background: linear-gradient(to right,
+    #3d5a80 0%,
+    #52749a var(--pct-a),
+    #76e8df var(--pct-a),
     #4fd1c5 100%
   );
+}
+
+.dynamic-share-bar--large::after {
+  content: '';
+  position: absolute;
+  left: var(--pct-a);
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  background: white;
+  transform: translateX(-50%) skewX(-10deg);
+}
+
+.dynamic-share-bar--small {
+  --pct-a: 50%;
+  position: relative;
+  background: linear-gradient(to right,
+    #3d5a80 0%,
+    #52749a var(--pct-a),
+    #76e8df var(--pct-a),
+    #4fd1c5 100%
+  );
+}
+
+.dynamic-share-bar--small::after {
+  content: '';
+  position: absolute;
+  left: var(--pct-a);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: white;
+  transform: translateX(-50%) skewX(-10deg);
 }
 

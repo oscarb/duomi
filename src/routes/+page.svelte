@@ -642,8 +642,8 @@
 						{@const pctA = Math.round(currentPctA * 100)}
 						{@const pctB = Math.round(currentPctB * 100)}
 						<div 
-							class="w-full flex rounded-full overflow-hidden shadow-inner h-10 relative bg-[#fbf9f5] {pctA > 0 && pctA < 100 ? 'dynamic-share-bar' : ''}"
-							style="{pctA === 100 ? 'background-color: #5c67f2;' : pctB === 100 ? 'background-color: #4fd1c5;' : `--pct-a: ${pctA}%;`}"
+							class="w-full flex rounded-full overflow-hidden shadow-inner h-10 relative bg-[#fbf9f5] {pctA > 0 && pctA < 100 ? 'dynamic-share-bar--large' : ''}"
+							style="{pctA === 100 ? 'background-color: #3d5a80;' : pctB === 100 ? 'background-color: #4fd1c5;' : `--pct-a: ${pctA}%;`}"
 						>
 							{#if pctA > 0}
 								<div class="absolute left-0 top-0 h-full flex items-center px-4 justify-start text-white text-xs font-semibold" style="width: {pctA}%;">
@@ -691,7 +691,7 @@
 							filterPartA = !filterPartA;
 						}}
 					>
-						<span class="person-dot" style="background: #5c67f2"></span>
+						<span class="person-dot" style="background: #3d5a80"></span>
 						<span>{data.personAName}</span>
 					</button>
 
@@ -757,12 +757,12 @@
 															{#if (item.staticSplitRatio ?? 0.5) === 0}
 																<div class="flex rounded-full overflow-hidden h-[4px] w-[40px] bg-[#4fd1c5]"></div>
 															{:else if (item.staticSplitRatio ?? 0.5) === 1}
-																<div class="flex rounded-full overflow-hidden h-[4px] w-[40px] bg-[#5c67f2]"></div>
+																<div class="flex rounded-full overflow-hidden h-[4px] w-[40px] bg-[#3d5a80]"></div>
 															{:else}
 																{@const rA = item.staticSplitRatio ?? 0.5}
 																<div class="relative w-[40px] flex items-center h-[6px]">
 																	<div class="flex rounded-full overflow-hidden h-[4px] w-full bg-gray-100">
-																		<div class="h-full bg-[#5c67f2]" style="width: {rA * 100}%"></div>
+																		<div class="h-full bg-[#3d5a80]" style="width: {rA * 100}%"></div>
 																		<div class="h-full bg-[#4fd1c5]" style="width: {(1 - rA) * 100}%"></div>
 																	</div>
 																	<div class="absolute w-[6px] h-[6px] rounded-full bg-white border border-gray-300 shadow-sm" style="left: calc({rA * 100}% - 3px)"></div>
@@ -773,9 +773,9 @@
 																{#if currentPctA === 0}
 																	<div class="w-full h-full bg-[#4fd1c5]"></div>
 																{:else if currentPctA === 1}
-																	<div class="w-full h-full bg-[#5c67f2]"></div>
+																	<div class="w-full h-full bg-[#3d5a80]"></div>
 																{:else}
-																	<div class="w-full h-full dynamic-share-bar" style="--pct-a: {currentPctA * 100}%"></div>
+																	<div class="w-full h-full dynamic-share-bar--small" style="--pct-a: {currentPctA * 100}%"></div>
 																{/if}
 															</div>
 														{/if}
@@ -904,12 +904,12 @@
 															{#if (item.staticSplitRatio ?? 0.5) === 0}
 																<div class="flex rounded-full overflow-hidden h-[4px] w-[40px] bg-[#4fd1c5]"></div>
 															{:else if (item.staticSplitRatio ?? 0.5) === 1}
-																<div class="flex rounded-full overflow-hidden h-[4px] w-[40px] bg-[#5c67f2]"></div>
+																<div class="flex rounded-full overflow-hidden h-[4px] w-[40px] bg-[#3d5a80]"></div>
 															{:else}
 																{@const rA = item.staticSplitRatio ?? 0.5}
 																<div class="relative w-[40px] flex items-center h-[6px]">
 																	<div class="flex rounded-full overflow-hidden h-[4px] w-full bg-gray-100">
-																		<div class="h-full bg-[#5c67f2]" style="width: {rA * 100}%"></div>
+																		<div class="h-full bg-[#3d5a80]" style="width: {rA * 100}%"></div>
 																		<div class="h-full bg-[#4fd1c5]" style="width: {(1 - rA) * 100}%"></div>
 																	</div>
 																	<div class="absolute w-[6px] h-[6px] rounded-full bg-white border border-gray-300 shadow-sm" style="left: calc({rA * 100}% - 3px)"></div>
@@ -920,9 +920,9 @@
 																{#if currentPctA === 0}
 																	<div class="w-full h-full bg-[#4fd1c5]"></div>
 																{:else if currentPctA === 1}
-																	<div class="w-full h-full bg-[#5c67f2]"></div>
+																	<div class="w-full h-full bg-[#3d5a80]"></div>
 																{:else}
-																	<div class="w-full h-full dynamic-share-bar" style="--pct-a: {currentPctA * 100}%"></div>
+																	<div class="w-full h-full dynamic-share-bar--small" style="--pct-a: {currentPctA * 100}%"></div>
 																{/if}
 															</div>
 														{/if}
@@ -1210,9 +1210,9 @@
 	}
 
 	.toolbar-btn--active-A {
-		background: rgba(92, 103, 242, 0.08) !important;
-		border-color: #5c67f2 !important;
-		box-shadow: 0 2px 8px rgba(92, 103, 242, 0.15) !important;
+		background: rgba(61, 90, 128, 0.08) !important;
+		border-color: #3d5a80 !important;
+		box-shadow: 0 2px 8px rgba(61, 90, 128, 0.15) !important;
 	}
 
 	.toolbar-btn--active-B {

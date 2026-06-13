@@ -504,8 +504,8 @@
 				<!-- Row 2: Badge and Date -->
 				<div class="flex justify-between items-center gap-4">
 					<div class="flex items-center gap-2">
-						<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#5c67f2]/10 text-[#5c67f2] border border-[#5c67f2]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
-							<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#5c67f2]' : 'bg-[#4fd1c5]'}"></span>
+						<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#3d5a80]/10 text-[#3d5a80] border border-[#3d5a80]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
+							<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#3d5a80]' : 'bg-[#4fd1c5]'}"></span>
 							{editPaidBy === 'A' ? namePersonA : namePersonB}
 						</div>
 					</div>
@@ -550,7 +550,7 @@
 						{@const parsedAmt = parseFloat(editAmountVal.replace(/\s/g, '')) || 0}
 						<div class="space-y-1 pt-0.5">
 							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
-								<span>{namePersonA} <span class="text-[#5c67f2] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
+								<span>{namePersonA} <span class="text-[#3d5a80] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
 								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - editRatio) * 100)}%</span></span>
 							</div>
 							<div class="h-6 flex items-center">
@@ -566,7 +566,7 @@
 										e.currentTarget.value = editRatio.toString();
 									}}
 									class="w-full cursor-pointer appearance-none rounded-lg"
-									style="background: linear-gradient(to right, #5c67f2 0%, #5c67f2 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
+									style="background: linear-gradient(to right, #3d5a80 0%, #3d5a80 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
 								/>
 							</div>
 							<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
@@ -578,7 +578,7 @@
 						{@const parsedAmt = parseFloat(editAmountVal.replace(/\s/g, '')) || 0}
 						<div class="space-y-1 pt-0.5">
 							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
-								<span>{namePersonA} <span class="text-[#5c67f2] ml-0.5">{Math.round(dynamicSplitRatioA * 100)}%</span></span>
+								<span>{namePersonA} <span class="text-[#3d5a80] ml-0.5">{Math.round(dynamicSplitRatioA * 100)}%</span></span>
 								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - dynamicSplitRatioA) * 100)}%</span></span>
 							</div>
 							<!-- Styled share bar gradient without handle for dynamic split type -->
@@ -586,9 +586,9 @@
 								{#if dynamicSplitRatioA === 0}
 									<div class="w-full h-3 rounded-full bg-[#4fd1c5]"></div>
 								{:else if dynamicSplitRatioA === 1}
-									<div class="w-full h-3 rounded-full bg-[#5c67f2]"></div>
+									<div class="w-full h-3 rounded-full bg-[#3d5a80]"></div>
 								{:else}
-									<div class="w-full h-3 rounded-full dynamic-share-bar" style="--pct-a: {dynamicSplitRatioA * 100}%"></div>
+									<div class="w-full h-3 rounded-full dynamic-share-bar--small" style="--pct-a: {dynamicSplitRatioA * 100}%"></div>
 								{/if}
 							</div>
 							<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
@@ -635,9 +635,7 @@
 									}
 								}}
 								class="px-3.5 py-1.5 rounded-lg border-2 text-xs font-bold transition-all 
-								{editAccountId === acc.id ? 
-									(editPaidBy === 'A' ? 'border-[#5c67f2] bg-[#5c67f2]/5 text-[#5c67f2]' : 'border-[#4fd1c5] bg-[#4fd1c5]/5 text-[#4fd1c5]') : 
-									('border-[#efeeea] bg-white text-[#2d3142]/80 hover:text-[#2d3142] hover:bg-[#fbf9f5]/50 ' + (editPaidBy === 'A' ? 'hover:border-[#5c67f2]/30' : 'hover:border-[#4fd1c5]/30'))}
+								{editAccountId === acc.id ? 'border-[#ff7361] bg-[#ff7361]/5 text-[#ff7361]' : 'border-[#efeeea] bg-white text-[#2d3142]/80 hover:text-[#2d3142] hover:border-[#ff7361]/30 hover:bg-[#fbf9f5]/50'}
 								{isEditingAccounts ? 'cursor-default opacity-80' : 'cursor-pointer'}"
 							>
 								{#if editAccountId === acc.id}<span class="mr-1.5 font-bold">✓</span>{/if}{acc.name}
@@ -694,8 +692,7 @@
 							<button
 								type="button"
 								onclick={() => isCreatingAccountInline = true}
-								class="pl-2.5 pr-3 py-1.5 rounded-lg border-2 border-dashed transition-all flex items-center gap-1 focus:outline-none h-[32px]
-								{editPaidBy === 'A' ? 'border-[#5c67f2]/30 text-[#5c67f2] hover:bg-[#5c67f2]/5' : 'border-[#4fd1c5]/30 text-[#4fd1c5] hover:bg-[#4fd1c5]/5'}"
+								class="pl-2.5 pr-3 py-1.5 rounded-lg border-2 border-dashed border-[#ff7361]/30 text-xs font-bold text-[#ff7361] hover:bg-[#ff7361]/5 transition-all flex items-center gap-1 focus:outline-none h-[32px]"
 							>
 								<span class="material-symbols-outlined text-[10px] font-bold">add</span>
 								<span>{t('add')}</span>
@@ -749,10 +746,10 @@
 							{#each calendarMonths as item}
 								{@const isPaid = isPaymentMonth(item.year, item.month, editInterval, editAmountDate)}
 								{@const monthName = new Date(item.year, item.month - 1, 1).toLocaleString(locale, { month: 'short' }).toUpperCase().substring(0, 3)}
-								<div class="relative flex flex-col items-center justify-center pt-1 pb-2 {item.month === 1 ? (editPaidBy === 'A' ? 'border-l border-[#5c67f2]/20' : 'border-l border-[#4fd1c5]/20') : ''}">
+								<div class="relative flex flex-col items-center justify-center pt-1 pb-2 {item.month === 1 ? 'border-l border-[#ff7361]/20' : ''}">
 									{#if isPaid}
-										<span class="text-[10px] font-bold {editPaidBy === 'A' ? 'text-[#5c67f2]' : 'text-[#4fd1c5]'}">{monthName}</span>
-										<span class="w-1 h-1 rounded-full {editPaidBy === 'A' ? 'bg-[#5c67f2]' : 'bg-[#4fd1c5]'} absolute bottom-0"></span>
+										<span class="text-[10px] font-bold text-[#ff7361]">{monthName}</span>
+										<span class="w-1 h-1 rounded-full bg-[#ff7361] absolute bottom-0"></span>
 									{:else}
 										<span class="text-[10px] font-bold text-[#9ca3af]">{monthName}</span>
 									{/if}
@@ -846,8 +843,8 @@
 								{t('active')}
 							</div>
 						{/if}
-						<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#5c67f2]/10 text-[#5c67f2] border border-[#5c67f2]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
-							<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#5c67f2]' : 'bg-[#4fd1c5]'}"></span>
+						<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#3d5a80]/10 text-[#3d5a80] border border-[#3d5a80]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
+							<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#3d5a80]' : 'bg-[#4fd1c5]'}"></span>
 							{editPaidBy === 'A' ? namePersonA : namePersonB}
 						</div>
 					</div>
@@ -976,7 +973,7 @@
 					{#if editSplitType === 'static'}
 						<div class="space-y-1 pt-0.5">
 							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
-								<span>{namePersonA} <span class="text-[#5c67f2] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
+								<span>{namePersonA} <span class="text-[#3d5a80] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
 								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - editRatio) * 100)}%</span></span>
 							</div>
 							<div class="h-6 flex items-center">
@@ -993,7 +990,7 @@
 									}}
 									onchange={triggerAutoSave}
 									class="w-full cursor-pointer appearance-none rounded-lg"
-									style="background: linear-gradient(to right, #5c67f2 0%, #5c67f2 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
+									style="background: linear-gradient(to right, #3d5a80 0%, #3d5a80 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
 								/>
 							</div>
 							<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
@@ -1004,7 +1001,7 @@
 					{:else}
 						<div class="space-y-1 pt-0.5">
 							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
-								<span>{namePersonA} <span class="text-[#5c67f2] ml-0.5">{Math.round(dynamicSplitRatioA * 100)}%</span></span>
+								<span>{namePersonA} <span class="text-[#3d5a80] ml-0.5">{Math.round(dynamicSplitRatioA * 100)}%</span></span>
 								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - dynamicSplitRatioA) * 100)}%</span></span>
 							</div>
 							<!-- Styled share bar gradient without handle for dynamic split type -->
@@ -1012,9 +1009,9 @@
 								{#if dynamicSplitRatioA === 0}
 									<div class="w-full h-3 rounded-full bg-[#4fd1c5]"></div>
 								{:else if dynamicSplitRatioA === 1}
-									<div class="w-full h-3 rounded-full bg-[#5c67f2]"></div>
+									<div class="w-full h-3 rounded-full bg-[#3d5a80]"></div>
 								{:else}
-									<div class="w-full h-3 rounded-full dynamic-share-bar" style="--pct-a: {dynamicSplitRatioA * 100}%"></div>
+									<div class="w-full h-3 rounded-full dynamic-share-bar--small" style="--pct-a: {dynamicSplitRatioA * 100}%"></div>
 								{/if}
 							</div>
 							<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
@@ -1062,9 +1059,7 @@
 									triggerAutoSave();
 								}}
 								class="px-3.5 py-1.5 rounded-lg border-2 text-xs font-bold transition-all 
-								{editAccountId === acc.id ? 
-									(editPaidBy === 'A' ? 'border-[#5c67f2] bg-[#5c67f2]/5 text-[#5c67f2]' : 'border-[#4fd1c5] bg-[#4fd1c5]/5 text-[#4fd1c5]') : 
-									('border-[#efeeea] bg-white text-[#2d3142]/80 hover:text-[#2d3142] hover:bg-[#fbf9f5]/50 ' + (editPaidBy === 'A' ? 'hover:border-[#5c67f2]/30' : 'hover:border-[#4fd1c5]/30'))}
+								{editAccountId === acc.id ? 'border-[#ff7361] bg-[#ff7361]/5 text-[#ff7361]' : 'border-[#efeeea] bg-white text-[#2d3142]/80 hover:text-[#2d3142] hover:border-[#ff7361]/30 hover:bg-[#fbf9f5]/50'}
 								{isEditingAccounts ? 'cursor-default opacity-80' : 'cursor-pointer'}"
 							>
 								{#if editAccountId === acc.id}<span class="mr-1.5 font-bold">✓</span>{/if}{acc.name}
@@ -1121,8 +1116,7 @@
 							<button
 								type="button"
 								onclick={() => isCreatingAccountInline = true}
-								class="pl-2.5 pr-3 py-1.5 rounded-lg border-2 border-dashed transition-all flex items-center gap-1 focus:outline-none h-[32px]
-								{editPaidBy === 'A' ? 'border-[#5c67f2]/30 text-[#5c67f2] hover:bg-[#5c67f2]/5' : 'border-[#4fd1c5]/30 text-[#4fd1c5] hover:bg-[#4fd1c5]/5'}"
+								class="pl-2.5 pr-3 py-1.5 rounded-lg border-2 border-dashed border-[#ff7361]/30 text-xs font-bold text-[#ff7361] hover:bg-[#ff7361]/5 transition-all flex items-center gap-1 focus:outline-none h-[32px]"
 							>
 								<span class="material-symbols-outlined text-[10px] font-bold">add</span>
 								<span>{t('add')}</span>
@@ -1176,10 +1170,10 @@
 							{#each calendarMonths as item}
 								{@const isPaid = isPaymentMonth(item.year, item.month, editInterval, editAmountDate)}
 								{@const monthName = new Date(item.year, item.month - 1, 1).toLocaleString(locale, { month: 'short' }).toUpperCase().substring(0, 3)}
-								<div class="relative flex flex-col items-center justify-center pt-1 pb-2 {item.month === 1 ? (editPaidBy === 'A' ? 'border-l border-[#5c67f2]/20' : 'border-l border-[#4fd1c5]/20') : ''}">
+								<div class="relative flex flex-col items-center justify-center pt-1 pb-2 {item.month === 1 ? 'border-l border-[#ff7361]/20' : ''}">
 									{#if isPaid}
-										<span class="text-[10px] font-bold {editPaidBy === 'A' ? 'text-[#5c67f2]' : 'text-[#4fd1c5]'}">{monthName}</span>
-										<span class="w-1 h-1 rounded-full {editPaidBy === 'A' ? 'bg-[#5c67f2]' : 'bg-[#4fd1c5]'} absolute bottom-0"></span>
+										<span class="text-[10px] font-bold text-[#ff7361]">{monthName}</span>
+										<span class="w-1 h-1 rounded-full bg-[#ff7361] absolute bottom-0"></span>
 									{:else}
 										<span class="text-[10px] font-bold text-[#9ca3af]">{monthName}</span>
 									{/if}
@@ -1237,15 +1231,15 @@
 								<svg class="w-full h-full overflow-visible" viewBox="0 0 400 100" preserveAspectRatio="none">
 									<defs>
 										<linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-											<stop offset="0%" stop-color={expense.paidBy === 'A' ? '#5c67f2' : '#4fd1c5'} stop-opacity="0.15" />
-											<stop offset="100%" stop-color={expense.paidBy === 'A' ? '#5c67f2' : '#4fd1c5'} stop-opacity="0" />
+											<stop offset="0%" stop-color={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stop-opacity="0.15" />
+											<stop offset="100%" stop-color={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stop-opacity="0" />
 										</linearGradient>
 									</defs>
 									<path d={areaPath} fill="url(#chartGrad)" />
-									<path d={linePath} fill="none" stroke={expense.paidBy === 'A' ? '#5c67f2' : '#4fd1c5'} stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+									<path d={linePath} fill="none" stroke={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
 									{#each coords as pt}
 										<g>
-											<circle cx={pt.x} cy={pt.y} r="4.5" fill="white" stroke={expense.paidBy === 'A' ? '#5c67f2' : '#4fd1c5'} stroke-width="2.5" />
+											<circle cx={pt.x} cy={pt.y} r="4.5" fill="white" stroke={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stroke-width="2.5" />
 											<text x={pt.x} y={pt.y - 10} text-anchor="middle" fill="#2d3142" class="text-[9px] font-black font-sans select-none pointer-events-none">
 												{Math.round(pt.amount)} kr
 											</text>
