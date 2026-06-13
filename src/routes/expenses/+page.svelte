@@ -307,7 +307,7 @@
 						<div class="px-4 py-3.5 bg-[#fbf9f5]/50 border-t border-[#efeeea]">
 							<a
 								href="?new=true&paidBy=A"
-								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#3d5a80]/20 rounded-lg hover:text-[#3d5a80] hover:bg-[#3d5a80]/5 transition-all text-[#3d5a80] justify-center text-xs font-bold"
+								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
 							>
 								<span class="material-symbols-outlined text-sm">add</span>
 								<span>{t('addTemplate')}</span>
@@ -315,11 +315,11 @@
 						</div>
 					{:else}
 						<div class="flex flex-col items-center justify-center text-center p-8 space-y-4">
-							<span class="material-symbols-outlined text-4xl text-[#3d5a80] opacity-70">receipt_long</span>
+							<span class="material-symbols-outlined text-4xl text-[#ff7361] opacity-70">receipt_long</span>
 							<p class="text-xs text-[#9ca3af] font-bold max-w-[200px] leading-relaxed">{t('noActiveTemplates', { name: data.personAName })}</p>
 							<a
 								href="?new=true&paidBy=A"
-								class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#3d5a80]/10 border border-[#3d5a80]/30 hover:bg-[#3d5a80] hover:text-white rounded-xl text-[#3d5a80] transition-all text-xs font-bold shadow-sm"
+								class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#ff7361]/10 border border-[#ff7361]/30 hover:bg-[#ff7361] hover:text-white rounded-xl text-[#ff7361] transition-all text-xs font-bold shadow-sm"
 							>
 								<span class="material-symbols-outlined text-sm">add</span>
 								<span>{t('addTemplate')}</span>
@@ -384,7 +384,7 @@
 						<div class="px-4 py-3.5 bg-[#fbf9f5]/50 border-t border-[#efeeea]">
 							<a
 								href="?new=true&paidBy=B"
-								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#4fd1c5]/20 rounded-lg hover:text-[#4fd1c5] hover:bg-[#4fd1c5]/5 transition-all text-[#4fd1c5] justify-center text-xs font-bold"
+								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
 							>
 								<span class="material-symbols-outlined text-sm">add</span>
 								<span>{t('addTemplate')}</span>
@@ -392,11 +392,11 @@
 						</div>
 					{:else}
 						<div class="flex flex-col items-center justify-center text-center p-8 space-y-4">
-							<span class="material-symbols-outlined text-4xl text-[#4fd1c5] opacity-70">receipt_long</span>
+							<span class="material-symbols-outlined text-4xl text-[#ff7361] opacity-70">receipt_long</span>
 							<p class="text-xs text-[#9ca3af] font-bold max-w-[200px] leading-relaxed">{t('noActiveTemplates', { name: data.personBName })}</p>
 							<a
 								href="?new=true&paidBy=B"
-								class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#4fd1c5]/10 border border-[#4fd1c5]/30 hover:bg-[#4fd1c5] hover:text-white rounded-xl text-[#4fd1c5] transition-all text-xs font-bold shadow-sm"
+								class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#ff7361]/10 border border-[#ff7361]/30 hover:bg-[#ff7361] hover:text-white rounded-xl text-[#ff7361] transition-all text-xs font-bold shadow-sm"
 							>
 								<span class="material-symbols-outlined text-sm">add</span>
 								<span>{t('addTemplate')}</span>
