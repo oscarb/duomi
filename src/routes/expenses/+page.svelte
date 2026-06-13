@@ -543,7 +543,7 @@
 	/* Detail panel: collapsed by default, expands when open */
 	.detail-panel {
 		width: 0;
-		overflow: hidden;
+		overflow: visible;
 		flex-shrink: 0;
 		transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 	}
