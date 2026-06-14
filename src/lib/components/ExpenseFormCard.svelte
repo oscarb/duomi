@@ -480,7 +480,7 @@
 					<div class="flex flex-col items-end flex-shrink-0">
 						<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2">
 							{#if currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] mr-1 inline-block -translate-y-[2px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-40 mr-1 inline-block -translate-y-[2px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
 							{/if}
 							<div class="inline-grid grid-cols-1">
 								<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[1px] pr-[6px] pb-[4px] whitespace-pre tracking-tight">{editAmountVal || '0'}</span>
@@ -498,7 +498,7 @@
 							</div>
 							<input type="hidden" name="amount" value={editAmountVal.replace(/\D/g, '')} />
 							{#if !currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] ml-1 inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-40 ml-1 inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
 							{/if}
 						</div>
 					</div>
@@ -891,11 +891,11 @@
 							<div class="flex items-center">
 								<span class="text-2xl font-bold text-[#2d3142] tracking-tight">
 									{#if currencyConfig.isPrefix}
-										<span class="text-[#9ca3af] mr-1 inline-block" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
+										<span class="text-[#9ca3af] opacity-40 mr-1 inline-block" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
 									{/if}
 									{new Intl.NumberFormat(locale).format(Math.round(latestAmount))}
 									{#if !currencyConfig.isPrefix}
-										<span class="text-[#9ca3af] ml-1 inline-block">{currencyConfig.symbol}</span>
+										<span class="text-[#9ca3af] opacity-40 ml-1 inline-block">{currencyConfig.symbol}</span>
 									{/if}
 								</span>
 							</div>
@@ -917,7 +917,7 @@
 						<div class="flex flex-col items-end space-y-2">
 							<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2">
 								{#if currencyConfig.isPrefix}
-									<span class="text-[#9ca3af] mr-1 inline-block -translate-y-[2px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
+									<span class="text-[#9ca3af] opacity-40 mr-1 inline-block -translate-y-[2px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
 								{/if}
 								<div class="inline-grid grid-cols-1">
 									<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[1px] pr-[6px] pb-[4px] whitespace-pre tracking-tight">{editAmountVal || '0'}</span>
@@ -935,7 +935,7 @@
 								</div>
 								<input type="hidden" name="amount" value={editAmountVal.replace(/\D/g, '')} />
 								{#if !currencyConfig.isPrefix}
-									<span class="text-[#9ca3af] ml-1 inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
+									<span class="text-[#9ca3af] opacity-40 ml-1 inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
 								{/if}
 							</div>
 							
@@ -1252,7 +1252,7 @@
 												<span>
 													{#each formatter.formatToParts(Math.round(item.amount)) as part}
 														{#if part.type === 'currency'}
-															<span class="text-[#9ca3af] {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+															<span class="text-[#9ca3af] opacity-40 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
 														{:else if part.type !== 'literal'}
 															{part.value}
 														{/if}
@@ -1294,7 +1294,7 @@
 										<g>
 											<circle cx={pt.x} cy={pt.y} r="4.5" fill="white" stroke={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stroke-width="2.5" />
 											<text x={pt.x} y={pt.y - 10} text-anchor="middle" fill="#2d3142" class="text-[9px] font-black font-sans select-none pointer-events-none">
-												{Math.round(pt.amount)} <tspan fill="#9ca3af">kr</tspan>
+												{Math.round(pt.amount)} <tspan fill="#9ca3af" opacity="0.4">kr</tspan>
 											</text>
 										</g>
 									{/each}

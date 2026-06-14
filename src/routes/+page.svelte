@@ -525,7 +525,7 @@
 					<div class="text-[#ff7361] font-bold text-5xl flex items-center justify-center mb-6">
 						{#each formatter.formatToParts(Math.round(currentSettlement.amount)) as part}
 							{#if part.type === 'currency'}
-								<span class="text-[#9ca3af] {currencyConfig.isPrefix ? 'mr-2' : 'ml-2'}">{part.value}</span>
+								<span class="text-[#9ca3af] opacity-40 {currencyConfig.isPrefix ? 'mr-2' : 'ml-2'}">{part.value}</span>
 							{:else if part.type !== 'literal'}
 								{part.value}
 							{/if}
@@ -564,7 +564,7 @@
 					<span class="text-lg sm:text-xl font-bold text-[#2d3142] font-sans ml-auto">
 						{#each formatter.formatToParts(Math.round(currentTotalIncome)) as part}
 							{#if part.type === 'currency'}
-								<span class="text-[#9ca3af] {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+								<span class="text-[#9ca3af] opacity-40 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
 							{:else if part.type !== 'literal'}
 								{part.value}
 							{/if}
@@ -577,7 +577,7 @@
 						<label for="incomeA" class="block text-[#9ca3af] text-xs uppercase tracking-widest font-medium">{data.personAName}</label>
 						<div class="income-input-text font-bold text-[#2d3142] flex items-baseline">
 							{#if currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] mr-1.5 sm:mr-2 inline-block" style="transform: translateY(2px);">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-40 mr-1.5 sm:mr-2 inline-block" style="transform: translateY(2px);">{currencyConfig.symbol}</span>
 							{/if}
 							<div class="tactile-input tactile-input--person-A" style="display: inline-flex; position: relative; align-items: baseline;">
 								<span class="invisible font-bold income-input-text p-0 whitespace-pre">
@@ -604,7 +604,7 @@
 								/>
 							</div>
 							{#if !currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] ml-1.5 sm:ml-2 inline-block" style="transform: translateY(2px);">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-40 ml-1.5 sm:ml-2 inline-block" style="transform: translateY(2px);">{currencyConfig.symbol}</span>
 							{/if}
 						</div>
 					</div>
@@ -613,7 +613,7 @@
 						<label for="incomeB" class="block text-[#9ca3af] text-xs uppercase tracking-widest font-medium">{data.personBName}</label>
 						<div class="income-input-text font-bold text-[#2d3142] flex items-baseline">
 							{#if currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] mr-1.5 sm:mr-2 inline-block" style="transform: translateY(2px);">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-40 mr-1.5 sm:mr-2 inline-block" style="transform: translateY(2px);">{currencyConfig.symbol}</span>
 							{/if}
 							<div class="tactile-input tactile-input--person-B" style="display: inline-flex; position: relative; align-items: baseline;">
 								<span class="invisible font-bold income-input-text p-0 whitespace-pre">
@@ -640,7 +640,7 @@
 								/>
 							</div>
 							{#if !currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] ml-1.5 sm:ml-2 inline-block" style="transform: translateY(2px);">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-40 ml-1.5 sm:ml-2 inline-block" style="transform: translateY(2px);">{currencyConfig.symbol}</span>
 							{/if}
 						</div>
 					</div>
@@ -684,7 +684,7 @@
 					<span class="text-xl font-bold text-[#2d3142]">
 						{#each formatter.formatToParts(Math.round(data.expenses.total)) as part}
 							{#if part.type === 'currency'}
-								<span class="text-[#9ca3af] {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+								<span class="text-[#9ca3af] opacity-40 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
 							{:else if part.type !== 'literal'}
 								{part.value}
 							{/if}
@@ -724,7 +724,7 @@
 						<span class="text-sm font-bold text-[#2d3142]">
 							{#each formatter.formatToParts(Math.round(totalPaidByA)) as part}
 								{#if part.type === 'currency'}
-									<span class="text-[#9ca3af] {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+									<span class="text-[#9ca3af] opacity-40 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
 								{:else if part.type !== 'literal'}
 									{part.value}
 								{/if}
@@ -804,7 +804,7 @@
 															{#if currencyConfig.isPrefix}
 																{#each formatter.formatToParts(Math.round(item.amount)) as part}
 																	{#if part.type === 'currency'}
-																		<span class="text-[#9ca3af] font-normal mr-1 inline-block" style="transform: translateY(1px);">{part.value}</span>
+																		<span class="text-[#9ca3af] opacity-40 font-normal mr-1 inline-block" style="transform: translateY(1px);">{part.value}</span>
 																	{/if}
 																{/each}
 															{/if}
@@ -840,7 +840,7 @@
 															{#if !currencyConfig.isPrefix}
 																{#each formatter.formatToParts(Math.round(item.amount)) as part}
 																	{#if part.type === 'currency'}
-																		<span class="text-[#9ca3af] font-normal ml-1 inline-block" style="transform: translateY(1px);">{part.value}</span>
+																		<span class="text-[#9ca3af] opacity-40 font-normal ml-1 inline-block" style="transform: translateY(1px);">{part.value}</span>
 																	{/if}
 																{/each}
 															{/if}
@@ -882,7 +882,7 @@
 						<span class="text-sm font-bold text-[#2d3142]">
 							{#each formatter.formatToParts(Math.round(totalPaidByB)) as part}
 								{#if part.type === 'currency'}
-									<span class="text-[#9ca3af] {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+									<span class="text-[#9ca3af] opacity-40 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
 								{:else if part.type !== 'literal'}
 									{part.value}
 								{/if}
@@ -962,7 +962,7 @@
 															{#if currencyConfig.isPrefix}
 																{#each formatter.formatToParts(Math.round(item.amount)) as part}
 																	{#if part.type === 'currency'}
-																		<span class="text-[#9ca3af] font-normal mr-1 inline-block" style="transform: translateY(1px);">{part.value}</span>
+																		<span class="text-[#9ca3af] opacity-40 font-normal mr-1 inline-block" style="transform: translateY(1px);">{part.value}</span>
 																	{/if}
 																{/each}
 															{/if}
@@ -998,7 +998,7 @@
 															{#if !currencyConfig.isPrefix}
 																{#each formatter.formatToParts(Math.round(item.amount)) as part}
 																	{#if part.type === 'currency'}
-																		<span class="text-[#9ca3af] font-normal ml-1 inline-block" style="transform: translateY(1px);">{part.value}</span>
+																		<span class="text-[#9ca3af] opacity-40 font-normal ml-1 inline-block" style="transform: translateY(1px);">{part.value}</span>
 																	{/if}
 																{/each}
 															{/if}
