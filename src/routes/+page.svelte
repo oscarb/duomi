@@ -781,11 +781,10 @@
 																			<circle cx="3" cy="3" r="2.25" fill="white" />
 																			<circle cx="3" cy="3" r="2.25" fill="none" stroke="#4a7bb0" stroke-width="1.5"
 																				stroke-dasharray="{rA * _C6} {_C6}"
-																				transform="rotate(90 3 3)" />
+																				stroke-dashoffset="{-(0.5 - rA / 2) * _C6}" />
 																			<circle cx="3" cy="3" r="2.25" fill="none" stroke="#4fd1c5" stroke-width="1.5"
 																				stroke-dasharray="{(1 - rA) * _C6} {_C6}"
-																				stroke-dashoffset="{-(rA * _C6)}"
-																				transform="rotate(90 3 3)" />
+																				stroke-dashoffset="{(1 - rA) / 2 * _C6}" />
 																		</svg>
 																	</div>
 																</div>
@@ -942,11 +941,10 @@
 																			<circle cx="3" cy="3" r="2.25" fill="white" />
 																			<circle cx="3" cy="3" r="2.25" fill="none" stroke="#4a7bb0" stroke-width="1.5"
 																				stroke-dasharray="{rA * _C6} {_C6}"
-																				transform="rotate(90 3 3)" />
+																				stroke-dashoffset="{-(0.5 - rA / 2) * _C6}" />
 																			<circle cx="3" cy="3" r="2.25" fill="none" stroke="#4fd1c5" stroke-width="1.5"
 																				stroke-dasharray="{(1 - rA) * _C6} {_C6}"
-																				stroke-dashoffset="{-(rA * _C6)}"
-																				transform="rotate(90 3 3)" />
+																				stroke-dashoffset="{(1 - rA) / 2 * _C6}" />
 																		</svg>
 																	</div>
 																</div>
