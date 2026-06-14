@@ -453,7 +453,7 @@
 			bind:this={editFormElement}
 			class="space-y-12"
 		>
-			<div class="flex flex-col gap-2 pb-8 border-b border-[#efeeea]">
+			<div class="flex flex-col gap-2 pb-2">
 				<!-- Row 1: Title and Amount -->
 				<div class="flex justify-between items-start gap-4">
 					<div class="flex-grow min-w-0">
@@ -559,7 +559,7 @@
 							<div class="h-6 flex items-center relative w-full group">
 								<!-- Track -->
 								<div 
-									class="absolute inset-x-0 h-3 rounded-full overflow-hidden pointer-events-none"
+									class="absolute inset-x-0 h-1.5 rounded-full overflow-hidden pointer-events-none"
 									style="background: linear-gradient(to right, #4a7bb0 calc(10px + {editRatio * 100}% - {editRatio * 20}px), #4fd1c5 calc(10px + {editRatio * 100}% - {editRatio * 20}px))"
 								></div>
 								
@@ -835,7 +835,7 @@
 		>
 			<input type="hidden" name="id" value={expense.id} />
 
-			<div class="flex justify-between items-start pb-8 border-b border-[#efeeea] gap-4">
+			<div class="flex justify-between items-start pb-2 gap-4">
 				<!-- Title & Badges -->
 				<div class="flex-grow min-w-0 space-y-3">
 					<div class="inline-grid grid-cols-1 max-w-full min-w-[1ch]">
@@ -857,8 +857,8 @@
 					</div>
 					<div class="flex items-center gap-2">
 						{#if expense.archivedDate}
-							<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#ff7361]/10 text-[#ff7361] border border-[#ff7361]/20 font-bold text-[10px] uppercase tracking-wider">
-								<span class="w-1.5 h-1.5 rounded-full bg-[#ff7361]"></span>
+							<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 font-bold text-[10px] uppercase tracking-wider">
+								<span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
 								{t('archived')}
 							</div>
 						{:else}
@@ -1003,7 +1003,7 @@
 							<div class="h-6 flex items-center relative w-full group">
 								<!-- Track -->
 								<div 
-									class="absolute inset-x-0 h-3 rounded-full overflow-hidden pointer-events-none"
+									class="absolute inset-x-0 h-1.5 rounded-full overflow-hidden pointer-events-none"
 									style="background: linear-gradient(to right, #4a7bb0 calc(10px + {editRatio * 100}% - {editRatio * 20}px), #4fd1c5 calc(10px + {editRatio * 100}% - {editRatio * 20}px))"
 								></div>
 								
@@ -1249,7 +1249,15 @@
 														{item.pctChange > 0 ? '+' : ''}{Math.round(item.pctChange)}%
 													</span>
 												{/if}
-												<span>{formatter.format(Math.round(item.amount))}</span>
+												<span>
+													{#each formatter.formatToParts(Math.round(item.amount)) as part}
+														{#if part.type === 'currency'}
+															<span class="text-[#9ca3af] font-normal {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+														{:else if part.type !== 'literal'}
+															{part.value}
+														{/if}
+													{/each}
+												</span>
 											</div>
 										{/if}
 									</td>
@@ -1286,7 +1294,7 @@
 										<g>
 											<circle cx={pt.x} cy={pt.y} r="4.5" fill="white" stroke={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stroke-width="2.5" />
 											<text x={pt.x} y={pt.y - 10} text-anchor="middle" fill="#2d3142" class="text-[9px] font-black font-sans select-none pointer-events-none">
-												{Math.round(pt.amount)} kr
+												{Math.round(pt.amount)} <tspan fill="#9ca3af">kr</tspan>
 											</text>
 										</g>
 									{/each}

@@ -104,14 +104,9 @@
 			}
 		});
 		result = [...result].sort((a, b) => {
-			// Expenses with no account come first
-			const noAccA = a.accountId === null ? 0 : 1;
-			const noAccB = b.accountId === null ? 0 : 1;
-			if (noAccA !== noAccB) return noAccA - noAccB;
-			// Then apply the user-selected sort
 			let cmp = 0;
 			if (sortBy === 'cost') cmp = a.latestAmount - b.latestAmount;
-			else cmp = a.name.localeCompare(b.name);
+			else cmp = a.name.localeCompare(b.name, locale);
 			return sortAsc ? cmp : -cmp;
 		});
 		return result;
@@ -310,7 +305,15 @@
 										{/if}
 									</div>
 									<div class="text-right">
-										<p class="font-bold text-sm text-[#2d3142]">{formatter.format(Math.round(item.latestAmount))}</p>
+										<p class="font-bold text-sm text-[#2d3142]">
+											{#each formatter.formatToParts(Math.round(item.latestAmount)) as part}
+												{#if part.type === 'currency'}
+													<span class="text-[#9ca3af] font-normal {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+												{:else if part.type !== 'literal'}
+													{part.value}
+												{/if}
+											{/each}
+										</p>
 										<p class="text-[10px] font-bold uppercase tracking-wider {selectedId === item.id ? 'text-[#4a7bb0]' : 'text-[#9ca3af]'}">
 											{item.intervalMonths === 0 ? t('frequencyListOneTime') : item.intervalMonths === 1 ? t('frequencyListMonthly') : item.intervalMonths === 3 ? t('frequencyListQuarterly') : item.intervalMonths === 12 ? t('frequencyListYearly') : ''}
 										</p>
@@ -396,7 +399,15 @@
 										{/if}
 									</div>
 									<div class="text-right">
-										<p class="font-bold text-sm text-[#2d3142]">{formatter.format(Math.round(item.latestAmount))}</p>
+										<p class="font-bold text-sm text-[#2d3142]">
+											{#each formatter.formatToParts(Math.round(item.latestAmount)) as part}
+												{#if part.type === 'currency'}
+													<span class="text-[#9ca3af] font-normal {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+												{:else if part.type !== 'literal'}
+													{part.value}
+												{/if}
+											{/each}
+										</p>
 										<p class="text-[10px] font-bold uppercase tracking-wider {selectedId === item.id ? 'text-[#4fd1c5]' : 'text-[#9ca3af]'}">
 											{item.intervalMonths === 0 ? t('frequencyListOneTime') : item.intervalMonths === 1 ? t('frequencyListMonthly') : item.intervalMonths === 3 ? t('frequencyListQuarterly') : item.intervalMonths === 12 ? t('frequencyListYearly') : ''}
 										</p>
