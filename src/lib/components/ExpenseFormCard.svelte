@@ -498,7 +498,7 @@
 							</div>
 							<input type="hidden" name="amount" value={editAmountVal.replace(/\D/g, '')} />
 							{#if !currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 ml-1 inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-50 ml-1 inline-block -translate-x-[1px] -translate-y-[2px]">{currencyConfig.symbol}</span>
 							{/if}
 						</div>
 					</div>
@@ -935,7 +935,7 @@
 								</div>
 								<input type="hidden" name="amount" value={editAmountVal.replace(/\D/g, '')} />
 								{#if !currencyConfig.isPrefix}
-									<span class="text-[#9ca3af] opacity-50 ml-1 inline-block -translate-y-[2px]">{currencyConfig.symbol}</span>
+									<span class="text-[#9ca3af] opacity-50 ml-1 inline-block -translate-x-[1px] -translate-y-[2px]">{currencyConfig.symbol}</span>
 								{/if}
 							</div>
 							
