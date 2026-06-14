@@ -577,7 +577,7 @@
 						<label for="incomeA" class="block text-[#9ca3af] text-xs uppercase tracking-widest font-medium">{data.personAName}</label>
 						<div class="income-input-text font-bold text-[#2d3142] flex items-baseline">
 							{#if currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 mr-1.5 sm:mr-2">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-50 mr-1.5 sm:mr-2 inline-block" style="transform: translateY(2px);">{currencyConfig.symbol}</span>
 							{/if}
 							<div class="tactile-input tactile-input--person-A" style="display: inline-flex; position: relative; align-items: baseline;">
 								<span class="invisible font-bold income-input-text p-0 whitespace-pre">
@@ -604,7 +604,7 @@
 								/>
 							</div>
 							{#if !currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 ml-1.5 sm:ml-2">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-50 ml-1.5 sm:ml-2 inline-block" style="transform: translateY(2px);">{currencyConfig.symbol}</span>
 							{/if}
 						</div>
 					</div>
@@ -613,7 +613,7 @@
 						<label for="incomeB" class="block text-[#9ca3af] text-xs uppercase tracking-widest font-medium">{data.personBName}</label>
 						<div class="income-input-text font-bold text-[#2d3142] flex items-baseline">
 							{#if currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 mr-1.5 sm:mr-2">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-50 mr-1.5 sm:mr-2 inline-block" style="transform: translateY(2px);">{currencyConfig.symbol}</span>
 							{/if}
 							<div class="tactile-input tactile-input--person-B" style="display: inline-flex; position: relative; align-items: baseline;">
 								<span class="invisible font-bold income-input-text p-0 whitespace-pre">
@@ -640,7 +640,7 @@
 								/>
 							</div>
 							{#if !currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 ml-1.5 sm:ml-2">{currencyConfig.symbol}</span>
+								<span class="text-[#9ca3af] opacity-50 ml-1.5 sm:ml-2 inline-block" style="transform: translateY(2px);">{currencyConfig.symbol}</span>
 							{/if}
 						</div>
 					</div>
@@ -804,7 +804,7 @@
 															{#if currencyConfig.isPrefix}
 																{#each formatter.formatToParts(Math.round(item.amount)) as part}
 																	{#if part.type === 'currency'}
-																		<span class="text-[#9ca3af] opacity-40 font-normal mr-1">{part.value}</span>
+																		<span class="text-[#9ca3af] opacity-40 font-normal mr-1 inline-block" style="transform: translateY(1px);">{part.value}</span>
 																	{/if}
 																{/each}
 															{/if}
@@ -840,7 +840,7 @@
 															{#if !currencyConfig.isPrefix}
 																{#each formatter.formatToParts(Math.round(item.amount)) as part}
 																	{#if part.type === 'currency'}
-																		<span class="text-[#9ca3af] opacity-40 font-normal ml-1">{part.value}</span>
+																		<span class="text-[#9ca3af] opacity-40 font-normal ml-1 inline-block" style="transform: translateY(1px);">{part.value}</span>
 																	{/if}
 																{/each}
 															{/if}
@@ -962,7 +962,7 @@
 															{#if currencyConfig.isPrefix}
 																{#each formatter.formatToParts(Math.round(item.amount)) as part}
 																	{#if part.type === 'currency'}
-																		<span class="text-[#9ca3af] opacity-40 font-normal mr-1">{part.value}</span>
+																		<span class="text-[#9ca3af] opacity-40 font-normal mr-1 inline-block" style="transform: translateY(1px);">{part.value}</span>
 																	{/if}
 																{/each}
 															{/if}
@@ -998,7 +998,7 @@
 															{#if !currencyConfig.isPrefix}
 																{#each formatter.formatToParts(Math.round(item.amount)) as part}
 																	{#if part.type === 'currency'}
-																		<span class="text-[#9ca3af] opacity-40 font-normal ml-1">{part.value}</span>
+																		<span class="text-[#9ca3af] opacity-40 font-normal ml-1 inline-block" style="transform: translateY(1px);">{part.value}</span>
 																	{/if}
 																{/each}
 															{/if}
