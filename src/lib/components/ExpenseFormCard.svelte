@@ -351,23 +351,35 @@
 			return new Date(y, m - 1, d).getTime();
 		};
 
+		// Only show prediction if the expense template is not archived
+		const showPrediction = expense && !expense.archivedDate;
+
 		// 1. Predict next price point based on previous intervals and deltas
 		const times = chartPoints.map(p => parseDateToTime(p.date));
-		const intervals = [];
-		for (let i = 1; i < times.length; i++) {
-			intervals.push(times[i] - times[i - 1]);
-		}
-		const avgInterval = intervals.length > 0 ? intervals.reduce((a, b) => a + b, 0) / intervals.length : 365 * 24 * 60 * 60 * 1000;
-		const predictedTime = times[times.length - 1] + avgInterval;
-		const predictedDateObj = new Date(predictedTime);
-		const predictedDateStr = `${predictedDateObj.getFullYear()}-${String(predictedDateObj.getMonth() + 1).padStart(2, '0')}-${String(predictedDateObj.getDate()).padStart(2, '0')}`;
+		let predictedDateStr = '';
+		let maxTime = times[times.length - 1];
 
-		const deltas = [];
-		for (let i = 1; i < chartPoints.length; i++) {
-			deltas.push(chartPoints[i].amount - chartPoints[i - 1].amount);
+		if (showPrediction) {
+			const intervals = [];
+			for (let i = 1; i < times.length; i++) {
+				intervals.push(times[i] - times[i - 1]);
+			}
+			const avgInterval = intervals.length > 0 ? intervals.reduce((a, b) => a + b, 0) / intervals.length : 365 * 24 * 60 * 60 * 1000;
+			const predictedTime = times[times.length - 1] + avgInterval;
+			const predictedDateObj = new Date(predictedTime);
+			predictedDateStr = `${predictedDateObj.getFullYear()}-${String(predictedDateObj.getMonth() + 1).padStart(2, '0')}-${String(predictedDateObj.getDate()).padStart(2, '0')}`;
+			maxTime = parseDateToTime(predictedDateStr);
 		}
-		const avgDelta = deltas.length > 0 ? deltas.reduce((a, b) => a + b, 0) / deltas.length : 0;
-		const predictedAmount = Math.max(0, chartPoints[chartPoints.length - 1].amount + avgDelta);
+
+		let predictedAmount = chartPoints[chartPoints.length - 1].amount;
+		if (showPrediction) {
+			const deltas = [];
+			for (let i = 1; i < chartPoints.length; i++) {
+				deltas.push(chartPoints[i].amount - chartPoints[i - 1].amount);
+			}
+			const avgDelta = deltas.length > 0 ? deltas.reduce((a, b) => a + b, 0) / deltas.length : 0;
+			predictedAmount = Math.max(0, chartPoints[chartPoints.length - 1].amount + avgDelta);
+		}
 
 		// 2. Set ranges
 		const minAmt = Math.min(...chartPoints.map(p => p.amount), predictedAmount);
@@ -375,7 +387,6 @@
 		const amtRange = maxAmt - minAmt;
 
 		const minTime = times[0];
-		const maxTime = parseDateToTime(predictedDateStr);
 		const timeRange = maxTime - minTime;
 
 		const getX = (dStr: string) => {
@@ -397,14 +408,17 @@
 			};
 		});
 
-		const predictedPoint = {
-			x: getX(predictedDateStr),
-			y: getY(predictedAmount),
-			amount: predictedAmount,
-			date: predictedDateStr
-		};
+		let predictedPoint = null;
+		if (showPrediction) {
+			predictedPoint = {
+				x: getX(predictedDateStr),
+				y: getY(predictedAmount),
+				amount: predictedAmount,
+				date: predictedDateStr
+			};
+		}
 
-		const fullCoords = [...coords, predictedPoint];
+		const fullCoords = showPrediction && predictedPoint ? [...coords, predictedPoint] : coords;
 
 		// 4. Compute spline curve paths
 		const controlPoint = (current: { x: number; y: number }, previous: { x: number; y: number } | undefined, next: { x: number; y: number } | undefined, reverse: boolean) => {
@@ -433,7 +447,7 @@
 			
 			if (i === 1) {
 				historicalCurvePath = `M ${prev.x} ${prev.y} ${segment}`;
-			} else if (i < fullCoords.length - 1) {
+			} else if (i < coords.length) {
 				historicalCurvePath += ` ${segment}`;
 			} else {
 				predictedCurvePath = `M ${prev.x} ${prev.y} ${segment}`;
@@ -444,15 +458,16 @@
 			? `${historicalCurvePath} L ${coords[coords.length - 1].x} 88 L ${coords[0].x} 88 Z`
 			: '';
 			
-		const predictedAreaPath = predictedCurvePath
+		const predictedAreaPath = predictedCurvePath && predictedPoint
 			? `${predictedCurvePath} L ${predictedPoint.x} 88 L ${coords[coords.length - 1].x} 88 Z`
 			: '';
 
-		// 5. Generate year ticks along the x axis
+		// 5. Generate year ticks along the x axis with spacing-based label hiding
 		const startYear = new Date(minTime).getFullYear();
 		const endYear = new Date(maxTime).getFullYear();
 		const yearTicks = [];
 
+		let lastYearLabelX = -999;
 		for (let yr = startYear; yr <= endYear; yr++) {
 			const yrStartStr = `${yr}-01-01`;
 			const yrTime = parseDateToTime(yrStartStr);
@@ -467,10 +482,17 @@
 			}
 			
 			if (x >= 20 && x <= 380) {
+				let showYearLabel = false;
+				if (x - lastYearLabelX >= 45) {
+					showYearLabel = true;
+					lastYearLabelX = x;
+				}
+				
 				yearTicks.push({
 					year: yr,
 					x,
-					drawTick
+					drawTick,
+					showYearLabel
 				});
 			}
 		}
@@ -1423,21 +1445,23 @@
 											<stop offset="100%" stop-color="#9ca3af" stop-opacity="0" />
 										</linearGradient>
 									</defs>
-									<!-- Baseline -->
-									<line x1="15" y1="88" x2="385" y2="88" stroke="#efeeea" stroke-width="1.5" stroke-dasharray="3 3" stroke-linecap="round" />
 									
 									<!-- Year ticks and labels on X Axis -->
 									{#each chartCoords.yearTicks as tick}
 										<g>
 											{#if tick.drawTick}
-												<line x1={tick.x} y1="88" x2={tick.x} y2="92" stroke="#efeeea" stroke-width="1.5" stroke-linecap="round" />
-												<text x={tick.x} y={99} text-anchor="middle" fill="#9ca3af" class="text-[9px] font-bold select-none pointer-events-none">
-													{tick.year}
-												</text>
+												<line x1={tick.x} y1="84" x2={tick.x} y2="88" stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round" />
+												{#if tick.showYearLabel}
+													<text x={tick.x} y={98} text-anchor="middle" fill="#4b5563" class="text-[9px] font-bold select-none pointer-events-none">
+														{tick.year}
+													</text>
+												{/if}
 											{:else}
-												<text x={tick.x} y={99} text-anchor="start" fill="#9ca3af" class="text-[9px] font-bold select-none pointer-events-none">
-													{tick.year}
-												</text>
+												{#if tick.showYearLabel}
+													<text x={tick.x} y={98} text-anchor="start" fill="#4b5563" class="text-[9px] font-bold select-none pointer-events-none">
+														{tick.year}
+													</text>
+												{/if}
 											{/if}
 										</g>
 									{/each}
@@ -1457,49 +1481,31 @@
 										<path d={chartCoords.curvePath} fill="none" stroke={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
 									{/if}
 
-									<!-- Predicted Segment Line -->
+									<!-- Predicted Segment Line (Thinner than before) -->
 									{#if chartCoords.predictedCurvePath}
-										<path d={chartCoords.predictedCurvePath} fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-dasharray="3 3" stroke-linecap="round" stroke-linejoin="round" />
-									{/if}
-									
-									<!-- Historical Event Dots -->
-									{#each chartCoords.coords as pt}
-										<g>
-											<circle
-												cx={pt.x}
-												cy={pt.y}
-												r="3.5"
-												fill="white"
-												stroke={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'}
-												stroke-width="2"
-												class="hover:scale-130 transition-transform duration-150 cursor-pointer"
-												style="transform-origin: {pt.x}px {pt.y}px;"
-											>
-												<title>{formatter.format(Math.round(pt.amount))}</title>
-											</circle>
-										</g>
-									{/each}
-
-									<!-- Predicted Event Dot -->
-									{#if chartCoords.predictedPoint}
-										{@const pt = chartCoords.predictedPoint}
-										<g>
-											<circle
-												cx={pt.x}
-												cy={pt.y}
-												r="3.5"
-												fill="white"
-												stroke="#9ca3af"
-												stroke-dasharray="2 1"
-												stroke-width="1.5"
-												class="hover:scale-130 transition-transform duration-150 cursor-pointer"
-												style="transform-origin: {pt.x}px {pt.y}px;"
-											>
-												<title>Predicted: {formatter.format(Math.round(pt.amount))} (approx. {formatHistoryDate(pt.date, locale)})</title>
-											</circle>
-										</g>
+										<path d={chartCoords.predictedCurvePath} fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="3 3" stroke-linecap="round" stroke-linejoin="round" />
 									{/if}
 								</svg>
+
+								<!-- HTML-based Event Dots (positioned absolutely to guarantee perfect circles and no aspect ratio squishing) -->
+								{#each chartCoords.coords as pt}
+									<div
+										class="absolute w-2 h-2 rounded-full bg-white border-2 transition-transform duration-150 hover:scale-130 cursor-pointer -translate-x-1/2 -translate-y-1/2"
+										style="left: {(pt.x / 400) * 100}%; top: {pt.y}%; border-color: {expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'};"
+									>
+										<title>{formatter.format(Math.round(pt.amount))}</title>
+									</div>
+								{/each}
+
+								{#if chartCoords.predictedPoint}
+									{@const pt = chartCoords.predictedPoint}
+									<div
+										class="absolute w-2 h-2 rounded-full bg-white border-2 border-[#9ca3af] border-dashed transition-transform duration-150 hover:scale-130 cursor-pointer -translate-x-1/2 -translate-y-1/2"
+										style="left: {(pt.x / 400) * 100}%; top: {pt.y}%;"
+									>
+										<title>Predicted: {formatter.format(Math.round(pt.amount))} (approx. {formatHistoryDate(pt.date, locale)})</title>
+									</div>
+								{/if}
 							</div>
 						</div>
 					{/if}
