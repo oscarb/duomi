@@ -982,16 +982,16 @@
 			</div>
 
 			<!-- Footer Buttons -->
-			<div class="flex gap-4 pt-4">
+			<div class="flex items-center justify-end gap-2 pt-4">
 				<a
 					href={cancelHref}
-					class="flex-1 py-3 text-center rounded-xl bg-[#fbf9f5] border border-[#efeeea] text-xs font-bold text-[#9ca3af] hover:text-[#2d3142] transition-colors"
+					class="px-4 py-3 text-[#9ca3af] text-xs font-bold hover:text-[#2d3142] transition-colors"
 				>
 					{t('cancel')}
 				</a>
 				<button
 					type="submit"
-					class="flex-1 py-3 rounded-xl bg-[#ff7361] text-white text-xs font-bold hover:bg-[#ff7361]/90 shadow-sm transition-colors"
+					class="px-8 py-3 rounded-xl bg-[#ff7361] text-white text-xs font-bold hover:bg-[#ff7361]/90 shadow-sm transition-colors"
 				>
 					{t('createTemplate')}
 				</button>
@@ -1007,7 +1007,16 @@
 				return async ({ result, update }) => {
 					if (result.type === 'success') {
 						if (actionName.includes('archive')) {
-							toasts.show(t('toastArchived'), 'success');
+							const expenseId = expense?.id;
+							toasts.show(t('toastArchived'), 'success', 5000, {
+								label: t('undo'),
+								callback: async () => {
+									const fd = new FormData();
+									fd.append('id', String(expenseId));
+									await fetch(`${actionRoute}?/unarchive`, { method: 'POST', body: fd });
+									await invalidateAll();
+								}
+							});
 						} else if (actionName.includes('updateAmount')) {
 							isAmountEdit = false;
 							const dateParts = editAmountDate.split('-');
@@ -1031,6 +1040,7 @@
 			class="space-y-12"
 		>
 			<input type="hidden" name="id" value={expense.id} />
+		<input type="hidden" name="archivedDate" value={`${currentYear}-${String(currentMonth).padStart(2, '0')}-01`} />
 
 			<div class="flex justify-between items-start pb-2 gap-4">
 				<!-- Title & Badges -->
@@ -1549,14 +1559,17 @@
 			<!-- Actions (Archive, Move, & Hide) -->
 			<div class="pt-4 flex flex-col gap-3">
 				<div class="flex items-center justify-between gap-3">
-					<button
-						formaction="{actionRoute}?/archive"
-						type="submit"
-						class="flex-grow flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 rounded-xl text-[#ff7361] transition-all font-bold group border-[#ff7361] hover:bg-[#ff7361] hover:text-white"
-					>
-						<span class="material-symbols-outlined text-[20px]">archive</span>
-						<span class="text-xs font-bold text-center">{t('archiveExpense')}</span>
-					</button>
+					{#if !expense.archivedDate}
+						<button
+							formaction="{actionRoute}?/archive"
+							type="submit"
+							class="h-10 flex-grow flex-1 flex items-center justify-center gap-2 px-3 rounded-xl border-2 border-[#efeeea] text-[#9ca3af] hover:text-[#ff7361] hover:border-[#ff7361]/30 transition-all group"
+							title={t('archiveExpense')}
+						>
+							<span class="material-symbols-outlined text-[20px]">stop_circle</span>
+							<span class="text-xs font-bold text-center">{t('archiveExpense')}</span>
+						</button>
+					{/if}
 
 					<button
 						type="button"
@@ -1564,12 +1577,12 @@
 							editPaidBy = editPaidBy === 'A' ? 'B' : 'A';
 							triggerAutoSave();
 						}}
-						class="flex-grow flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 rounded-xl text-[#ff7361] transition-all font-bold group border-[#ff7361] hover:bg-[#ff7361] hover:text-white"
+						class="h-10 flex-grow flex-1 flex items-center justify-center gap-2 px-3 rounded-xl border-2 border-[#efeeea] text-[#9ca3af] hover:text-[#ff7361] hover:border-[#ff7361]/30 transition-all group"
 					>
+						<span class="material-symbols-outlined text-[20px] font-bold">arrow_forward</span>
 						<span class="text-xs font-bold text-center">
 							{t('moveTo', { name: editPaidBy === 'A' ? namePersonB : namePersonA })}
 						</span>
-						<span class="material-symbols-outlined text-[20px] font-bold">arrow_forward</span>
 					</button>
 				</div>
 			</div>

@@ -1,6 +1,6 @@
 import { db } from './index';
 import { incomes, accounts, expenses, expenseAmounts } from './schema';
-import { eq, and, or, isNull, gte, sql } from 'drizzle-orm';
+import { eq, and, or, isNull, gt, sql } from 'drizzle-orm';
 
 // Helper to compute difference in months between YYYY-MM-DD and a target year/month
 function getMonthDiff(validFromStr: string, targetYear: number, targetMonth: number): number {
@@ -91,7 +91,7 @@ export async function getActiveExpensesForMonth(year: number, month: number) {
 	const targetFirstDay = `${targetMonthStr}-01`;
 	const targetLastDay = `${targetMonthStr}-31`;
 
-	// Fetch expenses that are NOT archived or archived after/in the selected month
+	// Fetch expenses that are NOT archived or archived strictly after the selected month ends
 	const allExpenses = await db
 		.select({
 			expense: expenses,
@@ -102,7 +102,7 @@ export async function getActiveExpensesForMonth(year: number, month: number) {
 		.where(
 			or(
 				isNull(expenses.archivedDate),
-				gte(expenses.archivedDate, targetFirstDay)
+				gt(expenses.archivedDate, targetLastDay)
 			)
 		)
 		.all();
@@ -270,6 +270,14 @@ export async function archiveExpense(expenseId: number, archivedDate: string) {
 	await db
 		.update(expenses)
 		.set({ archivedDate })
+		.where(eq(expenses.id, expenseId))
+		.run();
+}
+
+export async function unarchiveExpense(expenseId: number) {
+	await db
+		.update(expenses)
+		.set({ archivedDate: null })
 		.where(eq(expenses.id, expenseId))
 		.run();
 }

@@ -146,7 +146,9 @@
 			<!-- Toolbar -->
 			<div class="toolbar">
 				<!-- Person switcher -->
-				<button class="toolbar-btn" onclick={togglePerson} type="button">
+				<button class="toolbar-btn" 
+						style="--hover-text-color: {activePerson === 'B' ? '#4fd1c5' : '#4a7bb0'}; --hover-border-color: {activePerson === 'B' ? 'rgba(79, 209, 197, 0.3)' : 'rgba(74, 123, 176, 0.3)'};"
+						onclick={togglePerson} type="button">
 					<span class="person-dot" style="background:{activePerson === 'B' ? '#4fd1c5' : '#4a7bb0'}"></span>
 					<span>{activePerson === 'A' ? data.personAName : data.personBName}</span>
 					<span class="material-symbols-outlined toolbar-btn-icon">swap_horiz</span>

@@ -534,16 +534,16 @@
 					<div class="flex justify-center">
 						<button
 							onclick={copySettlementText}
-							class="hidden md:flex items-center gap-2 px-6 py-2 rounded-full border border-gray-100 bg-gray-50 text-[#9ca3af] text-sm font-semibold hover:bg-gray-100 hover:text-[#2d3142] transition-all focus:outline-none"
+							class="hidden md:flex h-10 items-center gap-2 px-4 rounded-xl border-2 border-[#efeeea] text-[#9ca3af] hover:text-[#ff7361] hover:border-[#ff7361]/30 transition-all font-bold text-xs focus:outline-none"
 						>
-							<span class="material-symbols-outlined text-lg">content_copy</span>
+							<span class="material-symbols-outlined text-[20px]">content_copy</span>
 							<span>{t(copyStatus)}</span>
 						</button>
 						<button
 							onclick={shareSettlement}
-							class="flex md:hidden items-center gap-2 px-6 py-2 rounded-full border border-gray-100 bg-gray-50 text-[#9ca3af] text-sm font-semibold hover:bg-gray-100 hover:text-[#2d3142] transition-all focus:outline-none"
+							class="flex md:hidden h-10 items-center gap-2 px-4 rounded-xl border-2 border-[#efeeea] text-[#9ca3af] hover:text-[#ff7361] hover:border-[#ff7361]/30 transition-all font-bold text-xs focus:outline-none"
 						>
-							<span class="material-symbols-outlined text-lg">share</span>
+							<span class="material-symbols-outlined text-[20px]">share</span>
 							<span>{t('share')}</span>
 						</button>
 					</div>
@@ -697,6 +697,7 @@
 					<button
 						type="button"
 						class="toolbar-btn {filterPartA ? 'toolbar-btn--active-A' : ''}"
+						style="--hover-text-color: #4a7bb0; --hover-border-color: rgba(74, 123, 176, 0.3);"
 						onclick={() => {
 							filterPartA = !filterPartA;
 						}}
@@ -708,6 +709,7 @@
 					<button
 						type="button"
 						class="toolbar-btn {filterPartB ? 'toolbar-btn--active-B' : ''}"
+						style="--hover-text-color: #4fd1c5; --hover-border-color: rgba(79, 209, 197, 0.3);"
 						onclick={() => {
 							filterPartB = !filterPartB;
 						}}
@@ -1213,24 +1215,23 @@
 	.toolbar-btn {
 		display: inline-flex;
 		align-items: center;
-		gap: 5px;
-		padding: 5px 10px 5px 8px;
-		border-radius: 8px;
-		border: 1px solid rgba(255,255,255,0.22);
-		background: rgba(255,255,255,0.92);
-		color: #2d3142;
+		gap: 6px;
+		padding: 0 12px;
+		height: 34px;
+		border-radius: 10px;
+		border: 2px solid #efeeea;
+		background: transparent;
+		color: #9ca3af;
 		font-size: 12px;
-		font-weight: 600;
+		font-weight: 700;
 		cursor: pointer;
-		transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+		transition: all 0.15s;
 		white-space: nowrap;
-		letter-spacing: 0.01em;
-		box-shadow: 0 1px 3px rgba(45,49,66,0.08);
 	}
 
 	.toolbar-btn:hover {
-		background: white;
-		box-shadow: 0 2px 6px rgba(45,49,66,0.12);
+		color: var(--hover-text-color, #ff7361);
+		border-color: var(--hover-border-color, rgba(255, 115, 97, 0.3));
 	}
 
 	.toolbar-btn:active {
@@ -1238,15 +1239,15 @@
 	}
 
 	.toolbar-btn--active-A {
-		background: rgba(74, 123, 176, 0.08) !important;
-		border-color: #4a7bb0 !important;
-		box-shadow: 0 2px 8px rgba(74, 123, 176, 0.15) !important;
+		background: rgba(74, 123, 176, 0.05) !important;
+		border-color: rgba(74, 123, 176, 0.3) !important;
+		color: #4a7bb0 !important;
 	}
 
 	.toolbar-btn--active-B {
-		background: rgba(79, 209, 197, 0.08) !important;
-		border-color: #4fd1c5 !important;
-		box-shadow: 0 2px 8px rgba(79, 209, 197, 0.15) !important;
+		background: rgba(79, 209, 197, 0.05) !important;
+		border-color: rgba(79, 209, 197, 0.3) !important;
+		color: #4fd1c5 !important;
 	}
 
 	.person-dot {

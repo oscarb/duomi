@@ -1,5 +1,5 @@
-import type { PageServerLoad } from './$types';
-import { getMonthlyIncomes, getActiveExpensesForMonth, getAccounts } from '$lib/server/db/queries';
+import type { PageServerLoad, Actions } from './$types';
+import { getMonthlyIncomes, getActiveExpensesForMonth, getAccounts, archiveExpense, unarchiveExpense } from '$lib/server/db/queries';
 import { calculateSettlement } from '$lib/calculations';
 import { db } from '$lib/server/db';
 import { incomes, expenses, expenseAmounts } from '$lib/server/db/schema';
@@ -155,4 +155,21 @@ export const load: PageServerLoad = async ({ url }) => {
 		dynamicSplitRatioA: pctA
 	};
 };
+
+export const actions = {
+	archive: async ({ request }) => {
+		const data = await request.formData();
+		const expenseId = parseInt(data.get('id') as string, 10);
+		const archivedDate = data.get('archivedDate') as string || new Date().toISOString().split('T')[0];
+		await archiveExpense(expenseId, archivedDate);
+		return { success: true };
+	},
+
+	unarchive: async ({ request }) => {
+		const data = await request.formData();
+		const expenseId = parseInt(data.get('id') as string, 10);
+		await unarchiveExpense(expenseId);
+		return { success: true };
+	}
+} satisfies Actions;
 

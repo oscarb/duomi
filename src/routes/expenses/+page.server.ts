@@ -1,5 +1,5 @@
 import type { PageServerLoad, Actions } from './$types';
-import { getMonthlyIncomes, getAccounts, addExpense, updateExpenseAmount, archiveExpense, addAccount, deleteAccount as deleteAccountQuery, restoreAccount as restoreAccountQuery } from '$lib/server/db/queries';
+import { getMonthlyIncomes, getAccounts, addExpense, updateExpenseAmount, archiveExpense, unarchiveExpense, addAccount, deleteAccount as deleteAccountQuery, restoreAccount as restoreAccountQuery } from '$lib/server/db/queries';
 import { db } from '$lib/server/db';
 import { expenses, expenseAmounts, incomes } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
@@ -182,6 +182,13 @@ export const actions = {
 		const archivedDate = data.get('archivedDate') as string || new Date().toISOString().split('T')[0];
 
 		await archiveExpense(expenseId, archivedDate);
+		return { success: true };
+	},
+
+	unarchive: async ({ request }) => {
+		const data = await request.formData();
+		const expenseId = parseInt(data.get('id') as string, 10);
+		await unarchiveExpense(expenseId);
 		return { success: true };
 	},
 
