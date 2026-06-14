@@ -357,7 +357,7 @@
 		// 1. Predict next price point based on previous intervals and deltas
 		const times = chartPoints.map(p => parseDateToTime(p.date));
 		let predictedDateStr = '';
-		let maxTime = times[times.length - 1];
+		let predictedYear = new Date(times[times.length - 1]).getFullYear();
 
 		if (showPrediction) {
 			const intervals = [];
@@ -368,7 +368,7 @@
 			const predictedTime = times[times.length - 1] + avgInterval;
 			const predictedDateObj = new Date(predictedTime);
 			predictedDateStr = `${predictedDateObj.getFullYear()}-${String(predictedDateObj.getMonth() + 1).padStart(2, '0')}-${String(predictedDateObj.getDate()).padStart(2, '0')}`;
-			maxTime = parseDateToTime(predictedDateStr);
+			predictedYear = predictedDateObj.getFullYear();
 		}
 
 		let predictedAmount = chartPoints[chartPoints.length - 1].amount;
@@ -381,21 +381,29 @@
 			predictedAmount = Math.max(0, chartPoints[chartPoints.length - 1].amount + avgDelta);
 		}
 
-		// 2. Set ranges
+		// 2. Set ranges (linear time from Jan 1st of startYear to Dec 31st of endYear)
+		const startYear = new Date(times[0]).getFullYear();
+		const endYear = predictedYear;
+
+		const minTime = parseDateToTime(`${startYear}-01-01`);
+		const maxTime = parseDateToTime(`${endYear}-12-31`);
+		const timeRange = maxTime - minTime;
+
 		const minAmt = Math.min(...chartPoints.map(p => p.amount), predictedAmount);
 		const maxAmt = Math.max(...chartPoints.map(p => p.amount), predictedAmount);
 		const amtRange = maxAmt - minAmt;
 
-		const minTime = times[0];
-		const timeRange = maxTime - minTime;
+		const leftMargin = 15;
+		const rightMargin = 15;
+		const chartWidth = 400 - leftMargin - rightMargin; // 370
 
 		const getX = (dStr: string) => {
 			const t = parseDateToTime(dStr);
-			return timeRange === 0 ? 200 : ((t - minTime) / timeRange) * 360 + 20;
+			return timeRange === 0 ? 200 : ((t - minTime) / timeRange) * chartWidth + leftMargin;
 		};
 
 		const getY = (amt: number) => {
-			return amtRange === 0 ? 50 : 85 - ((amt - minAmt) / amtRange) * 70;
+			return amtRange === 0 ? 40 : 70 - ((amt - minAmt) / amtRange) * 60;
 		};
 
 		// 3. Map coords (time-linear)
@@ -462,38 +470,38 @@
 			? `${predictedCurvePath} L ${predictedPoint.x} 88 L ${coords[coords.length - 1].x} 88 Z`
 			: '';
 
-		// 5. Generate year ticks along the x axis with spacing-based label hiding
-		const startYear = new Date(minTime).getFullYear();
-		const endYear = new Date(maxTime).getFullYear();
+		// 5. Generate year ticks along the x axis (always centered with a vertical line)
 		const yearTicks = [];
-
-		let lastYearLabelX = -999;
 		for (let yr = startYear; yr <= endYear; yr++) {
 			const yrStartStr = `${yr}-01-01`;
-			const yrTime = parseDateToTime(yrStartStr);
+			const x = getX(yrStartStr);
 			
-			let x = 20;
-			let drawTick = true;
-			if (yrTime < minTime) {
-				x = 20;
-				drawTick = false;
-			} else {
-				x = getX(yrStartStr);
-			}
-			
-			if (x >= 20 && x <= 380) {
-				let showYearLabel = false;
-				if (x - lastYearLabelX >= 45) {
-					showYearLabel = true;
-					lastYearLabelX = x;
-				}
-				
+			if (x >= 10 && x <= 390) {
 				yearTicks.push({
 					year: yr,
 					x,
-					drawTick,
-					showYearLabel
+					showYearLabel: false
 				});
+			}
+		}
+
+		// Post-process to prevent overlaps and ensure first/last are always shown
+		const N_ticks = yearTicks.length;
+		if (N_ticks > 0) {
+			yearTicks[0].showYearLabel = true;
+		}
+		if (N_ticks > 1) {
+			yearTicks[N_ticks - 1].showYearLabel = true;
+		}
+
+		let lastShownX = yearTicks[0] ? yearTicks[0].x : -999;
+		const lastYearX = yearTicks[N_ticks - 1] ? yearTicks[N_ticks - 1].x : 9999;
+
+		for (let i = 1; i < N_ticks - 1; i++) {
+			const tick = yearTicks[i];
+			if (tick.x - lastShownX >= 45 && lastYearX - tick.x >= 45) {
+				tick.showYearLabel = true;
+				lastShownX = tick.x;
 			}
 		}
 
@@ -1449,19 +1457,18 @@
 									<!-- Year ticks and labels on X Axis -->
 									{#each chartCoords.yearTicks as tick}
 										<g>
-											{#if tick.drawTick}
-												<line x1={tick.x} y1="84" x2={tick.x} y2="88" stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round" />
-												{#if tick.showYearLabel}
-													<text x={tick.x} y={98} text-anchor="middle" fill="#4b5563" class="text-[9px] font-bold select-none pointer-events-none">
-														{tick.year}
-													</text>
-												{/if}
-											{:else}
-												{#if tick.showYearLabel}
-													<text x={tick.x} y={98} text-anchor="start" fill="#4b5563" class="text-[9px] font-bold select-none pointer-events-none">
-														{tick.year}
-													</text>
-												{/if}
+											<!-- Thin vertical line showing where the year begins -->
+											<line x1={tick.x} y1="82" x2={tick.x} y2="88" stroke="#9ca3af" stroke-width="1" stroke-linecap="round" />
+											{#if tick.showYearLabel}
+												<text
+													x={tick.x}
+													y={99}
+													text-anchor="middle"
+													fill={tick.year === currentYear ? (expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5') : '#4b5563'}
+													class="text-[10px] font-bold select-none pointer-events-none"
+												>
+													{tick.year}
+												</text>
 											{/if}
 										</g>
 									{/each}
