@@ -339,6 +339,145 @@
 
 	let chartPoints = $derived(combinedHistoryTimeline.filter(item => item.type === 'price').reverse());
 
+	let chartCoords = $derived.by(() => {
+		if (chartPoints.length < 2) return { coords: [], curvePath: '', areaPath: '', predictedPoint: null, predictedCurvePath: '', predictedAreaPath: '', yearTicks: [] };
+
+		// Parse date to local timestamp
+		const parseDateToTime = (dateStr: string) => {
+			const parts = dateStr.split('-');
+			const y = parseInt(parts[0], 10);
+			const m = parseInt(parts[1], 10);
+			const d = parseInt(parts[2], 10);
+			return new Date(y, m - 1, d).getTime();
+		};
+
+		// 1. Predict next price point based on previous intervals and deltas
+		const times = chartPoints.map(p => parseDateToTime(p.date));
+		const intervals = [];
+		for (let i = 1; i < times.length; i++) {
+			intervals.push(times[i] - times[i - 1]);
+		}
+		const avgInterval = intervals.length > 0 ? intervals.reduce((a, b) => a + b, 0) / intervals.length : 365 * 24 * 60 * 60 * 1000;
+		const predictedTime = times[times.length - 1] + avgInterval;
+		const predictedDateObj = new Date(predictedTime);
+		const predictedDateStr = `${predictedDateObj.getFullYear()}-${String(predictedDateObj.getMonth() + 1).padStart(2, '0')}-${String(predictedDateObj.getDate()).padStart(2, '0')}`;
+
+		const deltas = [];
+		for (let i = 1; i < chartPoints.length; i++) {
+			deltas.push(chartPoints[i].amount - chartPoints[i - 1].amount);
+		}
+		const avgDelta = deltas.length > 0 ? deltas.reduce((a, b) => a + b, 0) / deltas.length : 0;
+		const predictedAmount = Math.max(0, chartPoints[chartPoints.length - 1].amount + avgDelta);
+
+		// 2. Set ranges
+		const minAmt = Math.min(...chartPoints.map(p => p.amount), predictedAmount);
+		const maxAmt = Math.max(...chartPoints.map(p => p.amount), predictedAmount);
+		const amtRange = maxAmt - minAmt;
+
+		const minTime = times[0];
+		const maxTime = parseDateToTime(predictedDateStr);
+		const timeRange = maxTime - minTime;
+
+		const getX = (dStr: string) => {
+			const t = parseDateToTime(dStr);
+			return timeRange === 0 ? 200 : ((t - minTime) / timeRange) * 360 + 20;
+		};
+
+		const getY = (amt: number) => {
+			return amtRange === 0 ? 50 : 85 - ((amt - minAmt) / amtRange) * 70;
+		};
+
+		// 3. Map coords (time-linear)
+		const coords = chartPoints.map((p) => {
+			return {
+				x: getX(p.date),
+				y: getY(p.amount),
+				amount: p.amount,
+				date: p.date
+			};
+		});
+
+		const predictedPoint = {
+			x: getX(predictedDateStr),
+			y: getY(predictedAmount),
+			amount: predictedAmount,
+			date: predictedDateStr
+		};
+
+		const fullCoords = [...coords, predictedPoint];
+
+		// 4. Compute spline curve paths
+		const controlPoint = (current: { x: number; y: number }, previous: { x: number; y: number } | undefined, next: { x: number; y: number } | undefined, reverse: boolean) => {
+			const p = previous || current;
+			const n = next || current;
+			const smoothing = 0.15;
+			const lengthX = n.x - p.x;
+			const lengthY = n.y - p.y;
+			const speed = Math.sqrt(lengthX * lengthX + lengthY * lengthY);
+			const angle = Math.atan2(lengthY, lengthX) + (reverse ? Math.PI : 0);
+			const x = current.x + Math.cos(angle) * speed * smoothing;
+			const y = current.y + Math.sin(angle) * speed * smoothing;
+			return { x, y };
+		};
+
+		let historicalCurvePath = '';
+		let predictedCurvePath = '';
+
+		for (let i = 1; i < fullCoords.length; i++) {
+			const prev = fullCoords[i - 1];
+			const pt = fullCoords[i];
+			const cp1 = controlPoint(prev, fullCoords[i - 2], pt, false);
+			const cp2 = controlPoint(pt, prev, fullCoords[i + 1], true);
+			
+			const segment = `C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${pt.x} ${pt.y}`;
+			
+			if (i === 1) {
+				historicalCurvePath = `M ${prev.x} ${prev.y} ${segment}`;
+			} else if (i < fullCoords.length - 1) {
+				historicalCurvePath += ` ${segment}`;
+			} else {
+				predictedCurvePath = `M ${prev.x} ${prev.y} ${segment}`;
+			}
+		}
+
+		const historicalAreaPath = historicalCurvePath
+			? `${historicalCurvePath} L ${coords[coords.length - 1].x} 88 L ${coords[0].x} 88 Z`
+			: '';
+			
+		const predictedAreaPath = predictedCurvePath
+			? `${predictedCurvePath} L ${predictedPoint.x} 88 L ${coords[coords.length - 1].x} 88 Z`
+			: '';
+
+		// 5. Generate year ticks along the x axis
+		const startYear = new Date(minTime).getFullYear();
+		const endYear = new Date(maxTime).getFullYear();
+		const yearTicks = [];
+
+		for (let yr = startYear; yr <= endYear; yr++) {
+			const yrStartStr = `${yr}-01-01`;
+			const yrTime = parseDateToTime(yrStartStr);
+			
+			let x = 20;
+			let drawTick = true;
+			if (yrTime < minTime) {
+				x = 20;
+				drawTick = false;
+			} else {
+				x = getX(yrStartStr);
+			}
+			
+			if (x >= 20 && x <= 380) {
+				yearTicks.push({
+					year: yr,
+					x,
+					drawTick
+				});
+			}
+		}
+
+		return { coords, curvePath: historicalCurvePath, areaPath: historicalAreaPath, predictedPoint, predictedCurvePath, predictedAreaPath, yearTicks };
+	});
+
 	function handleAmountKeyDown(e: KeyboardEvent) {
 		if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
 			e.preventDefault();
@@ -1268,36 +1407,98 @@
 
 					<!-- Minimalistic visual trend diagram -->
 					{#if chartPoints.length >= 2}
-						{@const minAmt = Math.min(...chartPoints.map(p => p.amount))}
-						{@const maxAmt = Math.max(...chartPoints.map(p => p.amount))}
-						{@const range = maxAmt - minAmt}
-						{@const coords = chartPoints.map((p, idx) => {
-							const x = (idx / (chartPoints.length - 1)) * 340 + 30;
-							const y = range === 0 ? 50 : 80 - ((p.amount - minAmt) / range) * 60;
-							return { x, y, amount: p.amount };
-						})}
-						{@const linePath = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x} ${c.y}`).join(' ')}
-						{@const areaPath = `${linePath} L ${coords[coords.length - 1].x} 95 L ${coords[0].x} 95 Z`}
 						<div class="mt-6 pt-4 border-t border-[#efeeea]">
-							<p class="text-[10px] font-black text-[#9ca3af] uppercase tracking-widest mb-3">Price Trend</p>
-							<div class="relative w-full h-[100px] bg-[#fbf9f5] rounded-xl border border-[#efeeea] p-2 overflow-visible">
+							<p class="text-[10px] font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('priceTrend')}</p>
+							<div class="relative w-full h-[100px] overflow-visible">
 								<svg class="w-full h-full overflow-visible" viewBox="0 0 400 100" preserveAspectRatio="none">
 									<defs>
+										<!-- Historical Gradient -->
 										<linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
 											<stop offset="0%" stop-color={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stop-opacity="0.15" />
 											<stop offset="100%" stop-color={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stop-opacity="0" />
 										</linearGradient>
+										<!-- Predicted Gradient -->
+										<linearGradient id="predGrad" x1="0" y1="0" x2="0" y2="1">
+											<stop offset="0%" stop-color="#9ca3af" stop-opacity="0.1" />
+											<stop offset="100%" stop-color="#9ca3af" stop-opacity="0" />
+										</linearGradient>
 									</defs>
-									<path d={areaPath} fill="url(#chartGrad)" />
-									<path d={linePath} fill="none" stroke={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-									{#each coords as pt}
+									<!-- Baseline -->
+									<line x1="15" y1="88" x2="385" y2="88" stroke="#efeeea" stroke-width="1.5" stroke-dasharray="3 3" stroke-linecap="round" />
+									
+									<!-- Year ticks and labels on X Axis -->
+									{#each chartCoords.yearTicks as tick}
 										<g>
-											<circle cx={pt.x} cy={pt.y} r="4.5" fill="white" stroke={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stroke-width="2.5" />
-											<text x={pt.x} y={pt.y - 10} text-anchor="middle" fill="#2d3142" class="text-[9px] font-black font-sans select-none pointer-events-none">
-												{Math.round(pt.amount)} <tspan fill="#9ca3af" opacity="0.5">kr</tspan>
-											</text>
+											{#if tick.drawTick}
+												<line x1={tick.x} y1="88" x2={tick.x} y2="92" stroke="#efeeea" stroke-width="1.5" stroke-linecap="round" />
+												<text x={tick.x} y={99} text-anchor="middle" fill="#9ca3af" class="text-[9px] font-bold select-none pointer-events-none">
+													{tick.year}
+												</text>
+											{:else}
+												<text x={tick.x} y={99} text-anchor="start" fill="#9ca3af" class="text-[9px] font-bold select-none pointer-events-none">
+													{tick.year}
+												</text>
+											{/if}
 										</g>
 									{/each}
+
+									<!-- Historical Segment Area -->
+									{#if chartCoords.areaPath}
+										<path d={chartCoords.areaPath} fill="url(#chartGrad)" />
+									{/if}
+
+									<!-- Predicted Segment Area -->
+									{#if chartCoords.predictedAreaPath}
+										<path d={chartCoords.predictedAreaPath} fill="url(#predGrad)" />
+									{/if}
+									
+									<!-- Historical Segment Line -->
+									{#if chartCoords.curvePath}
+										<path d={chartCoords.curvePath} fill="none" stroke={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+									{/if}
+
+									<!-- Predicted Segment Line -->
+									{#if chartCoords.predictedCurvePath}
+										<path d={chartCoords.predictedCurvePath} fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-dasharray="3 3" stroke-linecap="round" stroke-linejoin="round" />
+									{/if}
+									
+									<!-- Historical Event Dots -->
+									{#each chartCoords.coords as pt}
+										<g>
+											<circle
+												cx={pt.x}
+												cy={pt.y}
+												r="3.5"
+												fill="white"
+												stroke={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'}
+												stroke-width="2"
+												class="hover:scale-130 transition-transform duration-150 cursor-pointer"
+												style="transform-origin: {pt.x}px {pt.y}px;"
+											>
+												<title>{formatter.format(Math.round(pt.amount))}</title>
+											</circle>
+										</g>
+									{/each}
+
+									<!-- Predicted Event Dot -->
+									{#if chartCoords.predictedPoint}
+										{@const pt = chartCoords.predictedPoint}
+										<g>
+											<circle
+												cx={pt.x}
+												cy={pt.y}
+												r="3.5"
+												fill="white"
+												stroke="#9ca3af"
+												stroke-dasharray="2 1"
+												stroke-width="1.5"
+												class="hover:scale-130 transition-transform duration-150 cursor-pointer"
+												style="transform-origin: {pt.x}px {pt.y}px;"
+											>
+												<title>Predicted: {formatter.format(Math.round(pt.amount))} (approx. {formatHistoryDate(pt.date, locale)})</title>
+											</circle>
+										</g>
+									{/if}
 								</svg>
 							</div>
 						</div>
