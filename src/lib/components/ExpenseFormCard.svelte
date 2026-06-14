@@ -394,10 +394,10 @@
 		const maxAmt = Math.max(...chartPoints.map(p => p.amount), predictedAmount);
 		const amtRange = maxAmt - minAmt;
 
-		// Make chart occupy the 100% full width of the SVG container (0 to 400)
-		const leftMargin = 0;
-		const rightMargin = 0;
-		const chartWidth = 400 - leftMargin - rightMargin; // 400
+		// Set margins to pad inside the SVG container so that year labels align with the card paddings
+		const leftMargin = 15;
+		const rightMargin = 15;
+		const chartWidth = 400 - leftMargin - rightMargin; // 370
 
 		const getX = (dStr: string) => {
 			const t = parseDateToTime(dStr);
@@ -428,24 +428,29 @@
 			};
 		}
 
-		// Virtual start and end coordinates to pad the chart to full width
-		const startVirtual = {
-			x: 0,
-			y: coords[0].y,
-			amount: coords[0].amount,
-			date: `${startYear}-01-01`
-		};
+		// Predict the Y for endVirtual using the same slope
+		let endVirtualY = coords[coords.length - 1].y;
+		let endVirtualAmount = coords[coords.length - 1].amount;
+		if (showPrediction && predictedPoint && coords.length > 0) {
+			const lastHistorical = coords[coords.length - 1];
+			// Only extend if points are not identically positioned
+			if (predictedPoint.x !== lastHistorical.x) {
+				const slopeY = (predictedPoint.y - lastHistorical.y) / (predictedPoint.x - lastHistorical.x);
+				endVirtualY = predictedPoint.y + slopeY * (400 - predictedPoint.x);
+				
+				const slopeAmount = (predictedAmount - lastHistorical.amount) / (predictedPoint.x - lastHistorical.x);
+				endVirtualAmount = predictedAmount + slopeAmount * (400 - predictedPoint.x);
+			}
+		}
 
 		const endVirtual = {
 			x: 400,
-			y: showPrediction && predictedPoint ? predictedPoint.y : coords[coords.length - 1].y,
-			amount: showPrediction && predictedPoint ? predictedPoint.amount : coords[coords.length - 1].amount,
+			y: endVirtualY,
+			amount: endVirtualAmount,
 			date: `${endYear}-01-01`
 		};
 
-		const historicalSplineCoords = showPrediction
-			? [startVirtual, ...coords]
-			: [startVirtual, ...coords, endVirtual];
+		const historicalSplineCoords = coords;
 
 		const predictedSplineCoords = showPrediction && predictedPoint
 			? [coords[coords.length - 1], predictedPoint, endVirtual]
@@ -1460,8 +1465,7 @@
 
 					<!-- Minimalistic visual trend diagram -->
 					{#if chartPoints.length >= 2}
-						<div class="mt-6 pt-4 border-t border-[#efeeea]">
-							<p class="text-[10px] font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('priceTrend')}</p>
+						<div class="mt-6">
 							<div class="relative w-full h-[100px] overflow-visible">
 								<svg class="w-full h-full overflow-visible" viewBox="0 0 400 100" preserveAspectRatio="none">
 									<defs>
@@ -1486,7 +1490,7 @@
 												<text
 													x={tick.x}
 													y={99}
-													text-anchor={tick.align || 'middle'}
+													text-anchor="middle"
 													fill={tick.year === currentYear ? (expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5') : '#4b5563'}
 													class="text-[11px] font-bold select-none pointer-events-none"
 												>
