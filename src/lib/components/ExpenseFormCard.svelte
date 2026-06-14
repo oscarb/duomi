@@ -381,21 +381,23 @@
 			predictedAmount = Math.max(0, chartPoints[chartPoints.length - 1].amount + avgDelta);
 		}
 
-		// 2. Set ranges (linear time from Jan 1st of startYear to Dec 31st of endYear)
+		// 2. Set ranges (linear time from Jan 1st of startYear to Jan 1st of endYear + 1)
 		const startYear = new Date(times[0]).getFullYear();
-		const endYear = predictedYear;
+		const lastPointYear = new Date(times[times.length - 1]).getFullYear();
+		const endYear = (showPrediction ? predictedYear : lastPointYear) + 1;
 
 		const minTime = parseDateToTime(`${startYear}-01-01`);
-		const maxTime = parseDateToTime(`${endYear}-12-31`);
+		const maxTime = parseDateToTime(`${endYear}-01-01`);
 		const timeRange = maxTime - minTime;
 
 		const minAmt = Math.min(...chartPoints.map(p => p.amount), predictedAmount);
 		const maxAmt = Math.max(...chartPoints.map(p => p.amount), predictedAmount);
 		const amtRange = maxAmt - minAmt;
 
-		const leftMargin = 15;
-		const rightMargin = 15;
-		const chartWidth = 400 - leftMargin - rightMargin; // 370
+		// Make chart occupy the 100% full width of the SVG container (0 to 400)
+		const leftMargin = 0;
+		const rightMargin = 0;
+		const chartWidth = 400 - leftMargin - rightMargin; // 400
 
 		const getX = (dStr: string) => {
 			const t = parseDateToTime(dStr);
@@ -426,7 +428,28 @@
 			};
 		}
 
-		const fullCoords = showPrediction && predictedPoint ? [...coords, predictedPoint] : coords;
+		// Virtual start and end coordinates to pad the chart to full width
+		const startVirtual = {
+			x: 0,
+			y: coords[0].y,
+			amount: coords[0].amount,
+			date: `${startYear}-01-01`
+		};
+
+		const endVirtual = {
+			x: 400,
+			y: showPrediction && predictedPoint ? predictedPoint.y : coords[coords.length - 1].y,
+			amount: showPrediction && predictedPoint ? predictedPoint.amount : coords[coords.length - 1].amount,
+			date: `${endYear}-01-01`
+		};
+
+		const historicalSplineCoords = showPrediction
+			? [startVirtual, ...coords]
+			: [startVirtual, ...coords, endVirtual];
+
+		const predictedSplineCoords = showPrediction && predictedPoint
+			? [coords[coords.length - 1], predictedPoint, endVirtual]
+			: [];
 
 		// 4. Compute spline curve paths
 		const controlPoint = (current: { x: number; y: number }, previous: { x: number; y: number } | undefined, next: { x: number; y: number } | undefined, reverse: boolean) => {
@@ -442,32 +465,28 @@
 			return { x, y };
 		};
 
-		let historicalCurvePath = '';
-		let predictedCurvePath = '';
-
-		for (let i = 1; i < fullCoords.length; i++) {
-			const prev = fullCoords[i - 1];
-			const pt = fullCoords[i];
-			const cp1 = controlPoint(prev, fullCoords[i - 2], pt, false);
-			const cp2 = controlPoint(pt, prev, fullCoords[i + 1], true);
-			
-			const segment = `C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${pt.x} ${pt.y}`;
-			
-			if (i === 1) {
-				historicalCurvePath = `M ${prev.x} ${prev.y} ${segment}`;
-			} else if (i < coords.length) {
-				historicalCurvePath += ` ${segment}`;
-			} else {
-				predictedCurvePath = `M ${prev.x} ${prev.y} ${segment}`;
+		const getSplinePath = (pts: { x: number; y: number }[]) => {
+			if (pts.length < 2) return '';
+			let path = `M ${pts[0].x} ${pts[0].y}`;
+			for (let i = 1; i < pts.length; i++) {
+				const prev = pts[i - 1];
+				const pt = pts[i];
+				const cp1 = controlPoint(prev, pts[i - 2], pt, false);
+				const cp2 = controlPoint(pt, prev, pts[i + 1], true);
+				path += ` C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${pt.x} ${pt.y}`;
 			}
-		}
+			return path;
+		};
+
+		const historicalCurvePath = getSplinePath(historicalSplineCoords);
+		const predictedCurvePath = getSplinePath(predictedSplineCoords);
 
 		const historicalAreaPath = historicalCurvePath
-			? `${historicalCurvePath} L ${coords[coords.length - 1].x} 88 L ${coords[0].x} 88 Z`
+			? `${historicalCurvePath} L ${historicalSplineCoords[historicalSplineCoords.length - 1].x} 88 L ${historicalSplineCoords[0].x} 88 Z`
 			: '';
 			
-		const predictedAreaPath = predictedCurvePath && predictedPoint
-			? `${predictedCurvePath} L ${predictedPoint.x} 88 L ${coords[coords.length - 1].x} 88 Z`
+		const predictedAreaPath = predictedCurvePath
+			? `${predictedCurvePath} L ${predictedSplineCoords[predictedSplineCoords.length - 1].x} 88 L ${predictedSplineCoords[0].x} 88 Z`
 			: '';
 
 		// 5. Generate year ticks along the x axis (always centered with a vertical line)
@@ -476,11 +495,12 @@
 			const yrStartStr = `${yr}-01-01`;
 			const x = getX(yrStartStr);
 			
-			if (x >= 10 && x <= 390) {
+			if (x >= 0 && x <= 400) {
 				yearTicks.push({
 					year: yr,
 					x,
-					showYearLabel: false
+					showYearLabel: false,
+					align: 'middle'
 				});
 			}
 		}
@@ -489,9 +509,11 @@
 		const N_ticks = yearTicks.length;
 		if (N_ticks > 0) {
 			yearTicks[0].showYearLabel = true;
+			yearTicks[0].align = 'start';
 		}
 		if (N_ticks > 1) {
 			yearTicks[N_ticks - 1].showYearLabel = true;
+			yearTicks[N_ticks - 1].align = 'end';
 		}
 
 		let lastShownX = yearTicks[0] ? yearTicks[0].x : -999;
@@ -501,6 +523,7 @@
 			const tick = yearTicks[i];
 			if (tick.x - lastShownX >= 45 && lastYearX - tick.x >= 45) {
 				tick.showYearLabel = true;
+				tick.align = 'middle';
 				lastShownX = tick.x;
 			}
 		}
@@ -1463,9 +1486,9 @@
 												<text
 													x={tick.x}
 													y={99}
-													text-anchor="middle"
+													text-anchor={tick.align || 'middle'}
 													fill={tick.year === currentYear ? (expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5') : '#4b5563'}
-													class="text-[10px] font-bold select-none pointer-events-none"
+													class="text-[11px] font-bold select-none pointer-events-none"
 												>
 													{tick.year}
 												</text>
