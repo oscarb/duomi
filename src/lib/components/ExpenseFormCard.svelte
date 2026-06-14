@@ -1252,7 +1252,7 @@
 												<span>
 													{#each formatter.formatToParts(Math.round(item.amount)) as part}
 														{#if part.type === 'currency'}
-															<span class="text-[#9ca3af] font-normal {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+															<span class="text-[#9ca3af] {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
 														{:else if part.type !== 'literal'}
 															{part.value}
 														{/if}
