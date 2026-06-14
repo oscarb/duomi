@@ -41,7 +41,7 @@
 	} = $props();
 
 	// SVG circle circumference constants
-	const _C20 = 53.407;
+	const _C20 = 54.978;
 
 	// Local states
 	let editName = $state('');
@@ -565,17 +565,17 @@
 								
 								<!-- Custom Handle -->
 								<div 
-									class="absolute pointer-events-none w-5 h-5 rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,0.25),_0_0_0_1px_rgba(0,0,0,0.05)] flex items-center justify-center transition-transform duration-100 group-hover:scale-115 group-focus-within:scale-115"
+									class="absolute pointer-events-none w-5 h-5 rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.25),_0_0_0_1px_rgba(0,0,0,0.05)] flex items-center justify-center transition-transform duration-100 group-hover:scale-115 group-focus-within:scale-115"
 									style="left: calc({editRatio * 100}% - {editRatio * 20}px);"
 								>
 									<svg width="20" height="20" viewBox="0 0 20 20" style="display:block;overflow:visible">
-										<circle cx="10" cy="10" r="8.5" fill="white" />
-										<circle cx="10" cy="10" r="8.5" fill="none" stroke="#4a7bb0" stroke-width="2.5"
+										<circle cx="10" cy="10" r="8.75" fill="white" />
+										<circle cx="10" cy="10" r="8.75" fill="none" stroke="#4a7bb0" stroke-width="2.5"
 											stroke-dasharray="{editRatio * _C20} {_C20}"
 											stroke-dashoffset="{-(0.5 - editRatio / 2) * _C20}" />
-										<circle cx="10" cy="10" r="8.5" fill="none" stroke="#4fd1c5" stroke-width="2.5"
+										<circle cx="10" cy="10" r="8.75" fill="none" stroke="#4fd1c5" stroke-width="2.5"
 											stroke-dasharray="{(1 - editRatio) * _C20} {_C20}"
-											stroke-dashoffset="{(1 - editRatio) / 2 * _C20}" />
+											stroke-dashoffset="{-(1 - editRatio) / 2 * _C20}" />
 										<line x1="10" y1="7.5" x2="10" y2="12.5" stroke="#9ca3af" stroke-width="1.5" stroke-opacity="0.4" stroke-linecap="round" />
 									</svg>
 								</div>
@@ -1011,17 +1011,17 @@
 								
 								<!-- Custom Handle -->
 								<div 
-									class="absolute pointer-events-none w-5 h-5 rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,0.25),_0_0_0_1px_rgba(0,0,0,0.05)] flex items-center justify-center transition-transform duration-100 group-hover:scale-115 group-focus-within:scale-115"
+									class="absolute pointer-events-none w-5 h-5 rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.25),_0_0_0_1px_rgba(0,0,0,0.05)] flex items-center justify-center transition-transform duration-100 group-hover:scale-115 group-focus-within:scale-115"
 									style="left: calc({editRatio * 100}% - {editRatio * 20}px);"
 								>
 									<svg width="20" height="20" viewBox="0 0 20 20" style="display:block;overflow:visible">
-										<circle cx="10" cy="10" r="8.5" fill="white" />
-										<circle cx="10" cy="10" r="8.5" fill="none" stroke="#4a7bb0" stroke-width="2.5"
+										<circle cx="10" cy="10" r="8.75" fill="white" />
+										<circle cx="10" cy="10" r="8.75" fill="none" stroke="#4a7bb0" stroke-width="2.5"
 											stroke-dasharray="{editRatio * _C20} {_C20}"
 											stroke-dashoffset="{-(0.5 - editRatio / 2) * _C20}" />
-										<circle cx="10" cy="10" r="8.5" fill="none" stroke="#4fd1c5" stroke-width="2.5"
+										<circle cx="10" cy="10" r="8.75" fill="none" stroke="#4fd1c5" stroke-width="2.5"
 											stroke-dasharray="{(1 - editRatio) * _C20} {_C20}"
-											stroke-dashoffset="{(1 - editRatio) / 2 * _C20}" />
+											stroke-dashoffset="{-(1 - editRatio) / 2 * _C20}" />
 										<line x1="10" y1="7.5" x2="10" y2="12.5" stroke="#9ca3af" stroke-width="1.5" stroke-opacity="0.4" stroke-linecap="round" />
 									</svg>
 								</div>
