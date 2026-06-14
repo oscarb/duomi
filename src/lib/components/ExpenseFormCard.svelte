@@ -1481,8 +1481,8 @@
 									<defs>
 										<!-- Historical Gradient -->
 										<linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-											<stop offset="0%" stop-color={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stop-opacity="0.15" />
-											<stop offset="100%" stop-color={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stop-opacity="0" />
+											<stop offset="0%" stop-color="#ff7361" stop-opacity="0.15" />
+											<stop offset="100%" stop-color="#ff7361" stop-opacity="0" />
 										</linearGradient>
 										<!-- Predicted Gradient -->
 										<linearGradient id="predGrad" x1="0" y1="0" x2="0" y2="1">
@@ -1501,7 +1501,7 @@
 													x={tick.x}
 													y={99}
 													text-anchor="middle"
-													fill={tick.year === currentYear ? (expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5') : '#4b5563'}
+													fill={tick.year === currentYear ? '#ff7361' : '#4b5563'}
 													class="text-[11px] font-bold select-none pointer-events-none"
 												>
 													{tick.year}
@@ -1522,7 +1522,7 @@
 									
 									<!-- Historical Segment Line -->
 									{#if chartCoords.curvePath}
-										<path d={chartCoords.curvePath} fill="none" stroke={expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'} stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+										<path d={chartCoords.curvePath} fill="none" stroke="#ff7361" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
 									{/if}
 
 									<!-- Predicted Segment Line (Thinner than before) -->
@@ -1535,7 +1535,7 @@
 								{#each chartCoords.coords as pt}
 									<div
 										class="absolute w-2 h-2 rounded-full bg-white border-2 transition-transform duration-150 hover:scale-130 cursor-pointer -translate-x-1/2 -translate-y-1/2"
-										style="left: {(pt.x / 400) * 100}%; top: {pt.y}%; border-color: {expense.paidBy === 'A' ? '#ff7361' : '#4fd1c5'};"
+										style="left: {(pt.x / 400) * 100}%; top: {pt.y}%; border-color: #ff7361;"
 									>
 										<title>{formatter.format(Math.round(pt.amount))}</title>
 									</div>
