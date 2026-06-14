@@ -291,11 +291,23 @@
 												<div class="mt-1.5 w-24 h-[4px] rounded-full overflow-hidden" style="background: linear-gradient(to right, #4a7bb0, #6192c7)"></div>
 											{:else}
 												{@const rA = item.staticSplitRatio ?? 0.5}
+												{@const _C8 = 18.850}
 												<div class="relative w-24 flex items-center h-[8px] mt-1.5">
 													<div class="flex rounded-full overflow-hidden h-[4px] w-full bg-[#4fd1c5]">
 														<div class="bg-[#4a7bb0] h-full" style="width: {rA * 100}%"></div>
 													</div>
-													<div class="absolute w-2 h-2 rounded-full bg-white border border-gray-300 shadow-sm" style="left: calc({rA * 100}% - 4px)"></div>
+													<div class="absolute" style="left: calc({rA * 100}% - 4px)">
+														<svg width="8" height="8" viewBox="0 0 8 8" style="display:block;overflow:visible">
+															<circle cx="4" cy="4" r="3.0" fill="white" />
+															<circle cx="4" cy="4" r="3.0" fill="none" stroke="#4a7bb0" stroke-width="1.6"
+																stroke-dasharray="{rA * _C8} {_C8}"
+																transform="rotate(90 4 4)" />
+															<circle cx="4" cy="4" r="3.0" fill="none" stroke="#4fd1c5" stroke-width="1.6"
+																stroke-dasharray="{(1 - rA) * _C8} {_C8}"
+																stroke-dashoffset="{-(rA * _C8)}"
+																transform="rotate(90 4 4)" />
+														</svg>
+													</div>
 												</div>
 											{/if}
 										{/if}
@@ -368,11 +380,23 @@
 												<div class="mt-1.5 w-24 h-[4px] rounded-full overflow-hidden" style="background: linear-gradient(to right, #4a7bb0, #6192c7)"></div>
 											{:else}
 												{@const rA = item.staticSplitRatio ?? 0.5}
+												{@const _C8 = 18.850}
 												<div class="relative w-24 flex items-center h-[8px] mt-1.5">
 													<div class="flex rounded-full overflow-hidden h-[4px] w-full bg-[#4fd1c5]">
 														<div class="bg-[#4a7bb0] h-full" style="width: {rA * 100}%"></div>
 													</div>
-													<div class="absolute w-2 h-2 rounded-full bg-white border border-gray-300 shadow-sm" style="left: calc({rA * 100}% - 4px)"></div>
+													<div class="absolute" style="left: calc({rA * 100}% - 4px)">
+														<svg width="8" height="8" viewBox="0 0 8 8" style="display:block;overflow:visible">
+															<circle cx="4" cy="4" r="3.0" fill="white" />
+															<circle cx="4" cy="4" r="3.0" fill="none" stroke="#4a7bb0" stroke-width="1.6"
+																stroke-dasharray="{rA * _C8} {_C8}"
+																transform="rotate(90 4 4)" />
+															<circle cx="4" cy="4" r="3.0" fill="none" stroke="#4fd1c5" stroke-width="1.6"
+																stroke-dasharray="{(1 - rA) * _C8} {_C8}"
+																stroke-dashoffset="{-(rA * _C8)}"
+																transform="rotate(90 4 4)" />
+														</svg>
+													</div>
 												</div>
 											{/if}
 										{/if}

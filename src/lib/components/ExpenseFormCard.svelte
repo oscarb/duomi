@@ -40,6 +40,9 @@
 		currentMonth: number;
 	} = $props();
 
+	// SVG circle circumference constants
+	const _C20 = 53.407;
+
 	// Local states
 	let editName = $state('');
 	let editPaidBy = $state<'A' | 'B'>('A');
@@ -553,7 +556,34 @@
 								<span>{namePersonA} <span class="text-[#4a7bb0] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
 								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - editRatio) * 100)}%</span></span>
 							</div>
-							<div class="h-6 flex items-center">
+							<div class="h-6 flex items-center relative w-full group">
+								<!-- Track -->
+								<div 
+									class="absolute inset-x-0 h-3 rounded-full overflow-hidden pointer-events-none"
+									style="background: linear-gradient(to right, #4a7bb0 calc(10px + {editRatio * 100}% - {editRatio * 20}px), #4fd1c5 calc(10px + {editRatio * 100}% - {editRatio * 20}px))"
+								></div>
+								
+								<!-- Custom Handle -->
+								<div 
+									class="absolute pointer-events-none w-5 h-5 rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,0.25),_0_0_0_1px_rgba(0,0,0,0.05)] flex items-center justify-center transition-transform duration-75 group-focus-within:ring-2 group-focus-within:ring-[#ff7361]/50 group-focus-within:ring-offset-1 group-hover:scale-105"
+									style="left: calc({editRatio * 100}% - {editRatio * 20}px);"
+								>
+									<svg width="20" height="20" viewBox="0 0 20 20" style="display:block;overflow:visible">
+										<circle cx="10" cy="10" r="8.5" fill="white" />
+										<circle cx="10" cy="10" r="8.5" fill="none" stroke="#4a7bb0" stroke-width="2.5"
+											stroke-dasharray="{editRatio * _C20} {_C20}"
+											transform="rotate(90 10 10)" />
+										<circle cx="10" cy="10" r="8.5" fill="none" stroke="#4fd1c5" stroke-width="2.5"
+											stroke-dasharray="{(1 - editRatio) * _C20} {_C20}"
+											stroke-dashoffset="{-(editRatio * _C20)}"
+											transform="rotate(90 10 10)" />
+										<line x1="8" y1="8.5" x2="8" y2="11.5" stroke="#9ca3af" stroke-width="1.2" stroke-linecap="round" />
+										<line x1="10" y1="7.5" x2="10" y2="12.5" stroke="#9ca3af" stroke-width="1.2" stroke-linecap="round" />
+										<line x1="12" y1="8.5" x2="12" y2="11.5" stroke="#9ca3af" stroke-width="1.2" stroke-linecap="round" />
+									</svg>
+								</div>
+
+								<!-- Native input (completely transparent, positioned absolutely to cover everything) -->
 								<input
 									name="staticSplitRatio"
 									type="range"
@@ -565,8 +595,7 @@
 										editRatio = snapRatio(parseFloat(e.currentTarget.value));
 										e.currentTarget.value = editRatio.toString();
 									}}
-									class="w-full cursor-pointer appearance-none rounded-lg"
-									style="background: linear-gradient(to right, #4a7bb0 0%, #4a7bb0 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
+									class="absolute inset-0 w-full h-full cursor-pointer opacity-0 z-10 focus:outline-none"
 								/>
 							</div>
 							<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
@@ -976,7 +1005,34 @@
 								<span>{namePersonA} <span class="text-[#4a7bb0] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
 								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - editRatio) * 100)}%</span></span>
 							</div>
-							<div class="h-6 flex items-center">
+							<div class="h-6 flex items-center relative w-full group">
+								<!-- Track -->
+								<div 
+									class="absolute inset-x-0 h-3 rounded-full overflow-hidden pointer-events-none"
+									style="background: linear-gradient(to right, #4a7bb0 calc(10px + {editRatio * 100}% - {editRatio * 20}px), #4fd1c5 calc(10px + {editRatio * 100}% - {editRatio * 20}px))"
+								></div>
+								
+								<!-- Custom Handle -->
+								<div 
+									class="absolute pointer-events-none w-5 h-5 rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,0.25),_0_0_0_1px_rgba(0,0,0,0.05)] flex items-center justify-center transition-transform duration-75 group-focus-within:ring-2 group-focus-within:ring-[#ff7361]/50 group-focus-within:ring-offset-1 group-hover:scale-105"
+									style="left: calc({editRatio * 100}% - {editRatio * 20}px);"
+								>
+									<svg width="20" height="20" viewBox="0 0 20 20" style="display:block;overflow:visible">
+										<circle cx="10" cy="10" r="8.5" fill="white" />
+										<circle cx="10" cy="10" r="8.5" fill="none" stroke="#4a7bb0" stroke-width="2.5"
+											stroke-dasharray="{editRatio * _C20} {_C20}"
+											transform="rotate(90 10 10)" />
+										<circle cx="10" cy="10" r="8.5" fill="none" stroke="#4fd1c5" stroke-width="2.5"
+											stroke-dasharray="{(1 - editRatio) * _C20} {_C20}"
+											stroke-dashoffset="{-(editRatio * _C20)}"
+											transform="rotate(90 10 10)" />
+										<line x1="8" y1="8.5" x2="8" y2="11.5" stroke="#9ca3af" stroke-width="1.2" stroke-linecap="round" />
+										<line x1="10" y1="7.5" x2="10" y2="12.5" stroke="#9ca3af" stroke-width="1.2" stroke-linecap="round" />
+										<line x1="12" y1="8.5" x2="12" y2="11.5" stroke="#9ca3af" stroke-width="1.2" stroke-linecap="round" />
+									</svg>
+								</div>
+
+								<!-- Native input (completely transparent, positioned absolutely to cover everything) -->
 								<input
 									name="staticSplitRatio"
 									type="range"
@@ -989,8 +1045,7 @@
 										e.currentTarget.value = editRatio.toString();
 									}}
 									onchange={triggerAutoSave}
-									class="w-full cursor-pointer appearance-none rounded-lg"
-									style="background: linear-gradient(to right, #4a7bb0 0%, #4a7bb0 {editRatio * 100}%, #4fd1c5 {editRatio * 100}%, #4fd1c5 100%)"
+									class="absolute inset-0 w-full h-full cursor-pointer opacity-0 z-10 focus:outline-none"
 								/>
 							</div>
 							<div class="flex justify-between text-xs font-medium text-[#9ca3af]">

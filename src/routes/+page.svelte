@@ -770,12 +770,24 @@
 																<div class="flex rounded-full overflow-hidden h-[4px] w-[40px]" style="background: linear-gradient(to right, #4a7bb0, #6192c7)"></div>
 															{:else}
 																{@const rA = item.staticSplitRatio ?? 0.5}
+																{@const _C6 = 14.137}
 																<div class="relative w-[40px] flex items-center h-[6px]">
 																	<div class="flex rounded-full overflow-hidden h-[4px] w-full bg-gray-100">
 																		<div class="h-full bg-[#4a7bb0]" style="width: {rA * 100}%"></div>
 																		<div class="h-full bg-[#4fd1c5]" style="width: {(1 - rA) * 100}%"></div>
 																	</div>
-																	<div class="absolute w-[6px] h-[6px] rounded-full bg-white border border-gray-300 shadow-sm" style="left: calc({rA * 100}% - 3px)"></div>
+																	<div class="absolute" style="left: calc({rA * 100}% - 3px)">
+																		<svg width="6" height="6" viewBox="0 0 6 6" style="display:block;overflow:visible">
+																			<circle cx="3" cy="3" r="2.25" fill="white" />
+																			<circle cx="3" cy="3" r="2.25" fill="none" stroke="#4a7bb0" stroke-width="1.5"
+																				stroke-dasharray="{rA * _C6} {_C6}"
+																				transform="rotate(90 3 3)" />
+																			<circle cx="3" cy="3" r="2.25" fill="none" stroke="#4fd1c5" stroke-width="1.5"
+																				stroke-dasharray="{(1 - rA) * _C6} {_C6}"
+																				stroke-dashoffset="{-(rA * _C6)}"
+																				transform="rotate(90 3 3)" />
+																		</svg>
+																	</div>
 																</div>
 															{/if}
 														{:else}
@@ -919,12 +931,24 @@
 																<div class="flex rounded-full overflow-hidden h-[4px] w-[40px]" style="background: linear-gradient(to right, #4a7bb0, #6192c7)"></div>
 															{:else}
 																{@const rA = item.staticSplitRatio ?? 0.5}
+																{@const _C6 = 14.137}
 																<div class="relative w-[40px] flex items-center h-[6px]">
 																	<div class="flex rounded-full overflow-hidden h-[4px] w-full bg-gray-100">
 																		<div class="h-full bg-[#4a7bb0]" style="width: {rA * 100}%"></div>
 																		<div class="h-full bg-[#4fd1c5]" style="width: {(1 - rA) * 100}%"></div>
 																	</div>
-																	<div class="absolute w-[6px] h-[6px] rounded-full bg-white border border-gray-300 shadow-sm" style="left: calc({rA * 100}% - 3px)"></div>
+																	<div class="absolute" style="left: calc({rA * 100}% - 3px)">
+																		<svg width="6" height="6" viewBox="0 0 6 6" style="display:block;overflow:visible">
+																			<circle cx="3" cy="3" r="2.25" fill="white" />
+																			<circle cx="3" cy="3" r="2.25" fill="none" stroke="#4a7bb0" stroke-width="1.5"
+																				stroke-dasharray="{rA * _C6} {_C6}"
+																				transform="rotate(90 3 3)" />
+																			<circle cx="3" cy="3" r="2.25" fill="none" stroke="#4fd1c5" stroke-width="1.5"
+																				stroke-dasharray="{(1 - rA) * _C6} {_C6}"
+																				stroke-dashoffset="{-(rA * _C6)}"
+																				transform="rotate(90 3 3)" />
+																		</svg>
+																	</div>
 																</div>
 															{/if}
 														{:else}
