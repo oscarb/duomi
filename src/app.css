@@ -183,7 +183,7 @@
   left: var(--pct-a);
   top: 0;
   bottom: 0;
-  width: 1.5px;
+  width: 3px;
   background: white;
   transform: translateX(-50%) skewX(-10deg);
   z-index: 10;
@@ -221,7 +221,7 @@
   left: var(--pct-a);
   top: 0;
   bottom: 0;
-  width: 1px;
+  width: 2px;
   background: white;
   transform: translateX(-50%) skewX(-10deg);
   z-index: 10;
