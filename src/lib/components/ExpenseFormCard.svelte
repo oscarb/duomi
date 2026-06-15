@@ -1248,7 +1248,7 @@
 				</div>
 
 				<!-- Amount and Date Box -->
-				<div class="flex flex-col items-end space-y-1.5">
+				<div class="flex flex-col items-end space-y-1.5 flex-shrink-0">
 					{#if !isAmountEdit}
 						<button
 							type="button"
@@ -1263,7 +1263,7 @@
 							class="group {expense.archivedDate ? 'cursor-default' : 'cursor-pointer hover:border-[#ff7361]/20 hover:bg-[#fbf9f5]'} border border-transparent p-2 -m-2 rounded-xl transition-all flex flex-col items-end relative text-[#2d3142]"
 						>
 							<div class="flex items-center">
-								<span class="text-2xl font-bold text-[#2d3142] tracking-tight">
+								<span class="text-2xl font-bold text-[#2d3142] tracking-tight whitespace-nowrap">
 									{#if currencyConfig.isPrefix}
 										<span class="text-[#9ca3af] opacity-50 mr-1 inline-block" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
 									{/if}
@@ -1291,7 +1291,7 @@
 					{:else}
 						<!-- Amount Edit Mode input block -->
 						<div class="flex flex-col items-end space-y-2">
-							<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2 border border-transparent">
+							<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2 border border-transparent whitespace-nowrap">
 								{#if currencyConfig.isPrefix}
 									<span class="text-[#9ca3af] opacity-50 mr-[9px] inline-block -translate-y-[3px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
 								{/if}
