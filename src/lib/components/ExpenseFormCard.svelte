@@ -136,6 +136,27 @@
 		}
 	});
 
+	// Synchronize dashboard date with the form's selected date in Create Mode
+	$effect(() => {
+		if (isCreateMode && editAmountDate && page.url.pathname === '/') {
+			const parts = editAmountDate.split('-');
+			if (parts.length === 3) {
+				const year = parseInt(parts[0], 10);
+				const month = parseInt(parts[1], 10);
+				if (!isNaN(year) && !isNaN(month)) {
+					const currentUrlYear = parseInt(page.url.searchParams.get('year') || '', 10);
+					const currentUrlMonth = parseInt(page.url.searchParams.get('month') || '', 10);
+					if (currentUrlYear !== year || currentUrlMonth !== month) {
+						const params = new URLSearchParams(page.url.searchParams);
+						params.set('year', year.toString());
+						params.set('month', month.toString());
+						goto(`?${params.toString()}`, { replaceState: true, keepFocus: true });
+					}
+				}
+			}
+		}
+	});
+
 	// Focus inline account input field when "Lägg till" is clicked
 	$effect(() => {
 		if (isCreatingAccountInline && inlineAccountInputEl) {
@@ -1098,13 +1119,14 @@
 						<button
 							type="button"
 							onclick={async () => {
+								if (expense.archivedDate) return;
 								isAmountEdit = true;
 								editAmountVal = formatAmount(Math.round(latestAmount).toString());
 								editAmountDate = expense.history?.[expense.history.length - 1]?.validFrom || new Date().toISOString().split('T')[0];
 								await import('svelte').then(({ tick }) => tick());
 								amountInputEl?.focus();
 							}}
-							class="group cursor-pointer border border-transparent hover:border-[#ff7361]/20 hover:bg-[#fbf9f5] p-2 -m-2 rounded-xl transition-all flex flex-col items-end relative text-[#2d3142]"
+							class="group {expense.archivedDate ? 'cursor-default' : 'cursor-pointer hover:border-[#ff7361]/20 hover:bg-[#fbf9f5]'} border border-transparent p-2 -m-2 rounded-xl transition-all flex flex-col items-end relative text-[#2d3142]"
 						>
 							<div class="flex items-center">
 								<span class="text-2xl font-bold text-[#2d3142] tracking-tight">
@@ -1126,9 +1148,11 @@
 									<span class="text-[12px] font-bold text-[#2d3142]">{formatOneTimeDate(expense.history[expense.history.length - 1]?.validFrom || '', locale)}</span>
 								</div>
 							{/if}
-							<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none w-8 h-8 bg-white/90 backdrop-blur shadow-sm rounded-full border border-[#ff7361]/20 flex items-center justify-center">
-								<span class="material-symbols-outlined text-[#ff7361] text-[16px]">edit</span>
-							</div>
+							{#if !expense.archivedDate}
+								<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none w-8 h-8 bg-white/90 backdrop-blur shadow-sm rounded-full border border-[#ff7361]/20 flex items-center justify-center">
+									<span class="material-symbols-outlined text-[#ff7361] text-[16px]">edit</span>
+								</div>
+							{/if}
 						</button>
 					{:else}
 						<!-- Amount Edit Mode input block -->
