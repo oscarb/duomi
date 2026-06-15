@@ -59,6 +59,18 @@ describe('getCurrencyConfig', () => {
 		expect(config.isPrefix).toBe(false);
 	});
 
+	it('should correctly configure EUR as a prefix symbol for en-US', () => {
+		const config = getCurrencyConfig('en-US', 'EUR');
+		expect(config.symbol).toBe('€');
+		expect(config.isPrefix).toBe(true);
+	});
+
+	it('should correctly configure EUR as a suffix symbol for de-DE', () => {
+		const config = getCurrencyConfig('de-DE', 'EUR');
+		expect(config.symbol).toContain('€');
+		expect(config.isPrefix).toBe(false);
+	});
+
 	it('should gracefully fallback to default values on error/invalid input', () => {
 		const config = getCurrencyConfig('invalid-locale', 'INVALID-CURRENCY');
 		expect(config.symbol).toBe('$');

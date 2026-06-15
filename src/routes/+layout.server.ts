@@ -4,7 +4,14 @@ import { env as privateEnv } from '$env/dynamic/private';
 
 const DEFAULT_CURRENCIES: Record<string, string> = {
 	'sv-SE': 'SEK',
-	'en-US': 'USD'
+	'en-US': 'USD',
+	'de-DE': 'EUR',
+	'fr-FR': 'EUR',
+	'it-IT': 'EUR',
+	'es-ES': 'EUR',
+	'nl-NL': 'EUR',
+	'fi-FI': 'EUR',
+	'en-IE': 'EUR'
 };
 
 export const load: LayoutServerLoad = ({ url }) => {
