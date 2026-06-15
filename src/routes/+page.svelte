@@ -16,6 +16,17 @@
 		formatter: Intl.NumberFormat;
 	}>('i18n');
 
+	// Determine thousand separator dynamically from locale
+	const thousandSeparator = $derived.by(() => {
+		try {
+			const parts = new Intl.NumberFormat(locale).formatToParts(1000);
+			const groupPart = parts.find(p => p.type === 'group');
+			return groupPart ? groupPart.value : ' ';
+		} catch (e) {
+			return ' ';
+		}
+	});
+
 	const nowObj = new Date();
 	const realYear = nowObj.getFullYear();
 	const realMonth = nowObj.getMonth() + 1;
@@ -102,7 +113,7 @@
 	function formatIncome(val: string): string {
 		const clean = val.replace(/\D/g, '');
 		if (!clean) return '';
-		return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+		return clean.replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator);
 	}
 
 	function handleIncomeInput(e: Event, key: 'A' | 'B') {
@@ -115,7 +126,7 @@
 			clean = '0';
 		}
 		clean = clean.slice(0, 7); // Max 7 digits
-		const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+		const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator);
 
 		const digitsBeforeCursor = originalValue.slice(0, cursorPosition).replace(/\D/g, '').length;
 
@@ -130,7 +141,7 @@
 		let newCursorPosition = 0;
 		let digitsFound = 0;
 		for (let i = 0; i < formatted.length; i++) {
-			if (formatted[i] !== ' ') {
+			if (formatted[i] !== thousandSeparator) {
 				digitsFound++;
 			}
 			newCursorPosition = i + 1;
@@ -149,7 +160,7 @@
 	let incomeBVal = $state('');
 
 	let currentIncomeANum = $derived.by(() => {
-		const val = incomeAVal.replace(/\s/g, '');
+		const val = incomeAVal.replace(/\D/g, '');
 		if (val === '') {
 			return data.income.isFallback ? data.income.person_a : 0;
 		}
@@ -157,7 +168,7 @@
 	});
 
 	let currentIncomeBNum = $derived.by(() => {
-		const val = incomeBVal.replace(/\s/g, '');
+		const val = incomeBVal.replace(/\D/g, '');
 		if (val === '') {
 			return data.income.isFallback ? data.income.person_b : 0;
 		}
@@ -204,7 +215,7 @@
 		}
 		if (clean === '') clean = '0';
 		clean = clean.slice(0, 7); // Max 7 digits
-		const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+		const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator);
 
 		const digitsBeforeCursor = originalValue.slice(0, cursorPosition).replace(/\D/g, '').length;
 
@@ -214,7 +225,7 @@
 		let newCursorPosition = 0;
 		let digitsFound = 0;
 		for (let i = 0; i < formatted.length; i++) {
-			if (formatted[i] !== ' ') {
+			if (formatted[i] !== thousandSeparator) {
 				digitsFound++;
 			}
 			newCursorPosition = i + 1;
@@ -229,7 +240,7 @@
 	}
 
 	async function saveExpenseAmount(expenseId: number, amountStr: string) {
-		const amount = Math.round(parseFloat(amountStr.replace(/\s/g, '')) || 0);
+		const amount = Math.round(parseFloat(amountStr.replace(/\D/g, '')) || 0);
 		const year = data.period.year;
 		const month = data.period.month;
 		const validFrom = `${year}-${String(month).padStart(2, '0')}-01`;
@@ -291,8 +302,8 @@
 	}
 
 	async function saveIncomes() {
-		const valA = incomeAVal.replace(/\s/g, '');
-		const valB = incomeBVal.replace(/\s/g, '');
+		const valA = incomeAVal.replace(/\D/g, '');
+		const valB = incomeBVal.replace(/\D/g, '');
 		if (valA === '' && valB === '' && data.income.isFallback) {
 			return;
 		}
@@ -406,7 +417,7 @@
 			if (currentStr === '') {
 				currentStr = key === 'A' ? data.income.person_a.toString() : data.income.person_b.toString();
 			}
-			const currentVal = parseFloat(currentStr.replace(/\s/g, '')) || 0;
+			const currentVal = parseFloat(currentStr.replace(/\D/g, '')) || 0;
 			const newVal = Math.max(0, currentVal + (e.key === 'ArrowUp' ? step : -step));
 			const formatted = formatIncome(Math.round(newVal).toString());
 			if (key === 'A') {
@@ -425,7 +436,7 @@
 			e.preventDefault();
 			const step = e.shiftKey ? 100 : 10;
 			const currentStr = expenseAmounts[itemId] || '';
-			const currentVal = parseFloat(currentStr.replace(/\s/g, '')) || 0;
+			const currentVal = parseFloat(currentStr.replace(/\D/g, '')) || 0;
 			const newVal = Math.max(0, currentVal + (e.key === 'ArrowUp' ? step : -step));
 			const formatted = formatIncome(Math.round(newVal).toString());
 			expenseAmounts[itemId] = formatted;

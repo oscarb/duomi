@@ -13,6 +13,17 @@
 		formatter: Intl.NumberFormat;
 	}>('i18n');
 
+	// Determine thousand separator dynamically from locale
+	const thousandSeparator = $derived.by(() => {
+		try {
+			const parts = new Intl.NumberFormat(locale).formatToParts(1000);
+			const groupPart = parts.find(p => p.type === 'group');
+			return groupPart ? groupPart.value : ' ';
+		} catch (e) {
+			return ' ';
+		}
+	});
+
 	// Props
 	let {
 		expense = null,
@@ -188,7 +199,7 @@
 	function formatAmount(val: string): string {
 		const clean = val.replace(/\D/g, '');
 		if (!clean) return '';
-		return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+		return clean.replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator);
 	}
 
 	function handleAmountInput(e: Event) {
@@ -202,7 +213,7 @@
 		}
 		if (clean === '') clean = '0';
 		clean = clean.slice(0, 7); // Max 7 digits
-		const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+		const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator);
 
 		const digitsBeforeCursor = originalValue.slice(0, cursorPosition).replace(/\D/g, '').length;
 
@@ -212,7 +223,7 @@
 		let newCursorPosition = 0;
 		let digitsFound = 0;
 		for (let i = 0; i < formatted.length; i++) {
-			if (formatted[i] !== ' ') {
+			if (formatted[i] !== thousandSeparator) {
 				digitsFound++;
 			}
 			newCursorPosition = i + 1;
@@ -540,7 +551,7 @@
 		if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
 			e.preventDefault();
 			const step = e.shiftKey ? 10 : 1;
-			const currentVal = parseFloat(editAmountVal.replace(/\s/g, '')) || 0;
+			const currentVal = parseFloat(editAmountVal.replace(/\D/g, '')) || 0;
 			const newVal = Math.max(0, currentVal + (e.key === 'ArrowUp' ? step : -step));
 			editAmountVal = formatAmount(Math.round(newVal).toString());
 		}
@@ -747,7 +758,7 @@
 					<input type="hidden" name="splitType" value={editSplitType} />
 
 					{#if editSplitType === 'static'}
-						{@const parsedAmt = parseFloat(editAmountVal.replace(/\s/g, '')) || 0}
+						{@const parsedAmt = parseFloat(editAmountVal.replace(/\D/g, '')) || 0}
 						<div class="space-y-1 pt-0.5">
 							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
 								<span>{namePersonA} <span class="text-[#4a7bb0] ml-0.5">{Math.round(editRatio * 100)}%</span></span>
@@ -796,7 +807,7 @@
 							</div>
 						</div>
 					{:else}
-						{@const parsedAmt = parseFloat(editAmountVal.replace(/\s/g, '')) || 0}
+						{@const parsedAmt = parseFloat(editAmountVal.replace(/\D/g, '')) || 0}
 						<div class="space-y-1 pt-0.5">
 							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
 								<span>{namePersonA} <span class="text-[#4a7bb0] ml-0.5">{Math.round(dynamicSplitRatioA * 100)}%</span></span>
