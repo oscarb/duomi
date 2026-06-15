@@ -269,7 +269,7 @@
 									{idx === filteredExpensesA.length - 1 ? 'border-b-0' : ''}
 									{filteredExpensesA[idx + 1]?.id === selectedId ? 'border-b-transparent' : ''}"
 								>
-									<div class="flex flex-col flex-grow">
+									<div class="flex flex-col flex-grow min-w-0">
 										<span class="font-bold text-sm text-[#2d3142] hover:text-[#4a7bb0] transition-colors decoration-[#efeeea] hover:decoration-[#4a7bb0]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
 										{#if item.splitType === 'dynamic'}
 											<div class="mt-1.5 w-24 h-[6px] rounded-full overflow-hidden flex">
@@ -306,8 +306,8 @@
 											{/if}
 										{/if}
 									</div>
-									<div class="text-right">
-										<p class="font-bold text-sm text-[#2d3142]">
+									<div class="text-right shrink-0 ml-4">
+										<p class="font-bold text-sm text-[#2d3142] whitespace-nowrap">
 											{#each formatter.formatToParts(Math.round(item.latestAmount)) as part}
 												{#if part.type === 'currency'}
 													<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
@@ -363,7 +363,7 @@
 									{idx === filteredExpensesB.length - 1 ? 'border-b-0' : ''}
 									{filteredExpensesB[idx + 1]?.id === selectedId ? 'border-b-transparent' : ''}"
 								>
-									<div class="flex flex-col flex-grow">
+									<div class="flex flex-col flex-grow min-w-0">
 										<span class="font-bold text-sm text-[#2d3142] hover:text-[#4fd1c5] transition-colors decoration-[#efeeea] hover:decoration-[#4fd1c5]/30 underline-offset-4 whitespace-pre-wrap break-words">{item.name}</span>
 										{#if item.splitType === 'dynamic'}
 											<div class="mt-1.5 w-24 h-[6px] rounded-full overflow-hidden flex">
@@ -400,8 +400,8 @@
 											{/if}
 										{/if}
 									</div>
-									<div class="text-right">
-										<p class="font-bold text-sm text-[#2d3142]">
+									<div class="text-right shrink-0 ml-4">
+										<p class="font-bold text-sm text-[#2d3142] whitespace-nowrap">
 											{#each formatter.formatToParts(Math.round(item.latestAmount)) as part}
 												{#if part.type === 'currency'}
 													<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>

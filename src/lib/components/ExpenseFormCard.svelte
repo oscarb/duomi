@@ -814,7 +814,7 @@
 				};
 			}}
 			bind:this={editFormElement}
-			class="space-y-4"
+			class="space-y-12"
 		>
 			<div class="flex flex-col gap-2 pb-2">
 				<!-- Row 1: Title and Amount -->
@@ -1203,7 +1203,7 @@
 				};
 			}}
 			bind:this={editFormElement}
-			class="space-y-4"
+			class="space-y-12"
 		>
 			<input type="hidden" name="id" value={expense.id} />
 		<input type="hidden" name="archivedDate" value={`${currentYear}-${String(currentMonth).padStart(2, '0')}-01`} />
@@ -1615,7 +1615,7 @@
 								{@const isFuturePrice = item.type === 'price' && item.date > new Date().toISOString().split('T')[0]}
 								<div
 									transition:horizontalThenCollapse={{ duration: 350 }}
-									class="flex items-center justify-between py-2 group {isFuturePrice ? 'opacity-40' : ''}"
+									class="flex items-center justify-between py-1 group {isFuturePrice ? 'opacity-40' : ''}"
 								>
 									<div class="flex items-center gap-2">
 										<span class="font-bold text-sm text-[#2d3142]">{formatHistoryDate(item.date, locale)}</span>
