@@ -7,9 +7,9 @@ const DEFAULT_CURRENCIES: Record<string, string> = {
 	'en-US': 'USD'
 };
 
-export const load: LayoutServerLoad = () => {
-	const locale = privateEnv.LOCALE || 'en-US';
-	const currency = privateEnv.CURRENCY || DEFAULT_CURRENCIES[locale] || 'USD';
+export const load: LayoutServerLoad = ({ url }) => {
+	const locale = url.searchParams.get('test_locale') || privateEnv.LOCALE || 'en-US';
+	const currency = url.searchParams.get('test_currency') || privateEnv.CURRENCY || DEFAULT_CURRENCIES[locale] || 'USD';
 
 	return {
 		personAName: env.PUBLIC_PERSON_A_NAME || 'Partner A',

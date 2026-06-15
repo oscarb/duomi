@@ -31,3 +31,7 @@ vite.config.ts.timestamp-*
 
 # Local tasks
 /TODO.md
+
+# Playwright
+/test-results/
+/playwright-report/
