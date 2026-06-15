@@ -26,6 +26,7 @@ This document serves as the single source of truth for codebase standards, devel
   4. Start the Vite development server again.
   > [!IMPORTANT]
   > Always stop and restart the Vite development server when deleting/re-creating the SQLite database. On Unix/macOS systems, the running Node/Vite process will keep open file descriptors to the unlinked database file, causing it to read/write stale ghost data until restarted.
+- **Testing & Privacy**: When writing or running visual regression (screenshot) tests, always override `PUBLIC_PERSON_A_NAME` and `PUBLIC_PERSON_B_NAME` environment variables with generic names (e.g., `Alice` and `Bob`) in the test execution/server environment. This prevents private names in local `.env` files from being captured in version-controlled visual snapshots.
 
 ---
 

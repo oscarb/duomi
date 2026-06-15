@@ -47,7 +47,7 @@ export default defineConfig({
 
 	/* Run your local dev server before starting the tests */
 	webServer: {
-		command: 'rm -f ./data/test.db && DATABASE_URL=./data/test.db drizzle-kit migrate && DATABASE_URL=./data/test.db SECRET_APP_PASSPHRASE=development_secret DEMO_MODE=true npm run dev -- --port 3002',
+		command: 'rm -f ./data/test.db && DATABASE_URL=./data/test.db drizzle-kit migrate && DATABASE_URL=./data/test.db SECRET_APP_PASSPHRASE=development_secret PUBLIC_PERSON_A_NAME=Alice PUBLIC_PERSON_B_NAME=Bob DEMO_MODE=true npm run dev -- --port 3002',
 		url: 'http://localhost:3002',
 		reuseExistingServer: false,
 		timeout: 15000,

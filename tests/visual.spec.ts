@@ -23,7 +23,7 @@ test.describe('ExpenseFormCard Visual Regressions', () => {
 
 	test('USD - Static Mode rendering', async ({ page }) => {
 		// Visit the expenses page with ID 1 (Rent) in USD/en-US
-		await page.goto('/expenses?id=1&test_locale=en-US&test_currency=USD');
+		await page.goto('/expenses?id=1&test_locale=en-US&test_currency=USD&test_person_a=Alice&test_person_b=Bob');
 		await preparePageForScreenshot(page);
 
 		const card = page.locator('.floating-sidebar-card');
@@ -37,7 +37,7 @@ test.describe('ExpenseFormCard Visual Regressions', () => {
 
 	test('USD - Edit Mode rendering', async ({ page }) => {
 		// Visit the expenses page with ID 1 (Rent) in USD/en-US
-		await page.goto('/expenses?id=1&test_locale=en-US&test_currency=USD');
+		await page.goto('/expenses?id=1&test_locale=en-US&test_currency=USD&test_person_a=Alice&test_person_b=Bob');
 		await preparePageForScreenshot(page);
 
 		const card = page.locator('.floating-sidebar-card');
@@ -66,7 +66,7 @@ test.describe('ExpenseFormCard Visual Regressions', () => {
 
 	test('SEK - Static Mode rendering', async ({ page }) => {
 		// Visit the expenses page with ID 1 (Rent) in SEK/sv-SE
-		await page.goto('/expenses?id=1&test_locale=sv-SE&test_currency=SEK');
+		await page.goto('/expenses?id=1&test_locale=sv-SE&test_currency=SEK&test_person_a=Alice&test_person_b=Bob');
 		await preparePageForScreenshot(page);
 
 		const card = page.locator('.floating-sidebar-card');
@@ -80,7 +80,7 @@ test.describe('ExpenseFormCard Visual Regressions', () => {
 
 	test('SEK - Edit Mode rendering', async ({ page }) => {
 		// Visit the expenses page with ID 1 (Rent) in SEK/sv-SE
-		await page.goto('/expenses?id=1&test_locale=sv-SE&test_currency=SEK');
+		await page.goto('/expenses?id=1&test_locale=sv-SE&test_currency=SEK&test_person_a=Alice&test_person_b=Bob');
 		await preparePageForScreenshot(page);
 
 		const card = page.locator('.floating-sidebar-card');
