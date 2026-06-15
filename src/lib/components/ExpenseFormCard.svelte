@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import { invalidateAll, goto } from '$app/navigation';
 	import { toasts } from '$lib/toasts.svelte';
+	import { slide } from 'svelte/transition';
 
 	// Retrieve localized translations and formatting
 	const { locale, t, currencyConfig, formatter } = getContext<{
@@ -67,6 +68,8 @@
 	// Amount edit toggler for existing templates
 	let isAmountEdit = $state(false);
 	let amountInputEl = $state<HTMLInputElement | null>(null);
+
+	let deletedHistoryIds = $state<number[]>([]);
 
 	let latestAmount = $derived(expense?.history && expense.history.length > 0
 		? expense.history[expense.history.length - 1].amount
@@ -328,10 +331,139 @@
 		inlineAccountName = '';
 	}
 
+	function horizontalThenCollapse(node: HTMLElement, { duration = 500 }) {
+		const style = getComputedStyle(node);
+		const height = parseFloat(style.height);
+		const paddingTop = parseFloat(style.paddingTop);
+		const paddingBottom = parseFloat(style.paddingBottom);
+		const marginTop = parseFloat(style.marginTop);
+		const marginBottom = parseFloat(style.marginBottom);
+
+		return {
+			duration,
+			css: (t: number) => {
+				if (t > 0.6) {
+					// Phase 1: Slide horizontally (t: 0.6 -> 1.0; progress: 100% -> 0%)
+					const progress = (1 - t) / 0.4;
+					const slidePct = progress * 100;
+					const opacity = 1 - progress;
+					return `
+						transform: translateX(${slidePct}%);
+						opacity: ${opacity};
+						height: ${height}px;
+						padding-top: ${paddingTop}px;
+						padding-bottom: ${paddingBottom}px;
+						margin-top: ${marginTop}px;
+						margin-bottom: ${marginBottom}px;
+						overflow: hidden;
+					`;
+				} else if (t > 0.4) {
+					// Phase 2: Pause/Delay (t: 0.4 -> 0.6)
+					return `
+						transform: translateX(100%);
+						opacity: 0;
+						height: ${height}px;
+						padding-top: ${paddingTop}px;
+						padding-bottom: ${paddingBottom}px;
+						margin-top: ${marginTop}px;
+						margin-bottom: ${marginBottom}px;
+						overflow: hidden;
+					`;
+				} else {
+					// Phase 3: Collapse height (t: 0.0 -> 0.4; progress: 0% -> 100%)
+					const scale = t / 0.4;
+					return `
+						transform: translateX(100%);
+						opacity: 0;
+						height: ${height * scale}px;
+						padding-top: ${paddingTop * scale}px;
+						padding-bottom: ${paddingBottom * scale}px;
+						margin-top: ${marginTop * scale}px;
+						margin-bottom: ${marginBottom * scale}px;
+						border-bottom-width: 0px;
+						overflow: hidden;
+					`;
+				}
+			}
+		};
+	}
+
+	async function deleteHistoryItem(item: { id: number; date: string; amount: number }) {
+		if (combinedHistoryTimeline.filter(h => h.type === 'price').length <= 1) {
+			toasts.show(t('cannotDeleteOnlyPrice'), 'error');
+			return;
+		}
+
+		// Capture the target expense ID at the moment of deletion for the undo closure
+		const targetExpenseId = expense.id;
+
+		// Optimistic update
+		deletedHistoryIds = [...deletedHistoryIds, item.id];
+
+		const formData = new FormData();
+		formData.append('id', item.id.toString());
+
+		const postRoute = actionRoute || '';
+
+		try {
+			const response = await fetch(`${postRoute}?/deleteHistoryItem`, {
+				method: 'POST',
+				body: formData
+			});
+
+			if (!response.ok) {
+				throw new Error('Network response not ok');
+			}
+
+			const result = deserialize(await response.text());
+			if (result.type === 'success' && result.data?.success) {
+				await invalidateAll();
+				deletedHistoryIds = deletedHistoryIds.filter(id => id !== item.id);
+
+				const formattedDate = formatHistoryDate(item.date, locale);
+				toasts.show(t('toastHistoryDeleted', { date: formattedDate }), 'success', 5000, {
+					label: t('undo'),
+					callback: async () => {
+						const restoreForm = new FormData();
+						restoreForm.append('id', item.id.toString());
+						restoreForm.append('expenseId', targetExpenseId.toString());
+						restoreForm.append('amount', item.amount.toString());
+						restoreForm.append('validFrom', item.date);
+
+						const restoreResponse = await fetch(`${postRoute}?/restoreHistoryItem`, {
+							method: 'POST',
+							body: restoreForm
+						});
+
+						if (restoreResponse.ok) {
+							const restoreResult = deserialize(await restoreResponse.text());
+							if (restoreResult.type === 'success') {
+								toasts.show(t('toastHistoryRestored', { date: formattedDate }), 'success');
+								await invalidateAll();
+							}
+						}
+					}
+				});
+			} else {
+				const errMsg = (result.type === 'success' && result.data && typeof result.data.error === 'string') ? result.data.error : 'Failed to delete';
+				throw new Error(errMsg);
+			}
+		} catch (err: any) {
+			// Rollback optimistic update
+			deletedHistoryIds = deletedHistoryIds.filter(id => id !== item.id);
+			const errMsg = err.message === 'cannotDeleteOnlyPrice' ? t('cannotDeleteOnlyPrice') : err.message;
+			toasts.show(errMsg, 'error');
+		}
+	}
+
 	// Filter sequential unique changes and combine with archive date for a chronological timeline
 	let combinedHistoryTimeline = $derived.by(() => {
 		if (!expense) return [];
-		const sortedChrono = expense.history ? [...expense.history].sort((a, b) => a.validFrom.localeCompare(b.validFrom)) : [];
+		let sortedChrono = expense.history ? [...expense.history].sort((a, b) => a.validFrom.localeCompare(b.validFrom)) : [];
+		
+		// Optimistically filter out deleted ids
+		sortedChrono = sortedChrono.filter(item => !deletedHistoryIds.includes(item.id));
+
 		const uniquePoints = [];
 		
 		let lastAmt = null;
@@ -343,6 +475,7 @@
 					pctChange = ((currentAmt - lastAmt) / lastAmt) * 100;
 				}
 				uniquePoints.push({
+					id: sortedChrono[i].id,
 					type: 'price',
 					date: sortedChrono[i].validFrom,
 					amount: currentAmt,
@@ -354,6 +487,7 @@
 		
 		if (expense.archivedDate) {
 			uniquePoints.push({
+				id: null,
 				type: 'archive',
 				date: expense.archivedDate,
 				amount: null,
@@ -468,7 +602,7 @@
 			// Only extend if points are not identically positioned
 			if (predictedPoint.x !== lastHistorical.x) {
 				const slopeY = (predictedPoint.y - lastHistorical.y) / (predictedPoint.x - lastHistorical.x);
-				endVirtualY = predictedPoint.y + slopeY * (400 - predictedPoint.x);
+				endVirtualY = Math.max(5, Math.min(85, predictedPoint.y + slopeY * (400 - predictedPoint.x)));
 				
 				const slopeAmount = (predictedAmount - lastHistorical.amount) / (predictedPoint.x - lastHistorical.x);
 				endVirtualAmount = predictedAmount + slopeAmount * (400 - predictedPoint.x);
@@ -680,7 +814,7 @@
 				};
 			}}
 			bind:this={editFormElement}
-			class="space-y-12"
+			class="space-y-4"
 		>
 			<div class="flex flex-col gap-2 pb-2">
 				<!-- Row 1: Title and Amount -->
@@ -758,7 +892,7 @@
 
 			<!-- Split Ratio -->
 			<div>
-				<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('splittingRatio')}</p>
+				<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3 border-b border-[#efeeea] pb-2">{t('splittingRatio')}</p>
 				<div class="space-y-4">
 					<div class="grid grid-cols-2 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
 						<button
@@ -855,7 +989,7 @@
 
 			<!-- Source Account -->
 			<div>
-				<div class="flex items-center justify-between mb-3">
+				<div class="flex items-center justify-between mb-3 border-b border-[#efeeea] pb-2">
 					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest">{t('source')}</p>
 					{#if accounts.filter(acc => acc.owner === editPaidBy).length > 0}
 						<button
@@ -958,7 +1092,7 @@
 
 			<!-- Frequency -->
 			<div>
-				<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('frequency')}</p>
+				<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3 border-b border-[#efeeea] pb-2">{t('frequency')}</p>
 				<div class="grid grid-cols-4 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
 					<button
 						type="button"
@@ -1069,7 +1203,7 @@
 				};
 			}}
 			bind:this={editFormElement}
-			class="space-y-12"
+			class="space-y-4"
 		>
 			<input type="hidden" name="id" value={expense.id} />
 		<input type="hidden" name="archivedDate" value={`${currentYear}-${String(currentMonth).padStart(2, '0')}-01`} />
@@ -1216,7 +1350,7 @@
 
 			<!-- Split Ratio -->
 			<div>
-				<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('splittingRatio')}</p>
+				<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3 border-b border-[#efeeea] pb-2">{t('splittingRatio')}</p>
 				<div class="space-y-4">
 					<div class="grid grid-cols-2 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
 						<button
@@ -1312,7 +1446,7 @@
 
 			<!-- Source Account -->
 			<div>
-				<div class="flex items-center justify-between mb-3">
+				<div class="flex items-center justify-between mb-3 border-b border-[#efeeea] pb-2">
 					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest">{t('source')}</p>
 					{#if accounts.filter(acc => acc.owner === editPaidBy).length > 0}
 						<button
@@ -1416,7 +1550,7 @@
 
 			<!-- Frequency -->
 			<div>
-				<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('frequency')}</p>
+				<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3 border-b border-[#efeeea] pb-2">{t('frequency')}</p>
 				<div class="grid grid-cols-4 p-1 bg-[#fbf9f5] rounded-full border border-[#efeeea]">
 					<button
 						type="button"
@@ -1474,45 +1608,64 @@
 			<!-- Price History Section (Only if not one-time) -->
 			{#if editInterval !== 0}
 				<div>
-					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3">{t('history')}</p>
-					<table class="w-full text-xs">
-						<tbody class="text-[#2d3142]">
-							{#each combinedHistoryTimeline as item}
+					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest mb-3 border-b border-[#efeeea] pb-2">{t('history')}</p>
+					{#key expense?.id}
+						<div class="w-full text-xs space-y-1 overflow-hidden" class:history-fade={deletedHistoryIds.length > 0}>
+							{#each combinedHistoryTimeline as item (item.id || `${item.type}-${item.date}`)}
 								{@const isFuturePrice = item.type === 'price' && item.date > new Date().toISOString().split('T')[0]}
-								<tr class={isFuturePrice ? 'opacity-40' : ''}>
-									<td class="py-2 font-bold text-sm text-[#2d3142]">{formatHistoryDate(item.date, locale)}</td>
-									<td class="py-2 text-right font-bold text-sm text-[#2d3142] font-sans">
-										{#if item.type === 'archive'}
-											{t('archived')}
-										{:else}
-											<div class="inline-flex items-center gap-1.5">
-												{#if item.pctChange !== null && item.pctChange !== 0}
-													<span class="text-[11px] font-medium text-[#9ca3af] bg-[#f3f4f6] px-1 py-0.5 rounded-md">
-														{item.pctChange > 0 ? '+' : ''}{Math.round(item.pctChange)}%
-													</span>
-												{/if}
-												<span>
-													{#each formatter.formatToParts(Math.round(item.amount)) as part}
-														{#if part.type === 'currency'}
-															<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
-														{:else if part.type !== 'literal'}
-															{part.value}
-														{/if}
-													{/each}
-												</span>
-											</div>
+								<div
+									transition:horizontalThenCollapse={{ duration: 350 }}
+									class="flex items-center justify-between py-2 group {isFuturePrice ? 'opacity-40' : ''}"
+								>
+									<div class="flex items-center gap-2">
+										<span class="font-bold text-sm text-[#2d3142]">{formatHistoryDate(item.date, locale)}</span>
+										<!-- Trash Icon on Hover -->
+										{#if item.type === 'price' && combinedHistoryTimeline.filter(h => h.type === 'price').length > 1 && !expense.archivedDate}
+											<button
+												type="button"
+												onclick={() => deleteHistoryItem(item)}
+												class="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-150 p-1 text-[#9ca3af] hover:text-[#ff7361] focus:outline-none flex items-center justify-center cursor-pointer"
+												title={t('delete')}
+											>
+												<span class="material-symbols-outlined text-[18px]">delete</span>
+											</button>
 										{/if}
-									</td>
-								</tr>
+									</div>
+
+									<div class="flex items-center gap-2">
+										<div class="text-right font-bold text-sm text-[#2d3142] font-sans">
+											{#if item.type === 'archive'}
+												{t('archived')}
+											{:else}
+												<div class="inline-flex items-center gap-1.5">
+													{#if item.pctChange !== null && item.pctChange !== 0}
+														<span class="text-[11px] font-medium text-[#9ca3af] bg-[#f3f4f6] px-1 py-0.5 rounded-md">
+															{item.pctChange > 0 ? '+' : ''}{Math.round(item.pctChange)}%
+														</span>
+													{/if}
+													<span>
+														{#each formatter.formatToParts(Math.round(item.amount)) as part}
+															{#if part.type === 'currency'}
+																<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-1' : 'ml-1'}">{part.value}</span>
+															{:else if part.type !== 'literal'}
+																{part.value}
+															{/if}
+														{/each}
+													</span>
+												</div>
+											{/if}
+										</div>
+									</div>
+								</div>
 							{/each}
-						</tbody>
-					</table>
+						</div>
+					{/key}
 
 					<!-- Minimalistic visual trend diagram -->
 					{#if chartPoints.length >= 2}
 						<div class="mt-6">
-							<div class="relative w-full h-[100px] overflow-visible">
-								<svg class="w-full h-full overflow-visible" viewBox="0 0 400 100" preserveAspectRatio="none">
+							<div class="relative w-full h-[100px] overflow-hidden">
+								<svg class="w-full h-full overflow-hidden" viewBox="0 0 400 100" preserveAspectRatio="none">
 									<defs>
 										<!-- Historical Gradient -->
 										<linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
@@ -1639,5 +1792,9 @@
 			border-top-left-radius: 1rem;
 			border-top-right-radius: 1rem;
 		}
+	}
+	.history-fade {
+		mask-image: linear-gradient(to right, black 85%, transparent 100%);
+		-webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
 	}
 </style>
