@@ -819,10 +819,7 @@
 		return diff % interval === 0;
 	}
 
-	// Account creation states
-	let showAddAccount = $state(false);
-	let newAccountName = $state('');
-	let newAccountOwner = $state<'A' | 'B'>('A');
+
 </script>
 
 <div class="@container bg-white pt-6 pb-6 px-6 md:pt-10 md:pb-10 md:px-10 rounded-2xl floating-sidebar-card sticky lg:top-8 relative transition-all duration-300">
@@ -1844,7 +1841,7 @@
 										class="absolute w-2 h-2 rounded-full bg-white border-2 border-[#9ca3af] border-dashed transition-transform duration-150 hover:scale-130 cursor-pointer -translate-x-1/2 -translate-y-1/2"
 										style="left: {(pt.x / 400) * 100}%; top: {pt.y}%;"
 									>
-										<title>Predicted: {formatter.format(Math.round(pt.amount))} (approx. {formatHistoryDate(pt.date, locale)})</title>
+										<title>{t('predictedAmount', { amount: formatter.format(Math.round(pt.amount)), date: formatHistoryDate(pt.date, locale) })}</title>
 									</div>
 								{/if}
 							</div>

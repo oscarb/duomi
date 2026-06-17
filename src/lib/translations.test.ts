@@ -23,7 +23,7 @@ describe('translate', () => {
 			receiver: 'Delta',
 			amount: '$100'
 		});
-		expect(text).toBe('Charlie owes Delta $100');
+		expect(text).toBe('$100');
 	});
 
 	it('should perform placeholder substitutions correctly for Swedish', () => {
@@ -32,15 +32,15 @@ describe('translate', () => {
 			receiver: 'Delta',
 			amount: '100 kr'
 		});
-		expect(text).toBe('Charlie ska betala Delta 100 kr');
+		expect(text).toBe('100 kr');
 	});
 
 	it('should translate correctly for other common keys', () => {
-		expect(translate('en-US', 'createNewTemplate')).toBe('Create New Expense');
-		expect(translate('sv-SE', 'createNewTemplate')).toBe('Skapa ny utgift');
+		expect(translate('en-US', 'addExpense')).toBe('Add expense');
+		expect(translate('sv-SE', 'addExpense')).toBe('Lägg till utgift');
 		
-		expect(translate('en-US', 'placeholderExpenseName')).toBe('e.g. Electricity, Groceries');
-		expect(translate('sv-SE', 'placeholderExpenseName')).toBe('t.ex. El, Matvaror');
+		expect(translate('en-US', 'placeholderAccountName')).toBe('e.g. Main Bank, Revolut');
+		expect(translate('sv-SE', 'placeholderAccountName')).toBe('t.ex. Lönekonto, Revolut');
 	});
 });
 

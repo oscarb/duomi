@@ -48,6 +48,8 @@ This document serves as the single source of truth for codebase standards, devel
 ## 4. Translations & Localization
 - **Localization Files**: Translations are defined in `src/lib/translations.ts`.
 - **Constraint**: For any new text added to the UI, the developer/agent **must** add and maintain matching translations (e.g. for both English `en` and Swedish `sv` locales) rather than hardcoding static strings in components.
+- **Grouping & Cleaning**: Keys in both the `en-US` and `sv-SE` translation records **must** be grouped logically (e.g., by feature area, UI screen, or common elements) and kept in the same order across both locales. Always check for and remove unused translations to keep the translation file clean.
+- **UI Element Coverage**: All UI texts, dropdown filter labels, placeholders, input fields, and tooltip texts (e.g. chart tooltip values) must be translated. Never leave static English or Swedish texts in the UI markup.
 
 ---
 

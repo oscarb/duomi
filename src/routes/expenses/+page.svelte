@@ -25,10 +25,7 @@
 	// Currently selected expense
 	let selectedExpense = $derived(data.expenses.find(e => e.id === selectedId) || null);
 
-	// Account creation dialog
-	let showAddAccount = $state(false);
-	let newAccountName = $state('');
-	let newAccountOwner = $state<'A' | 'B'>('A');
+
 
 	let cancelHref = '/expenses';
 
@@ -120,9 +117,9 @@
 	});
 
 	let typeLabel = $derived.by(() => {
-		const active = [showRecurring && 'Recurring', showOneTime && 'One-time', showArchived && 'Archived'].filter(Boolean);
-		if (active.length === 3) return 'All types';
-		if (active.length === 0) return 'No types';
+		const active = [showRecurring && t('typeRecurring'), showOneTime && t('typeOneTime'), showArchived && t('typeArchived')].filter(Boolean);
+		if (active.length === 3) return t('allTypes');
+		if (active.length === 0) return t('noTypes');
 		return active.join(', ');
 	});
 
@@ -168,16 +165,16 @@
 						<div class="toolbar-menu" transition:fade={{ duration: 120 }}>
 							<label class="toolbar-menu-item">
 								<input type="checkbox" bind:checked={showRecurring} />
-								<span>Recurring</span>
+								<span>{t('typeRecurring')}</span>
 							</label>
 							<label class="toolbar-menu-item">
 								<input type="checkbox" bind:checked={showOneTime} />
-								<span>One-time</span>
+								<span>{t('typeOneTime')}</span>
 							</label>
 							<div class="toolbar-menu-divider"></div>
 							<label class="toolbar-menu-item">
 								<input type="checkbox" bind:checked={showArchived} />
-								<span>Archived</span>
+								<span>{t('typeArchived')}</span>
 							</label>
 						</div>
 					{/if}
@@ -249,7 +246,7 @@
 								onclick={() => { sortAsc = !sortAsc; }}
 							>
 								<span class="material-symbols-outlined" style="font-size:15px;">{sortAsc ? 'arrow_upward' : 'arrow_downward'}</span>
-								{sortAsc ? 'Ascending' : 'Descending'}
+								{sortAsc ? t('sortAscending') : t('sortDescending')}
 							</button>
 						</div>
 					{/if}
@@ -329,7 +326,7 @@
 								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
 							>
 								<span class="material-symbols-outlined text-sm">add</span>
-								<span>{t('addTemplate')}</span>
+								<span>{t('addExpense')}</span>
 							</a>
 						</div>
 					{:else}
@@ -341,7 +338,7 @@
 								class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#ff7361]/10 border border-[#ff7361]/30 hover:bg-[#ff7361] hover:text-white rounded-xl text-[#ff7361] transition-all text-xs font-bold shadow-sm"
 							>
 								<span class="material-symbols-outlined text-sm">add</span>
-								<span>{t('addTemplate')}</span>
+								<span>{t('addExpense')}</span>
 							</a>
 						</div>
 					{/if}
@@ -423,7 +420,7 @@
 								class="w-full flex items-center gap-2 px-4 py-2 border-2 border-dashed border-[#ff7361]/20 rounded-lg hover:text-[#ff7361] hover:bg-[#ff7361]/5 transition-all text-[#ff7361] justify-center text-xs font-bold"
 							>
 								<span class="material-symbols-outlined text-sm">add</span>
-								<span>{t('addTemplate')}</span>
+								<span>{t('addExpense')}</span>
 							</a>
 						</div>
 					{:else}
@@ -435,7 +432,7 @@
 								class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#ff7361]/10 border border-[#ff7361]/30 hover:bg-[#ff7361] hover:text-white rounded-xl text-[#ff7361] transition-all text-xs font-bold shadow-sm"
 							>
 								<span class="material-symbols-outlined text-sm">add</span>
-								<span>{t('addTemplate')}</span>
+								<span>{t('addExpense')}</span>
 							</a>
 						</div>
 					{/if}
@@ -474,61 +471,7 @@
 	</div>
 </div>
 
-<!-- Modal: Add Source Account -->
-{#if showAddAccount}
-	<div class="fixed inset-0 z-50 bg-[#2d3142]/40 backdrop-blur-sm flex items-center justify-center p-4">
-		<div class="bg-white rounded-2xl border border-[#efeeea] shadow-2xl p-6 w-full max-w-sm space-y-4">
-			<h4 class="text-lg font-black text-[#2d3142] font-display">{t('addSourceAccount')}</h4>
-			
-			<div class="space-y-4">
-				<div class="space-y-1">
-					<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-acc-name">{t('accountName')}</label>
-					<input
-						id="new-acc-name"
-						type="text"
-						bind:value={newAccountName}
-						class="w-full px-3.5 py-2 rounded-xl border border-[#efeeea] focus:border-[#ff7361] focus:ring-0 text-sm"
-						placeholder="e.g. Main Bank, Revolut"
-					/>
-				</div>
 
-				<div class="space-y-1">
-					<label class="text-xs font-black text-[#9ca3af] uppercase tracking-wider" for="new-acc-owner">{t('owner')}</label>
-					<select
-						id="new-acc-owner"
-						bind:value={newAccountOwner}
-						class="w-full px-3.5 py-2 rounded-xl border border-[#efeeea] focus:border-[#ff7361] focus:ring-0 text-sm"
-					>
-						<option value="A">{data.personAName}</option>
-						<option value="B">{data.personBName}</option>
-					</select>
-				</div>
-			</div>
-
-			<!-- Wait, let's write a hidden form or use page actions to POST new account. SvelteKit action isn't strictly needed for this simple test if we mock or create another API, but we can do it via a form submitting to a dedicated page action or a POST API!
-			Wait, layout has no page actions, but we can POST to `/api/expenses` or a page action to add account. Wait, does `/api/expenses` or page actions support creating accounts? No, let's see. In `queries.ts`, we have `addAccount`. We can add a page action `createAccount` inside `expenses/+page.server.ts`! That is extremely clean! -->
-			<form method="POST" action="?/createAccount" use:enhance class="flex gap-3 justify-end pt-2 border-t border-[#efeeea]">
-				<input type="hidden" name="name" value={newAccountName} />
-				<input type="hidden" name="owner" value={newAccountOwner} />
-
-				<button
-					type="button"
-					onclick={() => { showAddAccount = false; newAccountName = ''; }}
-					class="px-4 py-2 border border-[#efeeea] bg-[#fbf9f5] rounded-xl text-xs font-bold text-[#9ca3af] hover:text-[#2d3142]"
-				>
-					{t('cancel')}
-				</button>
-				<button
-					type="submit"
-					onclick={() => { showAddAccount = false; }}
-					class="px-5 py-2 bg-[#ff7361] text-white hover:bg-[#ff7361]/90 rounded-xl text-xs font-bold shadow-sm"
-				>
-					{t('addAccount')}
-				</button>
-			</form>
-		</div>
-	</div>
-{/if}
 
 <style>
 	@keyframes slideUpOnly {

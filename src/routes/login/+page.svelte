@@ -11,7 +11,7 @@
 </script>
 
 <svelte:head>
-	<title>{t('loginTitle')} - Duomi</title>
+	<title>{t('loginButton')} - Duomi</title>
 	<meta name="description" content="Access the Duomi expense tracker application." />
 </svelte:head>
 
@@ -22,7 +22,7 @@
 				<span class="material-symbols-outlined text-[#ff7361] text-4xl" style="font-weight: 300;">lock</span>
 			</div>
 			<h1 class="sr-only">
-				{t('loginTitle')}
+				{t('loginButton')}
 			</h1>
 		</div>
 
@@ -39,6 +39,7 @@
 							type={showPassword ? 'text' : 'password'}
 							autocomplete="current-password"
 							required
+							placeholder={t('loginPlaceholder')}
 							class="w-full px-4 py-3.5 rounded-xl border border-[#efeeea] focus:border-[#ff7361] focus:ring-2 focus:ring-[#ff7361]/25 outline-none transition-all pr-12 text-[#2d3142] bg-white font-sans text-base shadow-sm"
 						/>
 						<button

@@ -493,7 +493,7 @@
 					<a
 						href={todayHref}
 						class="w-12 h-12 rounded-full border border-white/15 bg-white/5 hover:bg-white/20 hover:border-white/30 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center opacity-70 hover:opacity-100 text-white"
-						title="{locale.startsWith('sv') ? 'Gå till' : 'Go to'} {realMonthName} {realYear}"
+						title={t('jumpToCurrentMonth', { currentDate: `${realMonthName} ${realYear}` })}
 					>
 						<span class="material-symbols-outlined text-2xl" style="font-weight: 300;">today</span>
 					</a>
