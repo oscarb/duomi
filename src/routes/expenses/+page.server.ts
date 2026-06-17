@@ -1,5 +1,5 @@
 import type { PageServerLoad, Actions } from './$types';
-import { getMonthlyIncomes, getAccounts, addExpense, updateExpenseAmount, archiveExpense, unarchiveExpense, addAccount, deleteAccount as deleteAccountQuery, restoreAccount as restoreAccountQuery } from '$lib/server/db/queries';
+import { getMonthlyIncomes, getAccounts, addExpense, updateExpenseAmount, archiveExpense, unarchiveExpense, addAccount, deleteAccount as deleteAccountQuery, restoreAccount as restoreAccountQuery, deleteExpenseAmount, restoreExpenseAmount } from '$lib/server/db/queries';
 import { db } from '$lib/server/db';
 import { expenses, expenseAmounts, incomes } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
@@ -39,6 +39,7 @@ export const load: PageServerLoad = async () => {
 	for (const expense of dbExpenses) {
 		const history = await db
 			.select({
+				id: expenseAmounts.id,
 				amount: expenseAmounts.amount,
 				validFrom: expenseAmounts.validFrom
 			})
@@ -158,9 +159,12 @@ export const actions = {
 
 		const amountStr = data.get('amount') as string;
 		if (amountStr) {
-			const amount = Math.round(parseFloat(amountStr) || 0);
-			const validFrom = data.get('validFrom') as string || new Date().toISOString().split('T')[0];
-			await updateExpenseAmount(id, amount, validFrom);
+			const expense = await db.select().from(expenses).where(eq(expenses.id, id)).get();
+			if (!expense?.archivedDate) {
+				const amount = Math.round(parseFloat(amountStr) || 0);
+				const validFrom = data.get('validFrom') as string || new Date().toISOString().split('T')[0];
+				await updateExpenseAmount(id, amount, validFrom);
+			}
 		}
 
 		return { success: true };
@@ -169,6 +173,12 @@ export const actions = {
 	updateAmount: async ({ request }) => {
 		const data = await request.formData();
 		const expenseId = parseInt(data.get('id') as string, 10);
+		
+		const expense = await db.select().from(expenses).where(eq(expenses.id, expenseId)).get();
+		if (!expense || expense.archivedDate) {
+			return { success: false, error: 'Cannot update amount of an archived expense' };
+		}
+
 		const amount = Math.round(parseFloat(data.get('amount') as string) || 0);
 		const validFrom = data.get('validFrom') as string;
 
@@ -223,6 +233,32 @@ export const actions = {
 		if (!id || !name || !owner) return { success: false };
 
 		await restoreAccountQuery(id, name, owner, affectedExpenseIds);
+		return { success: true };
+	},
+
+	deleteHistoryItem: async ({ request }) => {
+		const data = await request.formData();
+		const id = parseInt(data.get('id') as string, 10);
+		if (!id) return { success: false };
+
+		try {
+			const deleted = await deleteExpenseAmount(id);
+			return { success: true, deleted };
+		} catch (err: any) {
+			return { success: false, error: err.message || 'failed' };
+		}
+	},
+
+	restoreHistoryItem: async ({ request }) => {
+		const data = await request.formData();
+		const id = parseInt(data.get('id') as string, 10);
+		const expenseId = parseInt(data.get('expenseId') as string, 10);
+		const amount = parseInt(data.get('amount') as string, 10);
+		const validFrom = data.get('validFrom') as string;
+
+		if (!id || !expenseId || isNaN(amount) || !validFrom) return { success: false };
+
+		await restoreExpenseAmount(id, expenseId, amount, validFrom);
 		return { success: true };
 	}
 } satisfies Actions;

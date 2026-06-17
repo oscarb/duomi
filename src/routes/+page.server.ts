@@ -1,5 +1,5 @@
 import type { PageServerLoad, Actions } from './$types';
-import { getMonthlyIncomes, getActiveExpensesForMonth, getAccounts, archiveExpense, unarchiveExpense } from '$lib/server/db/queries';
+import { getMonthlyIncomes, getActiveExpensesForMonth, getAccounts, archiveExpense, unarchiveExpense, deleteExpenseAmount, restoreExpenseAmount } from '$lib/server/db/queries';
 import { calculateSettlement } from '$lib/calculations';
 import { db } from '$lib/server/db';
 import { incomes, expenses, expenseAmounts } from '$lib/server/db/schema';
@@ -87,6 +87,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		for (const expense of dbExpenses) {
 			const history = await db
 				.select({
+					id: expenseAmounts.id,
 					amount: expenseAmounts.amount,
 					validFrom: expenseAmounts.validFrom
 				})
@@ -169,6 +170,32 @@ export const actions = {
 		const data = await request.formData();
 		const expenseId = parseInt(data.get('id') as string, 10);
 		await unarchiveExpense(expenseId);
+		return { success: true };
+	},
+
+	deleteHistoryItem: async ({ request }) => {
+		const data = await request.formData();
+		const id = parseInt(data.get('id') as string, 10);
+		if (!id) return { success: false };
+
+		try {
+			const deleted = await deleteExpenseAmount(id);
+			return { success: true, deleted };
+		} catch (err: any) {
+			return { success: false, error: err.message || 'failed' };
+		}
+	},
+
+	restoreHistoryItem: async ({ request }) => {
+		const data = await request.formData();
+		const id = parseInt(data.get('id') as string, 10);
+		const expenseId = parseInt(data.get('expenseId') as string, 10);
+		const amount = parseInt(data.get('amount') as string, 10);
+		const validFrom = data.get('validFrom') as string;
+
+		if (!id || !expenseId || isNaN(amount) || !validFrom) return { success: false };
+
+		await restoreExpenseAmount(id, expenseId, amount, validFrom);
 		return { success: true };
 	}
 } satisfies Actions;

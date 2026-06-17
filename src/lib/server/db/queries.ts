@@ -1,6 +1,6 @@
 import { db } from './index';
 import { incomes, accounts, expenses, expenseAmounts } from './schema';
-import { eq, and, or, isNull, gt, sql } from 'drizzle-orm';
+import { eq, and, or, isNull, gt, sql, like } from 'drizzle-orm';
 
 // Helper to compute difference in months between YYYY-MM-DD and a target year/month
 function getMonthDiff(validFromStr: string, targetYear: number, targetMonth: number): number {
@@ -235,15 +235,16 @@ export async function addExpense(
 
 export async function updateExpenseAmount(expenseId: number, amount: number, validFrom: string) {
 	// Update or insert an amount for an expense on a target date.
-	// If an amount exists on the exact same date (YYYY-MM-DD), we update its amount.
+	// If an amount exists in the same year and month (YYYY-MM), we update its amount and date.
 	// Otherwise, we insert a new amount.
+	const targetYearMonth = validFrom.substring(0, 7);
 	const existing = await db
 		.select()
 		.from(expenseAmounts)
 		.where(
 			and(
 				eq(expenseAmounts.expenseId, expenseId),
-				eq(expenseAmounts.validFrom, validFrom)
+				like(expenseAmounts.validFrom, `${targetYearMonth}%`)
 			)
 		)
 		.get();
@@ -251,7 +252,7 @@ export async function updateExpenseAmount(expenseId: number, amount: number, val
 	if (existing) {
 		await db
 			.update(expenseAmounts)
-			.set({ amount })
+			.set({ amount, validFrom })
 			.where(eq(expenseAmounts.id, existing.id))
 			.run();
 	} else {
@@ -281,3 +282,28 @@ export async function unarchiveExpense(expenseId: number) {
 		.where(eq(expenses.id, expenseId))
 		.run();
 }
+
+export async function deleteExpenseAmount(id: number) {
+	const amountRecord = await db.select().from(expenseAmounts).where(eq(expenseAmounts.id, id)).get();
+	if (!amountRecord) return null;
+
+	// Check if this is the only amount record for the expense
+	const countResult = await db
+		.select({ count: sql<number>`count(*)` })
+		.from(expenseAmounts)
+		.where(eq(expenseAmounts.expenseId, amountRecord.expenseId))
+		.get();
+
+	const count = countResult ? countResult.count : 0;
+	if (count <= 1) {
+		throw new Error('cannotDeleteOnlyPrice');
+	}
+
+	await db.delete(expenseAmounts).where(eq(expenseAmounts.id, id)).run();
+	return amountRecord;
+}
+
+export async function restoreExpenseAmount(id: number, expenseId: number, amount: number, validFrom: string) {
+	await db.insert(expenseAmounts).values({ id, expenseId, amount, validFrom }).run();
+}
+

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { db, sqlite } from './index';
 import { incomes, accounts, expenses, expenseAmounts } from './schema';
-import { getMonthlyIncomes, setMonthlyIncome, getActiveExpensesForMonth, addExpense, addAccount, getAccounts, updateExpenseAmount, archiveExpense, unarchiveExpense } from './queries';
+import { getMonthlyIncomes, setMonthlyIncome, getActiveExpensesForMonth, addExpense, addAccount, getAccounts, updateExpenseAmount, archiveExpense, unarchiveExpense, deleteExpenseAmount, restoreExpenseAmount } from './queries';
 import { eq } from 'drizzle-orm';
 
 describe('Database Queries', () => {
@@ -17,7 +17,7 @@ describe('Database Queries', () => {
 		// Clean up
 	});
 
-	it('should update expense amount and create new history entries on new dates', async () => {
+	it('should update expense amount by overwriting if same month, or creating new entry if different month', async () => {
 		const [acc] = await db.insert(accounts).values({ name: 'Main Account', owner: 'A' }).returning();
 		const rentId = await addExpense('Rent', 'A', 1, 'dynamic', null, acc.id, 2400, '2026-08-01');
 
@@ -27,17 +27,24 @@ describe('Database Queries', () => {
 		expect(amounts.length).toBe(1);
 		expect(amounts[0].amount).toBe(2500);
 
-		// 2. Different date (same month): should insert new history entry
+		// 2. Different date (same month): should overwrite the existing entry
 		await updateExpenseAmount(rentId, 2600, '2026-08-15');
 		amounts = await db.select().from(expenseAmounts).where(eq(expenseAmounts.expenseId, rentId)).all();
+		expect(amounts.length).toBe(1);
+		expect(amounts[0].validFrom).toBe('2026-08-15');
+		expect(amounts[0].amount).toBe(2600);
+
+		// 3. Different month: should insert a new entry
+		await updateExpenseAmount(rentId, 2700, '2026-09-01');
+		amounts = await db.select().from(expenseAmounts).where(eq(expenseAmounts.expenseId, rentId)).all();
 		expect(amounts.length).toBe(2);
-		
+
 		// Sort by date to verify
 		amounts.sort((a, b) => a.validFrom.localeCompare(b.validFrom));
-		expect(amounts[0].validFrom).toBe('2026-08-01');
-		expect(amounts[0].amount).toBe(2500);
-		expect(amounts[1].validFrom).toBe('2026-08-15');
-		expect(amounts[1].amount).toBe(2600);
+		expect(amounts[0].validFrom).toBe('2026-08-15');
+		expect(amounts[0].amount).toBe(2600);
+		expect(amounts[1].validFrom).toBe('2026-09-01');
+		expect(amounts[1].amount).toBe(2700);
 	});
 
 	it('should set and get monthly incomes correctly', async () => {
@@ -144,6 +151,42 @@ describe('Database Queries', () => {
 			// Now it should be back in June
 			juneExpenses = await getActiveExpensesForMonth(2026, 6);
 			expect(juneExpenses.some(e => e.name === 'Rent')).toBe(true);
+		});
+	});
+
+	describe('deleteExpenseAmount / restoreExpenseAmount', () => {
+		it('allows deleting history rows if more than 1 exists, but fails if only 1 remains', async () => {
+			const rentId = await addExpense('Rent', 'A', 1, 'dynamic', null, null, 1000, '2026-01-01');
+			let history = await db.select().from(expenseAmounts).where(eq(expenseAmounts.expenseId, rentId)).all();
+			expect(history.length).toBe(1);
+
+			// Try to delete the only history row - should fail
+			await expect(deleteExpenseAmount(history[0].id)).rejects.toThrow('cannotDeleteOnlyPrice');
+
+			// Add a second history row
+			await updateExpenseAmount(rentId, 1200, '2026-02-01');
+			history = await db.select().from(expenseAmounts).where(eq(expenseAmounts.expenseId, rentId)).all();
+			expect(history.length).toBe(2);
+
+			// Sort by date to locate the new one
+			history.sort((a, b) => a.validFrom.localeCompare(b.validFrom));
+			const secondRowId = history[1].id;
+
+			// Delete the second history row
+			const deleted = await deleteExpenseAmount(secondRowId);
+			expect(deleted).toBeDefined();
+			expect(deleted?.id).toBe(secondRowId);
+			expect(deleted?.amount).toBe(1200);
+
+			// Check that only 1 remains now
+			history = await db.select().from(expenseAmounts).where(eq(expenseAmounts.expenseId, rentId)).all();
+			expect(history.length).toBe(1);
+			expect(history[0].amount).toBe(1000);
+
+			// Restore it
+			await restoreExpenseAmount(deleted!.id, deleted!.expenseId, deleted!.amount, deleted!.validFrom);
+			history = await db.select().from(expenseAmounts).where(eq(expenseAmounts.expenseId, rentId)).all();
+			expect(history.length).toBe(2);
 		});
 	});
 });
