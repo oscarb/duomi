@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import { invalidateAll, goto } from '$app/navigation';
 	import { toasts } from '$lib/toasts.svelte';
-	import { slide } from 'svelte/transition';
+	import { slide, fade } from 'svelte/transition';
 
 	// Retrieve localized translations and formatting
 	const { locale, t, currencyConfig, formatter } = getContext<{
@@ -207,6 +207,53 @@
 		let month = date.toLocaleDateString(localeStr, { month: 'short' });
 		if (localeStr.startsWith('sv')) {
 			month = month.toLowerCase();
+		}
+		month = month.replace('.', '');
+		return `${day} ${month} ${year}`;
+	}
+
+	function getNextPaymentDate(startDateStr: string, intervalMonths: number): string {
+		if (!startDateStr) return '';
+		if (intervalMonths <= 0) return startDateStr;
+		const parts = startDateStr.split('-');
+		const y = parseInt(parts[0], 10);
+		const m = parseInt(parts[1], 10);
+		const d = parseInt(parts[2], 10);
+		const start = new Date(y, m - 1, d);
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+
+		if (start >= today) {
+			return startDateStr;
+		}
+
+		let current = new Date(start);
+		while (current < today) {
+			current.setMonth(current.getMonth() + intervalMonths);
+		}
+		
+		const py = current.getFullYear();
+		const pm = String(current.getMonth() + 1).padStart(2, '0');
+		const pd = String(current.getDate()).padStart(2, '0');
+		return `${py}-${pm}-${pd}`;
+	}
+
+	function formatRenewalDate(dateStr: string, localeStr: string): string {
+		if (!dateStr) return '';
+		const parts = dateStr.split('-');
+		const y = parseInt(parts[0], 10);
+		const m = parseInt(parts[1], 10);
+		const d = parseInt(parts[2], 10);
+		const date = new Date(y, m - 1, d);
+		if (isNaN(date.getTime())) return dateStr;
+		
+		const day = String(date.getDate()).padStart(2, '0');
+		const year = date.getFullYear();
+		let month = date.toLocaleDateString(localeStr, { month: 'short' });
+		if (localeStr.startsWith('sv')) {
+			month = month.toLowerCase();
+		} else {
+			month = month.charAt(0).toUpperCase() + month.slice(1);
 		}
 		month = month.replace('.', '');
 		return `${day} ${month} ${year}`;
@@ -816,79 +863,110 @@
 			bind:this={editFormElement}
 			class="space-y-12"
 		>
-			<div class="flex flex-col gap-2 pb-2">
-				<!-- Row 1: Title and Amount -->
-				<div class="flex justify-between items-start gap-4">
-					<div class="flex-grow min-w-0">
-						<div class="inline-grid grid-cols-1 max-w-full min-w-[1ch]">
-							<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre-wrap break-words">{editName || t('name')}</span>
-							<textarea
-								bind:this={titleInputEl}
-								name="name"
-								bind:value={editName}
-								rows="1"
-								required
-								placeholder={t('name')}
-								class="col-start-1 row-start-1 w-0 min-w-full h-full resize-none overflow-hidden font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none pb-1 transition-colors duration-200 whitespace-pre-wrap break-words"
-								onkeydown={(e) => {
-									if (e.key === 'Enter' && !e.shiftKey) {
-										e.preventDefault();
-										e.currentTarget.form?.requestSubmit();
-									}
-								}}
-							></textarea>
-						</div>
-					</div>
-
-					<div class="flex flex-col items-end flex-shrink-0">
-						<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2">
-							{#if currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 mr-1 inline-block -translate-y-[2px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
-							{/if}
-							<div class="inline-grid grid-cols-1">
-								<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[1px] pb-[4px] whitespace-pre tracking-tight {currencyConfig.isPrefix ? '' : 'pr-[6px]'}">{editAmountVal || '0'}</span>
-								<input
-									type="text"
-									inputmode="numeric"
-									pattern="[0-9\s]*"
-									value={editAmountVal}
-									oninput={handleAmountInput}
-									onkeydown={handleAmountKeyDown}
+			<div class="space-y-6">
+				<div class="flex flex-col gap-2 pb-2">
+					<!-- Row 1: Title and Amount -->
+					<div class="flex justify-between items-start gap-4">
+						<div class="flex-grow min-w-0">
+							<div class="inline-grid grid-cols-1 max-w-full min-w-[1ch]">
+								<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre-wrap break-words">{editName || t('name')}</span>
+								<textarea
+									bind:this={titleInputEl}
+									name="name"
+									bind:value={editName}
+									rows="1"
 									required
-									class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pb-[4px] tracking-tight transition-colors duration-200 {currencyConfig.isPrefix ? '' : 'pr-[6px]'}"
-									placeholder="0"
-								/>
+									placeholder={t('name')}
+									class="col-start-1 row-start-1 w-0 min-w-full h-full resize-none overflow-hidden font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none pb-1 transition-colors duration-200 whitespace-pre-wrap break-words"
+									onkeydown={(e) => {
+										if (e.key === 'Enter' && !e.shiftKey) {
+											e.preventDefault();
+											e.currentTarget.form?.requestSubmit();
+										}
+									}}
+								></textarea>
 							</div>
-							<input type="hidden" name="amount" value={editAmountVal.replace(/\D/g, '')} />
-							{#if !currencyConfig.isPrefix}
-								<span class="text-[#9ca3af] opacity-50 ml-1 inline-block -translate-x-[1px] -translate-y-[2px]">{currencyConfig.symbol}</span>
+						</div>
+
+						<div class="flex flex-col items-end flex-shrink-0">
+							<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2">
+								{#if currencyConfig.isPrefix}
+									<span class="text-[#9ca3af] opacity-50 mr-1 inline-block -translate-y-[2px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
+								{/if}
+								<div class="inline-grid grid-cols-1">
+									<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[1px] pb-[4px] whitespace-pre tracking-tight {currencyConfig.isPrefix ? '' : 'pr-[6px]'}">{editAmountVal || '0'}</span>
+									<input
+										type="text"
+										inputmode="numeric"
+										pattern="[0-9\s]*"
+										value={editAmountVal}
+										oninput={handleAmountInput}
+										onkeydown={handleAmountKeyDown}
+										required
+										class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pb-[4px] tracking-tight transition-colors duration-200 {currencyConfig.isPrefix ? '' : 'pr-[6px]'}"
+										placeholder="0"
+									/>
+								</div>
+								<input type="hidden" name="amount" value={editAmountVal.replace(/\D/g, '')} />
+								{#if !currencyConfig.isPrefix}
+									<span class="text-[#9ca3af] opacity-50 ml-1 inline-block -translate-x-[1px] -translate-y-[2px]">{currencyConfig.symbol}</span>
+								{/if}
+							</div>
+						</div>
+					</div>
+
+					<!-- Row 2: Badge and Date -->
+					<div class="flex justify-between items-center gap-4">
+						<div class="flex items-center gap-2">
+							<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#4a7bb0]/10 text-[#4a7bb0] border border-[#4a7bb0]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
+								<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#4a7bb0]' : 'bg-[#4fd1c5]'}"></span>
+								{editPaidBy === 'A' ? namePersonA : namePersonB}
+							</div>
+						</div>
+
+						<div class="flex items-center">
+							<input
+								name="validFrom"
+								type="date"
+								bind:value={editAmountDate}
+								required
+								class="w-[125px] px-2 py-1 rounded-xl border border-[#efeeea] bg-[#fbf9f5] text-[12px] font-bold text-[#2d3142] focus:border-[#ff7361] focus:ring-2 focus:ring-[#ff7361]/20 outline-none transition-all cursor-pointer"
+							/>
+						</div>
+					</div>
+				</div>
+
+				<input type="hidden" name="paidBy" value={editPaidBy} />
+
+				{#if editInterval !== 0}
+					<div class="grid grid-cols-2 gap-4">
+						<div class="flex flex-col">
+							<span class="text-[10px] font-semibold uppercase tracking-wider text-[#9ca3af]">{t('nextPayment')}</span>
+							<span class="text-xl font-sans font-bold text-[#2d3142] mt-1">
+								{formatOneTimeDate(getNextPaymentDate(editAmountDate, editInterval), locale)}
+							</span>
+						</div>
+						<div class="flex flex-col">
+							{#if editInterval === 1 || editInterval === 3 || editInterval === 12}
+								{@const parsedAmt = parseFloat(editAmountVal.replace(/\D/g, '')) || 0}
+								{@const comparisonCost = editInterval === 1 ? Math.round(parsedAmt * 12) : Math.round(parsedAmt / editInterval)}
+								<span class="text-[10px] font-semibold uppercase tracking-wider text-[#9ca3af]">
+									{editInterval === 1 ? t('yearlyComparisonPrice') : t('comparisonPrice')}
+								</span>
+								<span class="text-xl font-sans font-bold text-[#2d3142] mt-1">
+									{#each formatter.formatToParts(comparisonCost) as part}
+										{#if part.type === 'currency'}
+											<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-0.5' : 'ml-0.5'}">{part.value}</span>
+										{:else if part.type !== 'literal'}
+											{part.value}
+										{/if}
+									{/each}
+								</span>
 							{/if}
 						</div>
 					</div>
-				</div>
-
-				<!-- Row 2: Badge and Date -->
-				<div class="flex justify-between items-center gap-4">
-					<div class="flex items-center gap-2">
-						<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#4a7bb0]/10 text-[#4a7bb0] border border-[#4a7bb0]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
-							<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#4a7bb0]' : 'bg-[#4fd1c5]'}"></span>
-							{editPaidBy === 'A' ? namePersonA : namePersonB}
-						</div>
-					</div>
-
-					<div class="flex items-center">
-						<input
-							name="validFrom"
-							type="date"
-							bind:value={editAmountDate}
-							required
-							class="w-[125px] px-2 py-1 rounded-xl border border-[#efeeea] bg-[#fbf9f5] text-[12px] font-bold text-[#2d3142] focus:border-[#ff7361] focus:ring-2 focus:ring-[#ff7361]/20 outline-none transition-all cursor-pointer"
-						/>
-					</div>
-				</div>
+				{/if}
 			</div>
-
-			<input type="hidden" name="paidBy" value={editPaidBy} />
 
 			<!-- Split Ratio -->
 			<div>
@@ -1206,147 +1284,178 @@
 			class="space-y-12"
 		>
 			<input type="hidden" name="id" value={expense.id} />
-		<input type="hidden" name="archivedDate" value={`${currentYear}-${String(currentMonth).padStart(2, '0')}-01`} />
+			<input type="hidden" name="archivedDate" value={`${currentYear}-${String(currentMonth).padStart(2, '0')}-01`} />
 
-			<div class="flex justify-between items-start pb-2 gap-4">
-				<!-- Title & Badges -->
-				<div class="flex-grow min-w-0 space-y-3">
-					<div class="inline-grid grid-cols-1 max-w-full min-w-[1ch]">
-						<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre-wrap break-words">{editName || t('name')}</span>
-						<textarea
-							name="name"
-							bind:value={editName}
-							rows="1"
-							required
-							class="col-start-1 row-start-1 w-0 min-w-full h-full resize-none overflow-hidden font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none pb-1 transition-colors duration-200 whitespace-pre-wrap break-words"
-							onblur={triggerAutoSave}
-							onkeydown={(e) => {
-								if (e.key === 'Enter' && !e.shiftKey) {
-									e.preventDefault();
-									e.currentTarget.form?.requestSubmit();
-								}
-							}}
-						></textarea>
-					</div>
-					<div class="flex items-center gap-2">
-						{#if expense.archivedDate}
-							<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 font-bold text-[10px] uppercase tracking-wider">
-								<span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-								{t('archived')}
-							</div>
-						{:else}
-							<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px] uppercase tracking-wider">
-								<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-								{t('active')}
-							</div>
-						{/if}
-						<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#4a7bb0]/10 text-[#4a7bb0] border border-[#4a7bb0]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
-							<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#4a7bb0]' : 'bg-[#4fd1c5]'}"></span>
-							{editPaidBy === 'A' ? namePersonA : namePersonB}
+			<div class="space-y-6">
+				<div class="flex justify-between items-start pb-2 gap-4">
+					<!-- Title & Badges -->
+					<div class="flex-grow min-w-0 space-y-3">
+						<div class="inline-grid grid-cols-1 max-w-full min-w-[1ch]">
+							<span class="col-start-1 row-start-1 invisible font-display text-2xl font-bold pb-1 whitespace-pre-wrap break-words">{editName || t('name')}</span>
+							<textarea
+								name="name"
+								bind:value={editName}
+								rows="1"
+								required
+								class="col-start-1 row-start-1 w-0 min-w-full h-full resize-none overflow-hidden font-display text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none pb-1 transition-colors duration-200 whitespace-pre-wrap break-words"
+								onblur={triggerAutoSave}
+								onkeydown={(e) => {
+									if (e.key === 'Enter' && !e.shiftKey) {
+										e.preventDefault();
+										e.currentTarget.form?.requestSubmit();
+									}
+								}}
+							></textarea>
 						</div>
-					</div>
-				</div>
-
-				<!-- Amount and Date Box -->
-				<div class="flex flex-col items-end space-y-1.5 flex-shrink-0">
-					{#if !isAmountEdit}
-						<button
-							type="button"
-							onclick={async () => {
-								if (expense.archivedDate) return;
-								isAmountEdit = true;
-								editAmountVal = formatAmount(Math.round(latestAmount).toString());
-								editAmountDate = expense.history?.[expense.history.length - 1]?.validFrom || new Date().toISOString().split('T')[0];
-								await import('svelte').then(({ tick }) => tick());
-								amountInputEl?.focus();
-							}}
-							class="group {expense.archivedDate ? 'cursor-default' : 'cursor-pointer hover:border-[#ff7361]/20 hover:bg-[#fbf9f5]'} border border-transparent p-2 -m-2 rounded-xl transition-all flex flex-col items-end relative text-[#2d3142]"
-						>
-							<div class="flex items-center">
-								<span class="text-2xl font-bold text-[#2d3142] tracking-tight whitespace-nowrap">
-									{#if currencyConfig.isPrefix}
-										<span class="text-[#9ca3af] opacity-50 mr-1 inline-block" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
-									{/if}
-									{new Intl.NumberFormat(locale).format(Math.round(latestAmount))}
-									{#if !currencyConfig.isPrefix}
-										<span class="text-[#9ca3af] opacity-50 ml-1 inline-block">{currencyConfig.symbol}</span>
-									{/if}
-								</span>
-							</div>
-							{#if expense.intervalMonths !== 0}
-								<div class="mt-1 text-right flex items-center gap-1">
-									<span class="text-[12px] text-[#9ca3af]">{t(isFuture ? 'from' : 'since')} <span class="font-bold text-[#2d3142]">{formatSinceDate(expense.history[expense.history.length - 1]?.validFrom || '', locale)}</span></span>
+						<div class="flex items-center gap-2">
+							{#if expense.archivedDate}
+								<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 font-bold text-[10px] uppercase tracking-wider">
+									<span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+									{t('archived')}
 								</div>
 							{:else}
-								<div class="mt-1 text-right flex items-center gap-1">
-									<span class="text-[12px] font-bold text-[#2d3142]">{formatOneTimeDate(expense.history[expense.history.length - 1]?.validFrom || '', locale)}</span>
+								<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px] uppercase tracking-wider">
+									<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+									{t('active')}
 								</div>
 							{/if}
-							{#if !expense.archivedDate}
-								<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none w-8 h-8 bg-white/90 backdrop-blur shadow-sm rounded-full border border-[#ff7361]/20 flex items-center justify-center">
-									<span class="material-symbols-outlined text-[#ff7361] text-[16px]">edit</span>
-								</div>
-							{/if}
-						</button>
-					{:else}
-						<!-- Amount Edit Mode input block -->
-						<div class="flex flex-col items-end space-y-2">
-							<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2 border border-transparent whitespace-nowrap">
-								{#if currencyConfig.isPrefix}
-									<span class="text-[#9ca3af] opacity-50 mr-[9px] inline-block -translate-y-[3px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
-								{/if}
-								<div class="inline-grid grid-cols-1 -translate-y-[1px]">
-									<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[1px] pb-[4px] whitespace-pre tracking-tight {currencyConfig.isPrefix ? '' : 'pr-[5px]'}">{editAmountVal || '0'}</span>
-									<input
-										bind:this={amountInputEl}
-										type="text"
-										inputmode="numeric"
-										pattern="[0-9\s]*"
-										value={editAmountVal}
-										oninput={handleAmountInput}
-										onkeydown={handleAmountKeyDown}
-										class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pb-[4px] tracking-tight transition-colors duration-200 {currencyConfig.isPrefix ? '' : 'pr-[5px]'}"
-										placeholder="0"
-									/>
-								</div>
-								<input type="hidden" name="amount" value={editAmountVal.replace(/\D/g, '')} />
-								{#if !currencyConfig.isPrefix}
-									<span class="text-[#9ca3af] opacity-50 ml-1 inline-block -translate-y-[3px]">{currencyConfig.symbol}</span>
-								{/if}
-							</div>
-							
-							<div class="flex items-center mt-2.5">
-								<input
-									name="validFrom"
-									type="date"
-									bind:value={editAmountDate}
-									class="px-1.5 py-0.5 rounded border border-[#efeeea] bg-[#fbf9f5] text-[12px] font-bold text-[#2d3142] focus:border-[#ff7361] focus:ring-0 outline-none cursor-pointer"
-								/>
-							</div>
-							
-							<div class="flex gap-2 pt-1">
-								<button
-									type="button"
-									class="px-2 py-1 text-[#9ca3af] font-bold text-[12px] hover:text-[#2d3142]"
-									onclick={() => isAmountEdit = false}
-								>
-									{t('cancel')}
-								</button>
-								<button
-									formaction="{actionRoute}?/updateAmount"
-									type="submit"
-									class="px-3 py-1 bg-[#ff7361] text-white rounded text-[12px] font-bold hover:bg-[#ff7361]/90 transition-all shadow-sm"
-								>
-									{t('save')}
-								</button>
+							<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-colors duration-200 {editPaidBy === 'A' ? 'bg-[#4a7bb0]/10 text-[#4a7bb0] border border-[#4a7bb0]/20' : 'bg-[#4fd1c5]/10 text-[#4fd1c5] border border-[#4fd1c5]/20'}">
+								<span class="w-1.5 h-1.5 rounded-full {editPaidBy === 'A' ? 'bg-[#4a7bb0]' : 'bg-[#4fd1c5]'}"></span>
+								{editPaidBy === 'A' ? namePersonA : namePersonB}
 							</div>
 						</div>
-					{/if}
-				</div>
-			</div>
+					</div>
 
-			<!-- Paid By Hidden input (updated via Move button) -->
-			<input type="hidden" name="paidBy" value={editPaidBy} />
+					<!-- Amount and Date Box -->
+					<div class="flex flex-col items-end space-y-1.5 flex-shrink-0">
+						{#if !isAmountEdit}
+							<button
+								type="button"
+								onclick={async () => {
+									if (expense.archivedDate) return;
+									isAmountEdit = true;
+									editAmountVal = formatAmount(Math.round(latestAmount).toString());
+									editAmountDate = expense.history?.[expense.history.length - 1]?.validFrom || new Date().toISOString().split('T')[0];
+									await import('svelte').then(({ tick }) => tick());
+									amountInputEl?.focus();
+								}}
+								class="group {expense.archivedDate ? 'cursor-default' : 'cursor-pointer hover:border-[#ff7361]/20 hover:bg-[#fbf9f5]'} border border-transparent p-2 -m-2 rounded-xl transition-all flex flex-col items-end relative text-[#2d3142]"
+							>
+								<div class="flex items-center">
+									<span class="text-2xl font-bold text-[#2d3142] tracking-tight whitespace-nowrap">
+										{#if currencyConfig.isPrefix}
+											<span class="text-[#9ca3af] opacity-50 mr-1 inline-block" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
+										{/if}
+										{new Intl.NumberFormat(locale).format(Math.round(latestAmount))}
+										{#if !currencyConfig.isPrefix}
+											<span class="text-[#9ca3af] opacity-50 ml-1 inline-block">{currencyConfig.symbol}</span>
+										{/if}
+									</span>
+								</div>
+								{#if expense.intervalMonths !== 0}
+									<div class="mt-1 text-right flex items-center gap-1">
+										<span class="text-[12px] text-[#9ca3af]">{t(isFuture ? 'from' : 'since')} <span class="font-bold text-[#2d3142]">{formatSinceDate(expense.history[expense.history.length - 1]?.validFrom || '', locale)}</span></span>
+									</div>
+								{:else}
+									<div class="mt-1 text-right flex items-center gap-1">
+										<span class="text-[12px] font-bold text-[#2d3142]">{formatOneTimeDate(expense.history[expense.history.length - 1]?.validFrom || '', locale)}</span>
+									</div>
+								{/if}
+								{#if !expense.archivedDate}
+									<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none w-8 h-8 bg-white/90 backdrop-blur shadow-sm rounded-full border border-[#ff7361]/20 flex items-center justify-center">
+										<span class="material-symbols-outlined text-[#ff7361] text-[16px]">edit</span>
+									</div>
+								{/if}
+							</button>
+						{:else}
+							<!-- Amount Edit Mode input block -->
+							<div class="flex flex-col items-end space-y-2">
+								<div class="flex items-center text-2xl font-bold text-[#2d3142] tracking-tight p-2 -m-2 border border-transparent whitespace-nowrap">
+									{#if currencyConfig.isPrefix}
+										<span class="text-[#9ca3af] opacity-50 mr-[9px] inline-block -translate-y-[3px]" style="width: 1ch; display: inline-block; text-align: right;">{currencyConfig.symbol}</span>
+									{/if}
+									<div class="inline-grid grid-cols-1 -translate-y-[1px]">
+										<span class="col-start-1 row-start-1 invisible font-sans text-2xl font-bold pt-[1px] pb-[4px] whitespace-pre tracking-tight {currencyConfig.isPrefix ? '' : 'pr-[5px]'}">{editAmountVal || '0'}</span>
+										<input
+											bind:this={amountInputEl}
+											type="text"
+											inputmode="numeric"
+											pattern="[0-9\s]*"
+											value={editAmountVal}
+											oninput={handleAmountInput}
+											onkeydown={handleAmountKeyDown}
+											class="col-start-1 row-start-1 w-0 min-w-full h-full font-sans text-2xl font-bold text-[#2d3142] border-0 border-b border-[#efeeea] hover:border-[#ff7361] focus:border-[#ff7361] p-0 focus:ring-0 outline-none focus:outline-none text-right pb-[4px] tracking-tight transition-colors duration-200 {currencyConfig.isPrefix ? '' : 'pr-[5px]'}"
+											placeholder="0"
+										/>
+									</div>
+									<input type="hidden" name="amount" value={editAmountVal.replace(/\D/g, '')} />
+									{#if !currencyConfig.isPrefix}
+										<span class="text-[#9ca3af] opacity-50 ml-1 inline-block -translate-y-[3px]">{currencyConfig.symbol}</span>
+									{/if}
+								</div>
+								
+								<div class="flex items-center mt-2.5">
+									<input
+										name="validFrom"
+										type="date"
+										bind:value={editAmountDate}
+										class="px-1.5 py-0.5 rounded border border-[#efeeea] bg-[#fbf9f5] text-[12px] font-bold text-[#2d3142] focus:border-[#ff7361] focus:ring-0 outline-none cursor-pointer"
+									/>
+								</div>
+								
+								<div class="flex gap-2 pt-1">
+									<button
+										type="button"
+										class="px-2 py-1 text-[#9ca3af] font-bold text-[12px] hover:text-[#2d3142]"
+										onclick={() => isAmountEdit = false}
+									>
+										{t('cancel')}
+									</button>
+									<button
+										formaction="{actionRoute}?/updateAmount"
+										type="submit"
+										class="px-3 py-1 bg-[#ff7361] text-white rounded text-[12px] font-bold hover:bg-[#ff7361]/90 transition-all shadow-sm"
+									>
+										{t('save')}
+									</button>
+								</div>
+							</div>
+						{/if}
+					</div>
+				</div>
+
+				<!-- Paid By Hidden input (updated via Move button) -->
+				<input type="hidden" name="paidBy" value={editPaidBy} />
+
+				{#if editInterval !== 0}
+					<div class="grid grid-cols-2 gap-4">
+						<div class="flex flex-col">
+							<span class="text-[10px] font-semibold uppercase tracking-wider text-[#9ca3af]">{t('nextPayment')}</span>
+							<span class="text-xl font-sans font-bold text-[#2d3142] mt-1">
+								{formatOneTimeDate(getNextPaymentDate(editAmountDate, editInterval), locale)}
+							</span>
+						</div>
+						<div class="flex flex-col">
+							{#if editInterval === 1 || editInterval === 3 || editInterval === 12}
+								{@const parsedAmt = parseFloat(editAmountVal.replace(/\D/g, '')) || 0}
+								{@const comparisonCost = editInterval === 1 ? Math.round(parsedAmt * 12) : Math.round(parsedAmt / editInterval)}
+								<span class="text-[10px] font-semibold uppercase tracking-wider text-[#9ca3af]">
+									{editInterval === 1 ? t('yearlyComparisonPrice') : t('comparisonPrice')}
+								</span>
+								<span class="text-xl font-sans font-bold text-[#2d3142] mt-1">
+									{#each formatter.formatToParts(comparisonCost) as part}
+										{#if part.type === 'currency'}
+											<span class="text-[#9ca3af] opacity-50 {currencyConfig.isPrefix ? 'mr-0.5' : 'ml-0.5'}">{part.value}</span>
+										{:else if part.type !== 'literal'}
+											{part.value}
+										{/if}
+									{/each}
+								</span>
+							{/if}
+						</div>
+					</div>
+				{/if}
+			</div>
 
 			<!-- Split Ratio -->
 			<div>
