@@ -1,6 +1,6 @@
 import { db } from './index';
 import { incomes, accounts, expenses, expenseAmounts } from './schema';
-import { eq, and, or, isNull, gt, sql, like } from 'drizzle-orm';
+import { eq, and, or, isNull, gt, sql, like, inArray } from 'drizzle-orm';
 
 // Helper to compute difference in months between YYYY-MM-DD and a target year/month
 function getMonthDiff(validFromStr: string, targetYear: number, targetMonth: number): number {
@@ -86,111 +86,140 @@ export async function restoreAccount(id: number, name: string, owner: 'A' | 'B',
 }
 
 // 3. Expenses
-export async function getActiveExpensesForMonth(year: number, month: number) {
+// 3. Expenses
+export async function getExpensesWithMappedHistory(
+	year: number,
+	month: number,
+	onlyActive = false
+) {
 	const targetMonthStr = `${year}-${String(month).padStart(2, '0')}`;
-	const targetFirstDay = `${targetMonthStr}-01`;
 	const targetLastDay = `${targetMonthStr}-31`;
 
-	// Fetch expenses that are NOT archived or archived strictly after the selected month ends
-	const allExpenses = await db
+	let query = db
 		.select({
 			expense: expenses,
 			accountName: accounts.name
 		})
 		.from(expenses)
-		.leftJoin(accounts, eq(expenses.accountId, accounts.id))
-		.where(
-			or(
-				isNull(expenses.archivedDate),
-				gt(expenses.archivedDate, targetLastDay)
+		.leftJoin(accounts, eq(expenses.accountId, accounts.id));
+
+	let dbExpenses;
+	if (onlyActive) {
+		dbExpenses = await query
+			.where(
+				or(
+					isNull(expenses.archivedDate),
+					gt(expenses.archivedDate, targetLastDay)
+				)
 			)
-		)
-		.all();
+			.all();
+	} else {
+		dbExpenses = await query.all();
+	}
 
-	const activeExpenses: Array<{
-		id: number;
-		name: string;
-		paidBy: 'A' | 'B';
-		intervalMonths: number;
-		splitType: 'dynamic' | 'static';
-		staticSplitRatio: number | null;
-		archivedDate: string | null;
-		accountId: number | null;
-		accountName: string | null;
-		amount: number;
-		latestAmount: number;
-		validFrom: string;
-		nextPaymentDate: string | null;
-	}> = [];
-
-	for (const row of allExpenses) {
-		const expense = row.expense;
-
-		// Fetch all amounts for this expense
-		const costs = await db
+	const expenseIds = dbExpenses.map(e => e.expense.id);
+	const allCosts = expenseIds.length > 0
+		? await db
 			.select()
 			.from(expenseAmounts)
-			.where(eq(expenseAmounts.expenseId, expense.id))
-			.all();
+			.where(inArray(expenseAmounts.expenseId, expenseIds))
+			.orderBy(expenseAmounts.validFrom)
+			.all()
+		: [];
 
-		if (costs.length === 0) continue;
+	// Group costs by expense ID
+	const costsMap: Record<number, typeof allCosts> = {};
+	for (const cost of allCosts) {
+		if (!costsMap[cost.expenseId]) {
+			costsMap[cost.expenseId] = [];
+		}
+		costsMap[cost.expenseId].push(cost);
+	}
 
-		// Sort costs by validFrom DESC to find the most relevant one
+	const mappedExpenses = [];
+
+	for (const row of dbExpenses) {
+		const expense = row.expense;
+		const history = costsMap[expense.id] || [];
+
+		if (history.length === 0) continue;
+
 		// Active cost is the latest cost where validFrom <= targetLastDay
-		const activeCost = costs
+		const activeCost = [...history]
 			.filter(c => c.validFrom <= targetLastDay)
 			.sort((a, b) => b.validFrom.localeCompare(a.validFrom))[0];
 
-		if (!activeCost) continue; // No cost registered before or in this month
-
-		// Check active based on frequency (intervalMonths)
-		const diff = getMonthDiff(activeCost.validFrom, year, month);
-		if (diff < 0) continue; // Cost is in the future relative to target month
+		if (onlyActive && !activeCost) continue;
 
 		let isActive = false;
-		if (expense.intervalMonths === 0) {
-			// One-time: active only in the specific month of the cost
-			isActive = diff === 0;
-		} else if (expense.intervalMonths === 1) {
-			// Monthly: active in all months after validFrom
-			isActive = true;
-		} else if (expense.intervalMonths > 1) {
-			// Quarterly/yearly etc: active if diff is a multiple of interval
-			isActive = diff % expense.intervalMonths === 0;
-		}
-
-		if (isActive) {
-			// Calculate next payment date if active
-			let nextPaymentDate: string | null = null;
-			if (expense.intervalMonths > 0) {
-				// E.g., if active this month, next is selectedMonth + intervalMonths
-				const nextMonthTotal = month + expense.intervalMonths;
-				const nextYear = year + Math.floor((nextMonthTotal - 1) / 12);
-				const nextMonth = ((nextMonthTotal - 1) % 12) + 1;
-				nextPaymentDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+		if (activeCost) {
+			const diff = getMonthDiff(activeCost.validFrom, year, month);
+			if (diff >= 0) {
+				if (expense.intervalMonths === 0) {
+					// One-time: active only in the specific month of the cost
+					isActive = diff === 0;
+				} else if (expense.intervalMonths === 1) {
+					// Monthly: active in all months after validFrom
+					isActive = true;
+				} else if (expense.intervalMonths > 1) {
+					// Multi-month intervals: active if diff is a multiple of interval
+					isActive = diff % expense.intervalMonths === 0;
+				}
 			}
-
-			const absoluteLatestCost = costs.sort((a, b) => b.validFrom.localeCompare(a.validFrom))[0];
-
-			activeExpenses.push({
-				id: expense.id,
-				name: expense.name,
-				paidBy: expense.paidBy as 'A' | 'B',
-				intervalMonths: expense.intervalMonths,
-				splitType: expense.splitType as 'dynamic' | 'static',
-				staticSplitRatio: expense.staticSplitRatio,
-				archivedDate: expense.archivedDate,
-				accountId: expense.accountId,
-				accountName: row.accountName,
-				amount: activeCost.amount,
-				latestAmount: absoluteLatestCost ? absoluteLatestCost.amount : activeCost.amount,
-				validFrom: activeCost.validFrom,
-				nextPaymentDate
-			});
 		}
+
+		if (onlyActive && !isActive) continue;
+
+		const currentAmount = activeCost ? activeCost.amount : (history[0]?.amount || 0);
+
+		// Calculate next payment date if active
+		let nextPaymentDate: string | null = null;
+		if (expense.intervalMonths > 0 && activeCost) {
+			const costParts = activeCost.validFrom.split('-');
+			const costY = parseInt(costParts[0], 10);
+			const costM = parseInt(costParts[1], 10);
+
+			const diff = (year - costY) * 12 + (month - costM);
+			if (diff >= 0) {
+				const remainder = diff % expense.intervalMonths;
+				const monthsToAdd = expense.intervalMonths - remainder;
+				const nextMonthTotal = month + (remainder === 0 ? 0 : monthsToAdd);
+				const nextY = year + Math.floor((nextMonthTotal - 1) / 12);
+				const nextM = ((nextMonthTotal - 1) % 12) + 1;
+				nextPaymentDate = `${nextY}-${String(nextM).padStart(2, '0')}-01`;
+			}
+		}
+
+		const absoluteLatestCost = history[history.length - 1];
+
+		mappedExpenses.push({
+			id: expense.id,
+			name: expense.name,
+			paidBy: expense.paidBy as 'A' | 'B',
+			accountId: expense.accountId,
+			accountName: row.accountName,
+			intervalMonths: expense.intervalMonths,
+			splitType: expense.splitType as 'dynamic' | 'static',
+			staticSplitRatio: expense.staticSplitRatio,
+			currentAmount: currentAmount,
+			amount: currentAmount, // Alias for compatibility with getActiveExpensesForMonth
+			latestAmount: absoluteLatestCost ? absoluteLatestCost.amount : currentAmount,
+			validFrom: activeCost ? activeCost.validFrom : history[0].validFrom,
+			nextPaymentDate,
+			archivedDate: expense.archivedDate,
+			history: history.map(h => ({
+				id: h.id,
+				amount: h.amount,
+				validFrom: h.validFrom
+			}))
+		});
 	}
 
-	return activeExpenses;
+	return mappedExpenses;
+}
+
+export async function getActiveExpensesForMonth(year: number, month: number) {
+	return getExpensesWithMappedHistory(year, month, true);
 }
 
 export async function addExpense(

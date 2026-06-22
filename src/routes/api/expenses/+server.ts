@@ -1,15 +1,16 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { expenses, expenseAmounts, accounts } from '$lib/server/db/schema';
+import { expenses } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
 import {
 	getMonthlyIncomes,
 	addExpense,
 	updateExpenseAmount,
 	archiveExpense,
-	getAccounts
+	getAccounts,
+	getExpensesWithMappedHistory
 } from '$lib/server/db/queries';
-import { eq } from 'drizzle-orm';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const now = new Date();
@@ -23,64 +24,23 @@ export const GET: RequestHandler = async ({ url }) => {
 	// Load all accounts
 	const allAccounts = await getAccounts();
 
-	// Load all expenses (both active and archived, so the frontend can display history / manage archived ones)
-	const dbExpenses = await db.select().from(expenses).all();
-
-	const mappedExpenses = [];
-
-	for (const expense of dbExpenses) {
-		const history = await db
-			.select({
-				amount: expenseAmounts.amount,
-				valid_from: expenseAmounts.validFrom
-			})
-			.from(expenseAmounts)
-			.where(eq(expenseAmounts.expenseId, expense.id))
-			.orderBy(expenseAmounts.validFrom)
-			.all();
-
-		// Current amount is the cost active in the target year/month (latest valid_from <= targetLastDay)
-		const targetLastDay = `${year}-${String(month).padStart(2, '0')}-31`;
-		const activeCost = [...history]
-			.filter(c => c.valid_from <= targetLastDay)
-			.sort((a, b) => b.valid_from.localeCompare(a.valid_from))[0];
-
-		const currentAmount = activeCost ? activeCost.amount : (history[0]?.amount || 0);
-
-		// Calculate next payment date
-		let nextPaymentDate: string | null = null;
-		if (expense.intervalMonths > 0 && activeCost) {
-			const costParts = activeCost.valid_from.split('-');
-			const costY = parseInt(costParts[0], 10);
-			const costM = parseInt(costParts[1], 10);
-			
-			// Month diff relative to target month
-			const diff = (year - costY) * 12 + (month - costM);
-			if (diff >= 0) {
-				// Next payment is target month or next interval month
-				const remainder = diff % expense.intervalMonths;
-				const monthsToAdd = expense.intervalMonths - remainder;
-				const nextMonthTotal = month + (remainder === 0 ? 0 : monthsToAdd);
-				const nextY = year + Math.floor((nextMonthTotal - 1) / 12);
-				const nextM = ((nextMonthTotal - 1) % 12) + 1;
-				nextPaymentDate = `${nextY}-${String(nextM).padStart(2, '0')}-01`;
-			}
-		}
-
-		mappedExpenses.push({
-			id: expense.id,
-			name: expense.name,
-			paid_by: expense.paidBy,
-			account_id: expense.accountId,
-			interval_months: expense.intervalMonths,
-			split_type: expense.splitType,
-			static_split_ratio: expense.staticSplitRatio,
-			current_amount: currentAmount,
-			next_payment_date: nextPaymentDate,
-			archived_date: expense.archivedDate,
-			history: history
-		});
-	}
+	// Load and map all expenses (both active and archived)
+	const mappedExpenses = (await getExpensesWithMappedHistory(year, month, false)).map(e => ({
+		id: e.id,
+		name: e.name,
+		paid_by: e.paidBy,
+		account_id: e.accountId,
+		interval_months: e.intervalMonths,
+		split_type: e.splitType,
+		static_split_ratio: e.staticSplitRatio,
+		current_amount: e.currentAmount,
+		next_payment_date: e.nextPaymentDate,
+		archived_date: e.archivedDate,
+		history: e.history.map(h => ({
+			amount: h.amount,
+			valid_from: h.validFrom
+		}))
+	}));
 
 	return json({
 		dynamic_split_ratio_a: pctA,

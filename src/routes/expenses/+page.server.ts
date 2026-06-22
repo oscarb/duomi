@@ -1,8 +1,20 @@
 import type { PageServerLoad, Actions } from './$types';
-import { getMonthlyIncomes, getAccounts, addExpense, updateExpenseAmount, archiveExpense, unarchiveExpense, addAccount, deleteAccount as deleteAccountQuery, restoreAccount as restoreAccountQuery, deleteExpenseAmount, restoreExpenseAmount } from '$lib/server/db/queries';
+import {
+	getMonthlyIncomes,
+	getAccounts,
+	addExpense,
+	updateExpenseAmount,
+	archiveExpense,
+	unarchiveExpense,
+	addAccount,
+	deleteAccount as deleteAccountQuery,
+	restoreAccount as restoreAccountQuery,
+	deleteExpenseAmount,
+	restoreExpenseAmount,
+	getExpensesWithMappedHistory
+} from '$lib/server/db/queries';
 import { db } from '$lib/server/db';
-import { expenses, expenseAmounts, incomes } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { incomes } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async () => {
 	const now = new Date();
@@ -33,62 +45,7 @@ export const load: PageServerLoad = async () => {
 	}
 
 	const allAccounts = await getAccounts();
-	const dbExpenses = await db.select().from(expenses).all();
-
-	const mappedExpenses = [];
-	for (const expense of dbExpenses) {
-		const history = await db
-			.select({
-				id: expenseAmounts.id,
-				amount: expenseAmounts.amount,
-				validFrom: expenseAmounts.validFrom
-			})
-			.from(expenseAmounts)
-			.where(eq(expenseAmounts.expenseId, expense.id))
-			.orderBy(expenseAmounts.validFrom)
-			.all();
-
-		const targetLastDay = `${year}-${String(month).padStart(2, '0')}-31`;
-		const activeCost = [...history]
-			.filter(c => c.validFrom <= targetLastDay)
-			.sort((a, b) => b.validFrom.localeCompare(a.validFrom))[0];
-
-		const currentAmount = activeCost ? activeCost.amount : (history[0]?.amount || 0);
-
-		let nextPaymentDate: string | null = null;
-		if (expense.intervalMonths > 0 && activeCost) {
-			const costParts = activeCost.validFrom.split('-');
-			const costY = parseInt(costParts[0], 10);
-			const costM = parseInt(costParts[1], 10);
-			
-			const diff = (year - costY) * 12 + (month - costM);
-			if (diff >= 0) {
-				const remainder = diff % expense.intervalMonths;
-				const monthsToAdd = expense.intervalMonths - remainder;
-				const nextMonthTotal = month + (remainder === 0 ? 0 : monthsToAdd);
-				const nextY = year + Math.floor((nextMonthTotal - 1) / 12);
-				const nextM = ((nextMonthTotal - 1) % 12) + 1;
-				nextPaymentDate = `${nextY}-${String(nextM).padStart(2, '0')}-01`;
-			}
-		}
-
-		const latestAmount = history[history.length - 1]?.amount || 0;
-
-		mappedExpenses.push({
-			id: expense.id,
-			name: expense.name,
-			paidBy: expense.paidBy as 'A' | 'B',
-			accountId: expense.accountId,
-			intervalMonths: expense.intervalMonths,
-			splitType: expense.splitType as 'dynamic' | 'static',
-			staticSplitRatio: expense.staticSplitRatio,
-			currentAmount: currentAmount,
-			latestAmount: latestAmount,
-			nextPaymentDate: nextPaymentDate,
-			archivedDate: expense.archivedDate,
-			history: history
-		});
-	}
+	const mappedExpenses = await getExpensesWithMappedHistory(year, month, false);
 
 	return {
 		dynamicSplitRatioA: pctA,
