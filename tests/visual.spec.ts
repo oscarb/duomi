@@ -1,7 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('ExpenseFormCard Visual Regressions', () => {
-	test.beforeEach(async ({ context }) => {
+	test.beforeEach(async ({ context, page }) => {
+		// Freeze browser clock for deterministic visual testing
+		await page.clock.setFixedTime(new Date('2026-06-22T23:00:00Z'));
+
 		// Set the auth cookie so we bypass login redirect
 		await context.addCookies([
 			{

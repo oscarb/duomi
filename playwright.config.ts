@@ -35,6 +35,9 @@ export default defineConfig({
 
 		/* Collect trace when retrying a failed test. See https://playwright.dev/docs/trace-viewer */
 		trace: 'on-first-retry',
+
+		/* Set a consistent timezone for browser screenshots */
+		timezoneId: 'UTC',
 	},
 
 	/* Configure projects for Chromium only to keep tests lightweight and consistent. */
@@ -47,7 +50,7 @@ export default defineConfig({
 
 	/* Run your local dev server before starting the tests */
 	webServer: {
-		command: 'rm -f ./data/test.db && DATABASE_URL=./data/test.db drizzle-kit migrate && DATABASE_URL=./data/test.db SECRET_APP_PASSPHRASE=development_secret PUBLIC_PERSON_A_NAME=Alice PUBLIC_PERSON_B_NAME=Bob DEMO_MODE=true npm run dev -- --port 3002',
+		command: 'rm -f ./data/test.db && DATABASE_URL=./data/test.db drizzle-kit migrate && TZ=UTC TEST_SYSTEM_DATE=2026-06-22T23:00:00Z DATABASE_URL=./data/test.db SECRET_APP_PASSPHRASE=development_secret PUBLIC_PERSON_A_NAME=Alice PUBLIC_PERSON_B_NAME=Bob DEMO_MODE=true npm run dev -- --port 3002',
 		url: 'http://localhost:3002',
 		reuseExistingServer: false,
 		timeout: 15000,

@@ -1,3 +1,4 @@
+import './lib/server/date-mock';
 import { redirect, type Handle } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 
