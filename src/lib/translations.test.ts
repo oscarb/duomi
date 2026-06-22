@@ -39,8 +39,8 @@ describe('translate', () => {
 		expect(translate('en-US', 'addExpense')).toBe('Add expense');
 		expect(translate('sv-SE', 'addExpense')).toBe('Lägg till utgift');
 		
-		expect(translate('en-US', 'placeholderAccountName')).toBe('e.g. Main Bank, Revolut');
-		expect(translate('sv-SE', 'placeholderAccountName')).toBe('t.ex. Lönekonto, Revolut');
+		expect(translate('en-US', 'createExpense')).toBe('Create expense');
+		expect(translate('sv-SE', 'createExpense')).toBe('Skapa utgift');
 	});
 });
 

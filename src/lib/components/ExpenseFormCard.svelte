@@ -1234,7 +1234,7 @@
 					type="submit"
 					class="px-8 py-3 rounded-xl bg-[#ff7361] text-white text-xs font-bold hover:bg-[#ff7361]/90 shadow-sm transition-colors"
 				>
-					{t('createTemplate')}
+					{t('createExpense')}
 				</button>
 			</div>
 		</form>

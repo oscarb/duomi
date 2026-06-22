@@ -52,9 +52,9 @@ export const translations: Record<string, Record<string, string>> = {
 
 		// Expense Management & Form
 		addExpense: 'Add expense',
+		createExpense: 'Create expense',
 		editAccounts: 'Edit accounts',
 		accountName: 'Account name',
-		placeholderAccountName: 'e.g. Main Bank, Revolut',
 		account: 'Account',
 		frequency: 'Frequency',
 		monthly: 'Monthly',
@@ -142,9 +142,9 @@ export const translations: Record<string, Record<string, string>> = {
 
 		// Expense Management & Form
 		addExpense: 'Lägg till utgift',
+		createExpense: 'Skapa utgift',
 		editAccounts: 'Redigera konton',
 		accountName: 'Kontonamn',
-		placeholderAccountName: 't.ex. Lönekonto, Revolut',
 		account: 'Konto',
 		frequency: 'Frekvens',
 		monthly: 'Månad',
