@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   duomi:
-    build: .
+    image: ghcr.io/oscarb/duomi:latest
     container_name: duomi
     restart: unless-stopped
     ports:
@@ -15,3 +15,4 @@ services:
       - PUBLIC_PERSON_B_NAME=Partner B
       - LOCALE=en-US
       - CURRENCY=USD
+      # - SECRET_APP_PASSPHRASE=your_passphrase_here
