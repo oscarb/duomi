@@ -91,3 +91,9 @@ We use the **Scoped Commits** specification (https://scopedcommits.com/). All co
     npm run release
     ```
     This script is local and zero-dependency, analyzing commits since the last tag and updating `package.json` and `CHANGELOG.md` automatically based on Scoped Commits heuristics. Do not edit `package.json` version strings manually.
+
+---
+
+## 7. Keeping Documentation (README.md) Updated
+- **Sync Config Changes**: Any time new environment variables, setup options, or database configuration defaults are added or modified, the developer/agent **must** update the corresponding table in the `## Configuration` section of `README.md` and adjust the setup instructions in both the Docker and Node.js sections.
+- **Visual Snapshot Cleanliness**: If the UI undergoes major layout changes, update the dashboard screenshot at `static/screenshot.png`. Ensure screenshots are captured in English (`LOCALE=en-US`) and Euros (`CURRENCY=EUR`), utilizing generic names (`Alice` and `Bob`) to prevent private names from being captured in version-controlled visual snapshots. Crop the final screenshot (e.g., via `sips --cropToHeightWidth`) to remove any blue automation borders or browser frames.
