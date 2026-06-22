@@ -119,8 +119,6 @@ npm run build
 npm run preview
 ```
 
----
-
 ## Configuration
 
 Duomi can be configured using environment variables. These can be defined in your `.env` file (for local Node.js setups) or directly inside the `environment` section of `docker-compose.yml` (for Docker setups).
@@ -134,14 +132,6 @@ Duomi can be configured using environment variables. These can be defined in you
 | `LOCALE`                | UI language and locale formatting (e.g., `en-US`, `sv-SE`).                  | `en-US`           |
 | `CURRENCY`              | Currency format code or symbol (e.g., `USD`, `SEK`).                         | `USD`             |
 | `SECRET_APP_PASSPHRASE` | Set a passphrase to restrict access. Leave empty to disable authentication.  | (None)            |
-
----
-
-## UX Details & Guidelines
-
-- **Aesthetics**: Custom-curated HSL palettes (`#ff7361` for Person A / Coral, `#4fd1c5` for Person B / Teal) paired with a clean off-white background (`#fbf9f5`).
-- **Autosave**: Modifying slider splits, frequency intervals, text fields, or bank accounts automatically submits changes without requiring a generic "Save Changes" button.
-- **Fallbacks**: When checking a month with empty/unconfigured incomes, Duomi locates the last known month with non-zero incomes and shows them as semi-opaque placeholders to guide the user.
 
 ---
 
