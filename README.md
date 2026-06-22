@@ -1,5 +1,11 @@
 # Duomi 💸
 
+[![Live Demo](https://img.shields.io/badge/Demo-Live-success?style=for-the-badge&logo=render)](https://duomi.onrender.com)
+[![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://svelte.dev)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
+
 **Duomi** is an expense tracker designed to fulfill two goals:
 
 - 🔮 **Predictable economy**: verify which expenses needs to be paid, what months are more expensive and how expenses change over time
@@ -8,6 +14,12 @@
 Made specifically and enhanced for household setups of two persons contributing to shared costs, Duomi is a self-hostable app meant to run on your own server to keep your economy private. Use it in a browser (e.g. on a tablet) or as a PWA on mobile devices. Supports English and Swedish.
 
 Designed with [Stitch](https://www.stitch.app/en/learn-stitch/ai-design-tools) and built with [Antigravity](https://antigravity.com/), the app features a modern, responsive user experience built on top of **SvelteKit**, **Tailwind CSS**, and **SQLite (Drizzle ORM)**.
+
+### 🌐 Live Demo
+
+You can try out Duomi at **[duomi.onrender.com](https://duomi.onrender.com)**.
+*   **Passphrase**: `show me the money` (the demo has passphrase protection enabled)
+*   **Demo Mode**: The live demo is seeded with several months of sample shared expenses and income history for testing.
 
 ![Duomi Dashboard](static/screenshot.png)
 
@@ -132,6 +144,7 @@ Duomi can be configured using environment variables. These can be defined in you
 | `LOCALE`                | UI language and locale formatting (e.g., `en-US`, `sv-SE`).                  | `en-US`           |
 | `CURRENCY`              | Currency format code or symbol (e.g., `USD`, `SEK`).                         | `USD`             |
 | `SECRET_APP_PASSPHRASE` | Set a passphrase to restrict access. Leave empty to disable authentication.  | (None)            |
+| `ORIGIN`                | The external origin of the application. Required when running behind a reverse proxy (e.g., on a NAS) to prevent SvelteKit's CSRF protection from blocking form submissions. | (None) / `https://duomi.yourdomain.com` |
 
 ---
 

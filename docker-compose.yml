@@ -16,3 +16,4 @@ services:
       - LOCALE=en-US
       - CURRENCY=USD
       # - SECRET_APP_PASSPHRASE=your_passphrase_here
+      # - ORIGIN=https://duomi.yourdomain.com # Required when running behind a reverse proxy (e.g. on NAS) to prevent CSRF blocks
