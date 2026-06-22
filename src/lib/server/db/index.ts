@@ -1,5 +1,6 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import * as schema from './schema';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,6 +15,16 @@ if (!fs.existsSync(dir)) {
 
 export const sqlite = new Database(databaseUrl);
 export const db = drizzle(sqlite, { schema });
+
+// Automatically run migrations on startup if migrations directory exists
+const migrationsFolder = './src/lib/server/db/migrations';
+if (fs.existsSync(migrationsFolder)) {
+	try {
+		migrate(db, { migrationsFolder });
+	} catch (e) {
+		console.error('Failed to run database migrations:', e);
+	}
+}
 
 // Seed default accounts and income if tables exist and are empty and DEMO_MODE is true
 try {
