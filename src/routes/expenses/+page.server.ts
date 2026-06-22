@@ -14,7 +14,8 @@ import {
 	getExpensesWithMappedHistory
 } from '$lib/server/db/queries';
 import { db } from '$lib/server/db';
-import { incomes } from '$lib/server/db/schema';
+import { incomes, expenses } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
 
 export const load: PageServerLoad = async () => {
 	const now = new Date();
