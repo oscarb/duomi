@@ -1,25 +1,27 @@
 # Duomi 💸
 
-Duomi is a sleek, premium, and feature-rich shared expense tracker designed for couples and cohabitants. It calculates fair, income-proportionate splitting of shared household bills while supporting static ratios, multi-month timelines, and interactive price histories.
+**Duomi** is an expense tracker designed to fulfill two goals:
 
-The application features a modern, responsive user experience inspired by premium aesthetics (vibrant color accents, smooth transitions, custom scrollbars, and tactile inputs) built on top of **SvelteKit**, **Tailwind CSS**, and **SQLite (Drizzle ORM)**.
+- 🔮 **Predictable economy**: verify which expenses needs to be paid, what months are more expensive and how expenses change over time
+- ⚖️ **Fair splitting**: expenses can be split based on income or by a custom ratio and then each month how much to settle is automatically calculated
 
----
+Made specifically and enhanced for household setups of two persons contributing to shared costs, Duomi is a self-hostable app meant to run on your own server to keep your economy private. Use it in a browser (e.g. on a tablet) or as a PWA on mobile devices. Supports English and Swedish.
 
-## Key Features
+Designed with [Stitch](https://www.stitch.app/en/learn-stitch/ai-design-tools) and built with [Antigravity](https://antigravity.com/), the app features a modern, responsive user experience built on top of **SvelteKit**, **Tailwind CSS**, and **SQLite (Drizzle ORM)**.
 
-- 🔄 **Dynamic Split Ratio**: Dynamically calculates splitting percentages based on each person's monthly income.
-- 🎯 **Static Overrides**: Custom discrete split slider (snaps to common ratios like 50/50, 60/40, or 1/3) for bills that aren't split by income.
-- 📆 **Flexible Frequency**: Support for one-time, monthly, quarterly, and yearly expenses with reactively calculated next payment dates.
-- 📈 **Price History & Archiving**: Tracks historical costs for every expense. Old prices are kept intact in the history when updating amounts. Templates can be archived rather than hard deleted.
-- 🚪 **Sliding Fixed Sidebar**: Templates open in a sliding sidebar panel that covers the screen on mobile and slides smoothly from the right on desktop, with clicking outside triggering automatic saves.
-- ⚡ **Tactile Inline Editing**: Change incomes and costs inline instantly on the dashboard. Edits auto-save when pressing **Enter** or on blur.
+![Duomi Dashboard](static/screenshot.png)
+
+## Key features
+
+- 🔄 **Split expenses by income**: Dynamically calculates splitting percentages based on each person's monthly income.
+- 🎯 **Custom splitting ratios**: Set expenses to be split 50/50 (or other ratios) for bills that should not be split based on income.
+- 📆 **Flexible frequency**: Expenses will only show for relevant months, based on if they're set up as one-time, monthly, quarterly, or yearly.
+- 📈 **Price history**: One click in dashboard to update an expense amount. Old amounts are saved to the expense's price history and can be tracked in a diagram.
+- ⚡ **Tactile inline editing**: Change incomes and costs inline instantly on the dashboard. Edits auto-save when pressing **Enter** or clicking outside.
 - 🇸🇪 **Swedish & English Localization**: Built-in translation engine supporting local currency formatting (`kr`) and language switching.
-- 🤖 **Demo Mode**: When `DEMO_MODE=true` is set, the SQLite database is automatically seeded with several months of sample shared expenses and income history on startup.
+- 🤖 **Demo Mode**: Start the app with `DEMO_MODE=true` to seed the SQLite database with several months of sample shared expenses and income history.
 
----
-
-## Technology Stack
+## Tech stack
 
 - **Framework**: [SvelteKit](https://kit.svelte.dev/) (with Svelte 5 runes)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
@@ -27,73 +29,66 @@ The application features a modern, responsive user experience inspired by premiu
 - **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
 - **Icons & Fonts**: Google Fonts (Inter & Open Sans), Google Material Symbols
 
----
+## Getting started
 
-## Database Architecture
+### Docker
 
-Duomi uses a lightweight SQLite database structure managed through Drizzle:
+To run Duomi using **Docker Compose** with the prebuilt image published on GitHub Container Registry (GHCR):
 
-```mermaid
-erDiagram
-    INCOMES {
-        int year PK
-        int month PK
-        int total_income_a
-        int total_income_b
-    }
-    ACCOUNTS {
-        int id PK
-        text name
-        text owner
-    }
-    EXPENSES {
-        int id PK
-        text name
-        text paid_by
-        int interval_months
-        text split_type
-        real static_split_ratio
-        text archived_date
-        int account_id FK
-    }
-    EXPENSE_COSTS {
-        int id PK
-        int expense_id FK
-        int amount
-        text valid_from
-    }
-    EXPENSES ||--o| ACCOUNTS : "paid from"
-    EXPENSE_COSTS ||--|| EXPENSES : "tracks cost for"
-```
+1. **Configure `docker-compose.yml`**:
+   Use the provided [docker-compose.yml](docker-compose.yml) file. You can customize the application's configuration by modifying its `environment` section as per the [configuration](#configuration) options below.
 
----
+2. **Start the application**:
 
-## Getting Started
+   ```sh
+   docker compose up -d
+   ```
 
-### Prerequisites
+3. **Access the application**:
+   Open [http://localhost:3001](http://localhost:3001) in your browser.
+
+4. **Stop the application**:
+   ```sh
+   docker compose down
+   ```
+
+### Node.js
+
+To run Duomi locally with **Node.js** (recommended for development):
+
+#### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18 or higher recommended)
 - `npm` or `pnpm`
 
-### Installation
+#### Installation & setup
 
-1. Clone the repository and navigate to the directory:
+1. **Clone the repository**:
+
    ```sh
-   git clone <repository-url>
+   git clone https://github.com/oscarb/duomi.git
    cd duomi
    ```
 
-2. Install the dependencies:
+2. **Install dependencies**:
+
    ```sh
    npm install
    ```
 
-3. (Optional) Run database migrations/synchronization:
+3. **Configure environment variables**:
+   Copy `.env.example` to `.env` and adjust the variables to your setup (see the [Configuration](#configuration) section for details):
+
+   ```sh
+   cp .env.example .env
+   ```
+
+4. **Synchronize SvelteKit files**:
    ```sh
    npm run prepare
    ```
 
-### Running Locally
+#### Running locally
 
 To start the development server:
 
@@ -107,7 +102,7 @@ DEMO_MODE=true npm run dev
 
 Open [http://localhost:3001](http://localhost:3001) in your browser to view the application.
 
-### Running Tests
+#### Running tests
 
 To run the unit tests with Vitest:
 
@@ -115,14 +110,30 @@ To run the unit tests with Vitest:
 npm test
 ```
 
-### Building for Production
+#### Building for production
 
-To compile the application:
+To compile and preview the production bundle locally:
 
 ```sh
 npm run build
 npm run preview
 ```
+
+---
+
+## Configuration
+
+Duomi can be configured using environment variables. These can be defined in your `.env` file (for local Node.js setups) or directly inside the `environment` section of `docker-compose.yml` (for Docker setups).
+
+| Variable                | Description                                                                  | Default / Example |
+| ----------------------- | ---------------------------------------------------------------------------- | ----------------- |
+| `DATABASE_URL`          | File path to the SQLite database file.                                       | `./data/duomi.db` |
+| `DEMO_MODE`             | If `true` and the database is empty, seeds mock incomes/expenses on startup. | `false`           |
+| `PUBLIC_PERSON_A_NAME`  | Display name for Person A.                                                   | `Partner A`       |
+| `PUBLIC_PERSON_B_NAME`  | Display name for Person B.                                                   | `Partner B`       |
+| `LOCALE`                | UI language and locale formatting (e.g., `en-US`, `sv-SE`).                  | `en-US`           |
+| `CURRENCY`              | Currency format code or symbol (e.g., `USD`, `SEK`).                         | `USD`             |
+| `SECRET_APP_PASSPHRASE` | Set a passphrase to restrict access. Leave empty to disable authentication.  | (None)            |
 
 ---
 
@@ -134,4 +145,4 @@ npm run preview
 
 ---
 
-*Made with 💖 for smooth shared living.*
+_Made with 💖 for smooth shared living._
