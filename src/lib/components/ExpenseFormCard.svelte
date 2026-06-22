@@ -1065,7 +1065,7 @@
 			<!-- Source Account -->
 			<div>
 				<div class="flex items-center justify-between mb-3 border-b border-[#efeeea] pb-2">
-					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest">{t('source')}</p>
+					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest">{t('account')}</p>
 					{#if accounts.filter(acc => acc.owner === editPaidBy).length > 0}
 						<button
 							type="button"
@@ -1553,7 +1553,7 @@
 			<!-- Source Account -->
 			<div>
 				<div class="flex items-center justify-between mb-3 border-b border-[#efeeea] pb-2">
-					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest">{t('source')}</p>
+					<p class="text-xs font-black text-[#9ca3af] uppercase tracking-widest">{t('account')}</p>
 					{#if accounts.filter(acc => acc.owner === editPaidBy).length > 0}
 						<button
 							type="button"
