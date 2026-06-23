@@ -4,7 +4,7 @@ import { db } from '$lib/server/db';
 import { expenses } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import {
-	getMonthlyIncomes,
+	getResolvedMonthlyIncomes,
 	addExpense,
 	updateExpenseAmount,
 	archiveExpense,
@@ -17,9 +17,11 @@ export const GET: RequestHandler = async ({ url }) => {
 	const year = parseInt(url.searchParams.get('year') || now.getFullYear().toString(), 10);
 	const month = parseInt(url.searchParams.get('month') || (now.getMonth() + 1).toString(), 10);
 
-	const income = await getMonthlyIncomes(year, month);
-	const totalIncome = income.totalIncomeA + income.totalIncomeB;
-	const pctA = totalIncome > 0 ? Math.round((income.totalIncomeA / totalIncome) * 100) / 100 : 0.5;
+	const resolvedIncome = await getResolvedMonthlyIncomes(year, month);
+	const incomeA = resolvedIncome.totalIncomeA;
+	const incomeB = resolvedIncome.totalIncomeB;
+	const totalIncome = incomeA + incomeB;
+	const pctA = totalIncome > 0 ? Math.round((incomeA / totalIncome) * 100) / 100 : 0.5;
 
 	// Load all accounts
 	const allAccounts = await getAccounts();

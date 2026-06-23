@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getMonthlyIncomes, getActiveExpensesForMonth, setMonthlyIncome } from '$lib/server/db/queries';
+import { getResolvedMonthlyIncomes, getActiveExpensesForMonth, setMonthlyIncome } from '$lib/server/db/queries';
 import { calculateSettlement } from '$lib/calculations';
 
 export const GET: RequestHandler = async ({ url }) => {
@@ -8,7 +8,9 @@ export const GET: RequestHandler = async ({ url }) => {
 	const year = parseInt(url.searchParams.get('year') || now.getFullYear().toString(), 10);
 	const month = parseInt(url.searchParams.get('month') || (now.getMonth() + 1).toString(), 10);
 
-	const income = await getMonthlyIncomes(year, month);
+	const resolvedIncome = await getResolvedMonthlyIncomes(year, month);
+	const incomeA = resolvedIncome.totalIncomeA;
+	const incomeB = resolvedIncome.totalIncomeB;
 	const activeExpenses = await getActiveExpensesForMonth(year, month);
 
 	// Map activeExpenses to calculations structure
@@ -21,11 +23,11 @@ export const GET: RequestHandler = async ({ url }) => {
 		amount: e.amount
 	}));
 
-	const settlement = calculateSettlement(income.totalIncomeA, income.totalIncomeB, mappedExpenses);
+	const settlement = calculateSettlement(incomeA, incomeB, mappedExpenses);
 
-	const totalIncome = income.totalIncomeA + income.totalIncomeB;
-	const pctA = totalIncome > 0 ? Math.round((income.totalIncomeA / totalIncome) * 100) / 100 : 0.5;
-	const pctB = totalIncome > 0 ? Math.round((income.totalIncomeB / totalIncome) * 100) / 100 : 0.5;
+	const totalIncome = incomeA + incomeB;
+	const pctA = totalIncome > 0 ? Math.round((incomeA / totalIncome) * 100) / 100 : 0.5;
+	const pctB = totalIncome > 0 ? Math.round((incomeB / totalIncome) * 100) / 100 : 0.5;
 
 	const totalExpensesAmount = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
 
@@ -37,8 +39,8 @@ export const GET: RequestHandler = async ({ url }) => {
 		},
 		income: {
 			total: totalIncome,
-			person_a: { amount: income.totalIncomeA, percentage: pctA },
-			person_b: { amount: income.totalIncomeB, percentage: pctB }
+			person_a: { amount: incomeA, percentage: pctA, isFallback: resolvedIncome.isFallbackA },
+			person_b: { amount: incomeB, percentage: pctB, isFallback: resolvedIncome.isFallbackB }
 		},
 		expenses: {
 			total: totalExpensesAmount,
@@ -62,8 +64,8 @@ export const POST: RequestHandler = async ({ request }) => {
 	if (
 		typeof year !== 'number' ||
 		typeof month !== 'number' ||
-		typeof incomeA !== 'number' ||
-		typeof incomeB !== 'number'
+		(incomeA !== null && typeof incomeA !== 'number') ||
+		(incomeB !== null && typeof incomeB !== 'number')
 	) {
 		return json({ error: 'Invalid parameters' }, { status: 400 });
 	}

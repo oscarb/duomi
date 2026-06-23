@@ -162,7 +162,7 @@
 	let currentIncomeANum = $derived.by(() => {
 		const val = incomeAVal.replace(/\D/g, '');
 		if (val === '') {
-			return data.income.isFallback ? data.income.person_a : 0;
+			return data.income.isFallbackA ? data.income.person_a : 0;
 		}
 		return parseFloat(val) || 0;
 	});
@@ -170,7 +170,7 @@
 	let currentIncomeBNum = $derived.by(() => {
 		const val = incomeBVal.replace(/\D/g, '');
 		if (val === '') {
-			return data.income.isFallback ? data.income.person_b : 0;
+			return data.income.isFallbackB ? data.income.person_b : 0;
 		}
 		return parseFloat(val) || 0;
 	});
@@ -189,8 +189,8 @@
 		const periodKey = `${data.period.year}-${data.period.month}`;
 		if (currentPeriodKey !== periodKey) {
 			currentPeriodKey = periodKey;
-			incomeAVal = data.income.isFallback || data.income.person_a === 0 ? '' : formatIncome(data.income.person_a.toString());
-			incomeBVal = data.income.isFallback || data.income.person_b === 0 ? '' : formatIncome(data.income.person_b.toString());
+			incomeAVal = data.income.isFallbackA ? '' : formatIncome(data.income.person_a.toString());
+			incomeBVal = data.income.isFallbackB ? '' : formatIncome(data.income.person_b.toString());
 		}
 	});
 
@@ -304,11 +304,11 @@
 	async function saveIncomes() {
 		const valA = incomeAVal.replace(/\D/g, '');
 		const valB = incomeBVal.replace(/\D/g, '');
-		if (valA === '' && valB === '' && data.income.isFallback) {
+		if (valA === '' && valB === '' && data.income.isFallbackA && data.income.isFallbackB) {
 			return;
 		}
-		const incomeA = Math.round(parseFloat(valA) || 0);
-		const incomeB = Math.round(parseFloat(valB) || 0);
+		const incomeA = valA === '' ? null : Math.round(parseFloat(valA) || 0);
+		const incomeB = valB === '' ? null : Math.round(parseFloat(valB) || 0);
 		try {
 			const response = await fetch('/api/overview', {
 				method: 'POST',

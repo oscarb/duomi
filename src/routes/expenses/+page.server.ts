@@ -1,6 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import {
-	getMonthlyIncomes,
+	getResolvedMonthlyIncomes,
 	getAccounts,
 	addExpense,
 	updateExpenseAmount,
@@ -22,28 +22,11 @@ export const load: PageServerLoad = async () => {
 	const year = now.getFullYear();
 	const month = now.getMonth() + 1;
 
-	const income = await getMonthlyIncomes(year, month);
-	const totalIncome = income.totalIncomeA + income.totalIncomeB;
-	let pctA = totalIncome > 0 ? Math.round((income.totalIncomeA / totalIncome) * 100) / 100 : 0.5;
-
-	if (totalIncome === 0) {
-		const allIncomes = await db.select().from(incomes).all();
-		let sortedWithIncomes = allIncomes
-			.filter(inc => inc.totalIncomeA + inc.totalIncomeB > 0 && (inc.year < year || (inc.year === year && inc.month <= month)))
-			.sort((a, b) => b.year - a.year || b.month - a.month);
-		
-		if (sortedWithIncomes.length === 0) {
-			sortedWithIncomes = allIncomes
-				.filter(inc => inc.totalIncomeA + inc.totalIncomeB > 0)
-				.sort((a, b) => b.year - a.year || b.month - a.month);
-		}
-
-		if (sortedWithIncomes.length > 0) {
-			const latest = sortedWithIncomes[0];
-			const latestTotal = latest.totalIncomeA + latest.totalIncomeB;
-			pctA = Math.round((latest.totalIncomeA / latestTotal) * 100) / 100;
-		}
-	}
+	const resolvedIncome = await getResolvedMonthlyIncomes(year, month);
+	const incomeA = resolvedIncome.totalIncomeA;
+	const incomeB = resolvedIncome.totalIncomeB;
+	const totalIncome = incomeA + incomeB;
+	const pctA = totalIncome > 0 ? Math.round((incomeA / totalIncome) * 100) / 100 : 0.5;
 
 	const allAccounts = await getAccounts();
 	const mappedExpenses = await getExpensesWithMappedHistory(year, month, false);

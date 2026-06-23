@@ -19,13 +19,72 @@ export async function getMonthlyIncomes(year: number, month: number) {
 		.get();
 
 	if (!result) {
-		return { year, month, totalIncomeA: 0, totalIncomeB: 0 };
+		return { year, month, totalIncomeA: null, totalIncomeB: null };
 	}
 
 	return result;
 }
 
-export async function setMonthlyIncome(year: number, month: number, incomeA: number, incomeB: number) {
+export async function getLastKnownIncome(person: 'A' | 'B', targetYear: number, targetMonth: number): Promise<number | null> {
+	const allIncomes = await db
+		.select()
+		.from(incomes)
+		.all();
+
+	const validIncomes = allIncomes
+		.filter(inc => {
+			const isBefore = inc.year < targetYear || (inc.year === targetYear && inc.month < targetMonth);
+			const val = person === 'A' ? inc.totalIncomeA : inc.totalIncomeB;
+			return isBefore && val !== null && val > 0;
+		})
+		.sort((a, b) => b.year - a.year || b.month - a.month);
+
+	if (validIncomes.length > 0) {
+		return person === 'A' ? validIncomes[0].totalIncomeA : validIncomes[0].totalIncomeB;
+	}
+
+	return null;
+}
+
+export async function getResolvedMonthlyIncomes(year: number, month: number) {
+	const income = await getMonthlyIncomes(year, month);
+	let incomeA = income.totalIncomeA;
+	let incomeB = income.totalIncomeB;
+	let isFallbackA = false;
+	let isFallbackB = false;
+
+	if (incomeA === null) {
+		const fallbackA = await getLastKnownIncome('A', year, month);
+		if (fallbackA !== null) {
+			incomeA = fallbackA;
+			isFallbackA = true;
+		} else {
+			incomeA = 0;
+		}
+	}
+
+	if (incomeB === null) {
+		const fallbackB = await getLastKnownIncome('B', year, month);
+		if (fallbackB !== null) {
+			incomeB = fallbackB;
+			isFallbackB = true;
+		} else {
+			incomeB = 0;
+		}
+	}
+
+	return {
+		year,
+		month,
+		totalIncomeA: incomeA,
+		totalIncomeB: incomeB,
+		isFallbackA,
+		isFallbackB,
+		isFallback: isFallbackA && isFallbackB
+	};
+}
+
+export async function setMonthlyIncome(year: number, month: number, incomeA: number | null, incomeB: number | null) {
 	// Insert or update on conflict (year, month)
 	await db
 		.insert(incomes)

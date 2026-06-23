@@ -54,10 +54,28 @@ describe('Database Queries', () => {
 		expect(result.totalIncomeB).toBe(3000);
 	});
 
-	it('should return zeros for monthly incomes if not set', async () => {
+	it('should return nulls for monthly incomes if not set', async () => {
 		const result = await getMonthlyIncomes(2026, 8);
-		expect(result.totalIncomeA).toBe(0);
-		expect(result.totalIncomeB).toBe(0);
+		expect(result.totalIncomeA).toBeNull();
+		expect(result.totalIncomeB).toBeNull();
+	});
+
+	it('should resolve fallback incomes per person independently', async () => {
+		await setMonthlyIncome(2026, 8, 4000, 3000);
+		await setMonthlyIncome(2026, 9, 5000, null);
+
+		const { getResolvedMonthlyIncomes } = await import('./queries');
+		const resSept = await getResolvedMonthlyIncomes(2026, 9);
+		expect(resSept.totalIncomeA).toBe(5000);
+		expect(resSept.isFallbackA).toBe(false);
+		expect(resSept.totalIncomeB).toBe(3000);
+		expect(resSept.isFallbackB).toBe(true);
+
+		const resOct = await getResolvedMonthlyIncomes(2026, 10);
+		expect(resOct.totalIncomeA).toBe(5000);
+		expect(resOct.isFallbackA).toBe(true);
+		expect(resOct.totalIncomeB).toBe(3000);
+		expect(resOct.isFallbackB).toBe(true);
 	});
 
 	it('should add and retrieve accounts', async () => {

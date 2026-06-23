@@ -1,6 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import {
-	getMonthlyIncomes,
+	getResolvedMonthlyIncomes,
 	getActiveExpensesForMonth,
 	getAccounts,
 	archiveExpense,
@@ -18,7 +18,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const year = parseInt(url.searchParams.get('year') || now.getFullYear().toString(), 10);
 	const month = parseInt(url.searchParams.get('month') || (now.getMonth() + 1).toString(), 10);
 
-	const income = await getMonthlyIncomes(year, month);
+	const resolvedIncome = await getResolvedMonthlyIncomes(year, month);
 	const activeExpenses = await getActiveExpensesForMonth(year, month);
 
 	const mappedExpenses = activeExpenses.map(e => ({
@@ -31,27 +31,11 @@ export const load: PageServerLoad = async ({ url }) => {
 		latestAmount: e.latestAmount
 	}));
 
-	let incomeA = income.totalIncomeA;
-	let incomeB = income.totalIncomeB;
-	let isFallback = false;
-
-	if (incomeA === 0 && incomeB === 0) {
-		const allIncomes = await db.select().from(incomes).all();
-		const validIncomes = allIncomes.filter(inc => inc.totalIncomeA + inc.totalIncomeB > 0);
-		const pastIncomes = validIncomes.filter(inc => inc.year < year || (inc.year === year && inc.month < month));
-		pastIncomes.sort((a, b) => b.year - a.year || b.month - a.month);
-
-		let fallbackIncome = null;
-		if (pastIncomes.length > 0) {
-			fallbackIncome = pastIncomes[0];
-		}
-
-		if (fallbackIncome) {
-			incomeA = fallbackIncome.totalIncomeA;
-			incomeB = fallbackIncome.totalIncomeB;
-			isFallback = true;
-		}
-	}
+	const incomeA = resolvedIncome.totalIncomeA;
+	const incomeB = resolvedIncome.totalIncomeB;
+	const isFallbackA = resolvedIncome.isFallbackA;
+	const isFallbackB = resolvedIncome.isFallbackB;
+	const isFallback = resolvedIncome.isFallback;
 
 	const settlement = calculateSettlement(incomeA, incomeB, mappedExpenses);
 
@@ -102,6 +86,8 @@ export const load: PageServerLoad = async ({ url }) => {
 			person_a_pct: pctA,
 			person_b: incomeB,
 			person_b_pct: pctB,
+			isFallbackA,
+			isFallbackB,
 			isFallback
 		},
 		expenses: {

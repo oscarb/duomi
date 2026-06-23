@@ -3,8 +3,8 @@ import { sqliteTable, integer, text, real, primaryKey } from 'drizzle-orm/sqlite
 export const incomes = sqliteTable('incomes', {
 	year: integer('year').notNull(),
 	month: integer('month').notNull(),
-	totalIncomeA: integer('total_income_a').notNull().default(0),
-	totalIncomeB: integer('total_income_b').notNull().default(0)
+	totalIncomeA: integer('total_income_a'),
+	totalIncomeB: integer('total_income_b')
 }, (table) => ({
 	pk: primaryKey({ columns: [table.year, table.month] })
 }));
