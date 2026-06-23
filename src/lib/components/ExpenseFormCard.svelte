@@ -65,6 +65,29 @@
 	let editAmountVal = $state('');
 	let editAmountDate = $state('');
 
+	let selectedDateYear = $derived(parseInt(editAmountDate.split('-')[0], 10) || currentYear);
+	let selectedDateMonth = $derived(parseInt(editAmountDate.split('-')[1], 10) || currentMonth);
+
+	let activeDynamicSplitRatioA = $state(0.5);
+
+	// Fetch dynamic split ratio when chosen year/month changes in the date picker
+	$effect(() => {
+		const yr = selectedDateYear;
+		const mo = selectedDateMonth;
+		if (yr && mo) {
+			fetch(`/api/expenses?year=${yr}&month=${mo}`)
+				.then(res => res.json())
+				.then(data => {
+					if (data && typeof data.dynamic_split_ratio_a === 'number') {
+						activeDynamicSplitRatioA = data.dynamic_split_ratio_a;
+					}
+				})
+				.catch(err => {
+					console.error('Failed to fetch dynamic split ratio for date:', err);
+				});
+		}
+	});
+
 	// Amount edit toggler for existing templates
 	let isAmountEdit = $state(false);
 	let amountInputEl = $state<HTMLInputElement | null>(null);
@@ -129,6 +152,7 @@
 				editAmountVal = '';
 				editAmountDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
 			}
+			activeDynamicSplitRatioA = dynamicSplitRatioA;
 		}
 	});
 
@@ -765,11 +789,11 @@
 		}, 20);
 	}
 
-	// Derive 13 consecutive months starting from the current dashboard view month
+	// Derive 13 consecutive months starting from the selected date picker month
 	let calendarMonths = $derived.by(() => {
 		const months = [];
-		let y = currentYear;
-		let m = currentMonth;
+		let y = selectedDateYear;
+		let m = selectedDateMonth;
 		for (let i = 0; i < 13; i++) {
 			months.push({ year: y, month: m });
 			m++;
@@ -1021,22 +1045,22 @@
 						{@const parsedAmt = parseFloat(editAmountVal.replace(/\D/g, '')) || 0}
 						<div class="space-y-1 pt-0.5">
 							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
-								<span>{namePersonA} <span class="text-[#4a7bb0] ml-0.5">{Math.round(dynamicSplitRatioA * 100)}%</span></span>
-								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - dynamicSplitRatioA) * 100)}%</span></span>
+								<span>{namePersonA} <span class="text-[#4a7bb0] ml-0.5">{Math.round(activeDynamicSplitRatioA * 100)}%</span></span>
+								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - activeDynamicSplitRatioA) * 100)}%</span></span>
 							</div>
 							<!-- Styled share bar gradient without handle for dynamic split type -->
 							<div class="h-6 flex items-center">
-								{#if dynamicSplitRatioA === 0}
+								{#if activeDynamicSplitRatioA === 0}
 									<div class="w-full h-3 rounded-full" style="background: linear-gradient(to right, #76e8df, #4fd1c5)"></div>
-								{:else if dynamicSplitRatioA === 1}
+								{:else if activeDynamicSplitRatioA === 1}
 									<div class="w-full h-3 rounded-full" style="background: linear-gradient(to right, #4a7bb0, #6192c7)"></div>
 								{:else}
-									<div class="w-full h-3 rounded-full dynamic-share-bar--small" style="--pct-a: {dynamicSplitRatioA * 100}%"></div>
+									<div class="w-full h-3 rounded-full dynamic-share-bar--small" style="--pct-a: {activeDynamicSplitRatioA * 100}%"></div>
 								{/if}
 							</div>
 							<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
-								<span>{formatter.format(Math.round(parsedAmt * dynamicSplitRatioA))}</span>
-								<span>{formatter.format(Math.round(parsedAmt * (1 - dynamicSplitRatioA)))}</span>
+								<span>{formatter.format(Math.round(parsedAmt * activeDynamicSplitRatioA))}</span>
+								<span>{formatter.format(Math.round(parsedAmt * (1 - activeDynamicSplitRatioA)))}</span>
 							</div>
 						</div>
 					{/if}
@@ -1509,22 +1533,22 @@
 					{:else}
 						<div class="space-y-1 pt-0.5">
 							<div class="flex justify-between text-sm font-bold text-[#2d3142]">
-								<span>{namePersonA} <span class="text-[#4a7bb0] ml-0.5">{Math.round(dynamicSplitRatioA * 100)}%</span></span>
-								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - dynamicSplitRatioA) * 100)}%</span></span>
+								<span>{namePersonA} <span class="text-[#4a7bb0] ml-0.5">{Math.round(activeDynamicSplitRatioA * 100)}%</span></span>
+								<span><span class="mr-0.5">{namePersonB}</span> <span class="text-[#4fd1c5]">{Math.round((1 - activeDynamicSplitRatioA) * 100)}%</span></span>
 							</div>
 							<!-- Styled share bar gradient without handle for dynamic split type -->
 							<div class="h-6 flex items-center">
-								{#if dynamicSplitRatioA === 0}
+								{#if activeDynamicSplitRatioA === 0}
 									<div class="w-full h-3 rounded-full" style="background: linear-gradient(to right, #76e8df, #4fd1c5)"></div>
-								{:else if dynamicSplitRatioA === 1}
+								{:else if activeDynamicSplitRatioA === 1}
 									<div class="w-full h-3 rounded-full" style="background: linear-gradient(to right, #4a7bb0, #6192c7)"></div>
 								{:else}
-									<div class="w-full h-3 rounded-full dynamic-share-bar--small" style="--pct-a: {dynamicSplitRatioA * 100}%"></div>
+									<div class="w-full h-3 rounded-full dynamic-share-bar--small" style="--pct-a: {activeDynamicSplitRatioA * 100}%"></div>
 								{/if}
 							</div>
 							<div class="flex justify-between text-xs font-medium text-[#9ca3af]">
-								<span>{formatter.format(Math.round(expense.currentAmount * dynamicSplitRatioA))}</span>
-								<span>{formatter.format(Math.round(expense.currentAmount * (1 - dynamicSplitRatioA)))}</span>
+								<span>{formatter.format(Math.round(expense.currentAmount * activeDynamicSplitRatioA))}</span>
+								<span>{formatter.format(Math.round(expense.currentAmount * (1 - activeDynamicSplitRatioA)))}</span>
 							</div>
 						</div>
 					{/if}
@@ -1776,7 +1800,7 @@
 													x={tick.x}
 													y={99}
 													text-anchor="middle"
-													fill={tick.year === currentYear ? '#ff7361' : '#4b5563'}
+													fill={tick.year === selectedDateYear ? '#ff7361' : '#4b5563'}
 													class="text-[11px] font-bold select-none pointer-events-none"
 												>
 													{tick.year}
