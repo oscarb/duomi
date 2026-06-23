@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
+	import { getContext, untrack } from 'svelte';
 	import { enhance, deserialize } from '$app/forms';
 	import { page } from '$app/state';
 	import { invalidateAll, goto } from '$app/navigation';
@@ -158,6 +158,26 @@
 				}
 			}
 		}
+	});
+
+	// Synchronize form date with dashboard month when month is navigated in dashboard
+	$effect(() => {
+		const yr = currentYear;
+		const mo = currentMonth;
+		untrack(() => {
+			if (isCreateMode && editAmountDate) {
+				const parts = editAmountDate.split('-');
+				if (parts.length === 3) {
+					const expenseYear = parseInt(parts[0], 10);
+					const expenseMonth = parseInt(parts[1], 10);
+					if (!isNaN(expenseYear) && !isNaN(expenseMonth)) {
+						if (expenseYear !== yr || expenseMonth !== mo) {
+							editAmountDate = `${yr}-${String(mo).padStart(2, '0')}-01`;
+						}
+					}
+				}
+			}
+		});
 	});
 
 	// Focus inline account input field when "Lägg till" is clicked
