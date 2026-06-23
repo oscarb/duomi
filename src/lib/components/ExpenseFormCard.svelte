@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getContext, untrack } from 'svelte';
+	import { getContext } from 'svelte';
 	import { enhance, deserialize } from '$app/forms';
 	import { page } from '$app/state';
 	import { invalidateAll, goto } from '$app/navigation';
@@ -139,46 +139,7 @@
 		}
 	});
 
-	// Synchronize dashboard date with the form's selected date in Create Mode
-	$effect(() => {
-		if (isCreateMode && editAmountDate && page.url.pathname === '/') {
-			const parts = editAmountDate.split('-');
-			if (parts.length === 3) {
-				const year = parseInt(parts[0], 10);
-				const month = parseInt(parts[1], 10);
-				if (!isNaN(year) && !isNaN(month)) {
-					const currentUrlYear = parseInt(page.url.searchParams.get('year') || '', 10);
-					const currentUrlMonth = parseInt(page.url.searchParams.get('month') || '', 10);
-					if (currentUrlYear !== year || currentUrlMonth !== month) {
-						const params = new URLSearchParams(page.url.searchParams);
-						params.set('year', year.toString());
-						params.set('month', month.toString());
-						goto(`?${params.toString()}`, { replaceState: true, keepFocus: true });
-					}
-				}
-			}
-		}
-	});
 
-	// Synchronize form date with dashboard month when month is navigated in dashboard
-	$effect(() => {
-		const yr = currentYear;
-		const mo = currentMonth;
-		untrack(() => {
-			if (isCreateMode && editAmountDate) {
-				const parts = editAmountDate.split('-');
-				if (parts.length === 3) {
-					const expenseYear = parseInt(parts[0], 10);
-					const expenseMonth = parseInt(parts[1], 10);
-					if (!isNaN(expenseYear) && !isNaN(expenseMonth)) {
-						if (expenseYear !== yr || expenseMonth !== mo) {
-							editAmountDate = `${yr}-${String(mo).padStart(2, '0')}-01`;
-						}
-					}
-				}
-			}
-		});
-	});
 
 	// Focus inline account input field when "Lägg till" is clicked
 	$effect(() => {
