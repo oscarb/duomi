@@ -322,6 +322,8 @@
 			});
 			if (!response.ok) {
 				console.error('Failed to save incomes:', await response.text());
+			} else {
+				await invalidateAll();
 			}
 		} catch (err) {
 			console.error('Error saving incomes:', err);
