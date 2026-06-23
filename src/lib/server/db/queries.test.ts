@@ -78,6 +78,22 @@ describe('Database Queries', () => {
 		expect(resOct.isFallbackB).toBe(true);
 	});
 
+	it('should fallback to 0 if the last known income was explicitly set to 0', async () => {
+		await setMonthlyIncome(2026, 8, 4000, 3000);
+		await setMonthlyIncome(2026, 9, 0, null);
+
+		const { getResolvedMonthlyIncomes } = await import('./queries');
+		const resSept = await getResolvedMonthlyIncomes(2026, 9);
+		expect(resSept.totalIncomeA).toBe(0);
+		expect(resSept.isFallbackA).toBe(false);
+
+		const resOct = await getResolvedMonthlyIncomes(2026, 10);
+		expect(resOct.totalIncomeA).toBe(0);
+		expect(resOct.isFallbackA).toBe(true);
+		expect(resOct.totalIncomeB).toBe(3000);
+		expect(resOct.isFallbackB).toBe(true);
+	});
+
 	it('should add and retrieve accounts', async () => {
 		await addAccount('Main Bank Account', 'A');
 		await addAccount('Revolut', 'B');

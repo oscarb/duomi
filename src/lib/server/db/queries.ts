@@ -35,7 +35,7 @@ export async function getLastKnownIncome(person: 'A' | 'B', targetYear: number, 
 		.filter(inc => {
 			const isBefore = inc.year < targetYear || (inc.year === targetYear && inc.month < targetMonth);
 			const val = person === 'A' ? inc.totalIncomeA : inc.totalIncomeB;
-			return isBefore && val !== null && val > 0;
+			return isBefore && val !== null;
 		})
 		.sort((a, b) => b.year - a.year || b.month - a.month);
 
