@@ -6,6 +6,11 @@
 [![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
 
+
+
+![Duomi Dashboard](static/screenshot.png)
+
+
 **Duomi** is an expense tracker designed to fulfill two goals:
 
 - 🔮 **Predictable economy**: verify which expenses needs to be paid, what months are more expensive and how expenses change over time
@@ -15,13 +20,13 @@ Made specifically and enhanced for household setups of two persons contributing 
 
 Designed with [Stitch](https://www.stitch.app/en/learn-stitch/ai-design-tools) and built with [Antigravity](https://antigravity.com/), the app features a modern, responsive user experience built on top of **SvelteKit**, **Tailwind CSS**, and **SQLite (Drizzle ORM)**.
 
-### 🌐 Live Demo
+## 🌐 Live Demo
 
-You can try out Duomi at **[duomi.onrender.com](https://duomi.onrender.com)**.
-*   **Passphrase**: `show me the money` (the demo has passphrase protection enabled)
-*   **Demo Mode**: The live demo is seeded with several months of sample shared expenses and income history for testing.
+Try out Duomi for yourself at **[duomi.onrender.com](https://duomi.onrender.com)**
 
-![Duomi Dashboard](static/screenshot.png)
+**Passphrase**: `show me the money` 
+
+
 
 ## Key features
 
