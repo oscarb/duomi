@@ -34,6 +34,7 @@ export const translations: Record<string, Record<string, string>> = {
 		share: 'Share',
 		copy: 'Copy',
 		copied: 'Copied!',
+		swish: 'Swish',
 		from: 'from',
 		since: 'since',
 
@@ -124,6 +125,7 @@ export const translations: Record<string, Record<string, string>> = {
 		share: 'Dela',
 		copy: 'Kopiera',
 		copied: 'Kopierad!',
+		swish: 'Swish',
 		from: 'från',
 		since: 'sedan',
 

@@ -118,6 +118,8 @@
 	});
 
 	import { calculateSettlement } from '$lib/calculations';
+	import SwishIcon from '$lib/components/SwishIcon.svelte';
+	import { buildSwishUrl, getSettlementRecipientSwish } from '$lib/swish';
 
 	function formatIncome(val: string): string {
 		const clean = val.replace(/\D/g, '');
@@ -310,6 +312,21 @@
 			navigator.clipboard.writeText(amountText);
 		}
 	}
+
+	let recipientSwish = $derived.by(() => {
+		if (currentSettlement.amount <= 0) return '';
+		return getSettlementRecipientSwish(currentSettlement.payer, data.personASwish, data.personBSwish);
+	});
+
+	let swishUrl = $derived.by(() => {
+		if (!recipientSwish || !currentSettlement.payer || currentSettlement.amount <= 0) return '';
+		return buildSwishUrl({
+			phone: recipientSwish,
+			amount: Math.round(currentSettlement.amount),
+			monthName,
+			year: data.period.year
+		});
+	});
 
 	async function saveIncomes() {
 		const valA = incomeAVal.replace(/\D/g, '');
@@ -554,7 +571,7 @@
 							{/if}
 						{/each}
 					</div>
-					<div class="flex justify-center">
+					<div class="flex justify-center gap-2">
 						<button
 							onclick={copySettlementText}
 							class="hidden md:flex h-10 items-center gap-2 px-4 rounded-xl border-2 border-[#efeeea] text-[#9ca3af] hover:text-[#ff7361] hover:border-[#ff7361]/30 transition-all font-bold text-xs focus:outline-none"
@@ -569,6 +586,18 @@
 							<span class="material-symbols-outlined text-[20px]">share</span>
 							<span>{t('share')}</span>
 						</button>
+						{#if recipientSwish && swishUrl}
+							<a
+								href={swishUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								title={t('swish')}
+								class="flex h-10 items-center gap-2 px-4 rounded-xl border-2 border-[#efeeea] text-[#9ca3af] hover:text-[#ff7361] hover:border-[#ff7361]/30 transition-all font-bold text-xs focus:outline-none"
+							>
+								<SwishIcon class="w-5 h-5 shrink-0" />
+								<span>{t('swish')}</span>
+							</a>
+						{/if}
 					</div>
 				{:else}
 					<div class="py-8">

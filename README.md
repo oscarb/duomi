@@ -146,6 +146,8 @@ Duomi can be configured using environment variables. These can be defined in you
 | `DEMO_MODE`             | If `true` and the database is empty, seeds mock incomes/expenses on startup. | `false`           |
 | `PUBLIC_PERSON_A_NAME`  | Display name for Person A.                                                   | `Partner A`       |
 | `PUBLIC_PERSON_B_NAME`  | Display name for Person B.                                                   | `Partner B`       |
+| `PUBLIC_PERSON_A_SWISH` | Swish phone number for Person A (e.g. `0731234567`). Optional.              | (None)            |
+| `PUBLIC_PERSON_B_SWISH` | Swish phone number for Person B (e.g. `0737654321`). Optional.              | (None)            |
 | `LOCALE`                | UI language and locale formatting (e.g., `en-US`, `sv-SE`).                  | `en-US`           |
 | `CURRENCY`              | Currency format code or symbol (e.g., `USD`, `SEK`).                         | `USD`             |
 | `SECRET_APP_PASSPHRASE` | Set a passphrase to restrict access. Leave empty to disable authentication.  | (None)            |

@@ -50,6 +50,9 @@ describe('translate', () => {
 		
 		expect(translate('en-US', 'createExpense')).toBe('Create expense');
 		expect(translate('sv-SE', 'createExpense')).toBe('Skapa utgift');
+
+		expect(translate('en-US', 'swish')).toBe('Swish');
+		expect(translate('sv-SE', 'swish')).toBe('Swish');
 	});
 });
 
