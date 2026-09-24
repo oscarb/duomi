@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duomi Intro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #111216;
+            color: #ffffff;
+            font-family: 'Outfit', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+        /* Background decorative elements */
+        .glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 115, 97, 0.15) 0%, rgba(255, 115, 97, 0) 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+            filter: blur(40px);
+            animation: pulse-glow 8s infinite alternate ease-in-out;
+        }
+        .container {
+            text-align: center;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-mark {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            animation: fade-in-up 1s ease-out forwards;
+        }
+        .circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            position: relative;
+        }
+        .circle-a {
+            background-color: #4a7bb0;
+            transform: translateX(12px);
+            opacity: 0.9;
+            animation: slide-a 1.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        .circle-b {
+            background-color: #4fd1c5;
+            transform: translateX(-12px);
+            opacity: 0.9;
+            animation: slide-b 1.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        h1 {
+            font-size: 56px;
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            background: linear-gradient(135deg, #ffffff 30%, #ff7361 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            opacity: 0;
+            animation: fade-in 1.2s ease-out 0.4s forwards;
+        }
+        p {
+            font-size: 20px;
+            color: #9ca3af;
+            font-weight: 300;
+            max-width: 500px;
+            line-height: 1.5;
+            opacity: 0;
+            animation: fade-in 1.2s ease-out 0.8s forwards;
+        }
+        .tagline {
+            display: flex;
+            gap: 16px;
+            margin-top: 24px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #ff7361;
+            opacity: 0;
+            animation: fade-in 1.2s ease-out 1.2s forwards;
+        }
+        .tag {
+            background: rgba(255, 115, 97, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 115, 97, 0.2);
+        }
+
+        /* Animations */
+        @keyframes pulse-glow {
+            0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1.2; }
+        }
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fade-in {
+            to { opacity: 1; }
+        }
+        @keyframes slide-a {
+            0% { transform: translateX(-40px); }
+            100% { transform: translateX(8px); }
+        }
+        @keyframes slide-b {
+            0% { transform: translateX(40px); }
+            100% { transform: translateX(-8px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="glow"></div>
+    <div class="container">
+        <div class="logo-mark">
+            <div class="circle circle-a"></div>
+            <div class="circle circle-b"></div>
+        </div>
+        <h1>Duomi</h1>
+        <p>Fair and proportional household expense splitting, simplified.</p>
+        <div class="tagline">
+            <span class="tag">Self-Hosted</span>
+            <span class="tag">100% Private</span>
+            <span class="tag">Docker Ready</span>
+        </div>
+    </div>
+</body>
+</html>
