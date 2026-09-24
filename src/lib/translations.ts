@@ -208,7 +208,7 @@ export function translate(locale: string, key: string, params?: Record<string, s
 	let text = dict[key] || translations['en-US'][key] || key;
 	if (params) {
 		Object.entries(params).forEach(([k, v]) => {
-			text = text.replace(`{${k}}`, v);
+			text = text.replaceAll(`{${k}}`, v);
 		});
 	}
 	return text;

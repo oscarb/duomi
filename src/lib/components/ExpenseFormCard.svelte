@@ -25,6 +25,15 @@
 		}
 	});
 
+	const inputPattern = $derived.by(() => {
+		try {
+			const escaped = thousandSeparator.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+			return `[0-9\\s${escaped}]*`;
+		} catch (e) {
+			return '[0-9\\s]*';
+		}
+	});
+
 	// Props
 	let {
 		expense = null,
@@ -900,7 +909,7 @@
 									<input
 										type="text"
 										inputmode="numeric"
-										pattern="[0-9\s]*"
+										pattern={inputPattern}
 										value={editAmountVal}
 										oninput={handleAmountInput}
 										onkeydown={handleAmountKeyDown}
@@ -1271,7 +1280,8 @@
 							const dateObj = new Date(y, m - 1, 1);
 							const formattedDate = dateObj.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
 							const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
-							toasts.show(t('toastAmountSaved', { name: editName, date: capitalizedDate }), 'success');
+							const formattedAmount = formatter.format(Math.round(parseFloat(editAmountVal.replace(/\D/g, '')) || 0));
+							toasts.show(t('toastAmountSaved', { name: editName, amount: formattedAmount, date: capitalizedDate }), 'success');
 						} else if (actionName.includes('update')) {
 							if (expense && editPaidBy !== expense.paidBy) {
 								const targetPersonName = editPaidBy === 'A' ? namePersonA : namePersonB;
@@ -1382,7 +1392,7 @@
 											bind:this={amountInputEl}
 											type="text"
 											inputmode="numeric"
-											pattern="[0-9\s]*"
+											pattern={inputPattern}
 											value={editAmountVal}
 											oninput={handleAmountInput}
 											onkeydown={handleAmountKeyDown}

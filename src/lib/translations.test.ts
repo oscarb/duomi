@@ -35,6 +35,15 @@ describe('translate', () => {
 		expect(text).toBe('100 kr');
 	});
 
+	it('should correctly substitute all parameters in toastAmountSaved', () => {
+		const text = translate('en-US', 'toastAmountSaved', {
+			name: 'Electricity',
+			amount: '$150',
+			date: 'June 2026'
+		});
+		expect(text).toBe('Electricity updated to $150 from June 2026');
+	});
+
 	it('should translate correctly for other common keys', () => {
 		expect(translate('en-US', 'addExpense')).toBe('Add expense');
 		expect(translate('sv-SE', 'addExpense')).toBe('Lägg till utgift');

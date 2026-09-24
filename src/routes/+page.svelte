@@ -27,6 +27,15 @@
 		}
 	});
 
+	const inputPattern = $derived.by(() => {
+		try {
+			const escaped = thousandSeparator.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+			return `[0-9\\s${escaped}]*`;
+		} catch (e) {
+			return '[0-9\\s]*';
+		}
+	});
+
 	const nowObj = new Date();
 	const realYear = nowObj.getFullYear();
 	const realMonth = nowObj.getMonth() + 1;
@@ -262,7 +271,8 @@
 				const dateObj = new Date(year, month - 1, 1);
 				const formattedDate = dateObj.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
 				const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
-				toasts.show(t('toastAmountSaved', { name: expenseName, date: capitalizedDate }), 'success');
+				const formattedAmount = formatter.format(amount);
+				toasts.show(t('toastAmountSaved', { name: expenseName, amount: formattedAmount, date: capitalizedDate }), 'success');
 				await invalidateAll();
 			}
 		} catch (err) {
@@ -601,7 +611,7 @@
 									name="incomeA"
 									type="text"
 									inputmode="numeric"
-									pattern="[0-9\s]*"
+									pattern={inputPattern}
 									autocomplete="off"
 									value={incomeAVal}
 									onfocus={() => {
@@ -637,7 +647,7 @@
 									name="incomeB"
 									type="text"
 									inputmode="numeric"
-									pattern="[0-9\s]*"
+									pattern={inputPattern}
 									autocomplete="off"
 									value={incomeBVal}
 									onfocus={() => {
